@@ -1,0 +1,92 @@
+[
+  {
+    "id": "rec-sleep-window",
+    "zoneIds": ["brain", "heart"],
+    "title": "Keep a fixed sleep window",
+    "steps": [
+      "Pick one sleep window you can keep for the next several nights.",
+      "Keep the same start and end times even when the work schedule shifts."
+    ],
+    "evidence": {
+      "label": "NASA HRP: Risk from inadequate sleep and irregular schedules (the routine change is a design proposal)",
+      "url": "https://www.nasa.gov/reference/risk-from-inadequate-sleep-and-irregular-schedules/",
+      "kind": "design-inference"
+    },
+    "needsVerification": true
+  },
+  {
+    "id": "rec-light",
+    "zoneIds": ["brain"],
+    "title": "Adjust light around sleep",
+    "steps": [
+      "In the evening before sleep, use dim light that is low in blue.",
+      "In the morning, use bright light."
+    ],
+    "evidence": {
+      "label": "NASA NTRS 20160006727: lighting and sleep in flight",
+      "url": "https://ntrs.nasa.gov/api/citations/20160006727/downloads/20160006727.pdf",
+      "kind": "primary"
+    },
+    "needsVerification": false
+  },
+  {
+    "id": "rec-hydration",
+    "zoneIds": ["heart", "immune"],
+    "title": "Check your hydration",
+    "steps": [
+      "Drink fluids steadily through the day, with a serving at your next meal."
+    ],
+    "evidence": {
+      "label": "Health monitoring report: review sleep, hydration, exercise load and CO2 when resting heart rate rises (design proposal)",
+      "url": "reports/Monitoreo de salud de astronautas.md",
+      "kind": "design-inference"
+    },
+    "needsVerification": true
+  },
+  {
+    "id": "rec-exercise-load",
+    "zoneIds": ["heart", "immune", "bone"],
+    "title": "Review your exercise load",
+    "steps": [
+      "Check whether today's exercise was heavier or later than usual.",
+      "If time is short, shorten the session and raise the intensity instead of skipping it."
+    ],
+    "evidence": {
+      "label": "SPRINT study: high-intensity, lower-volume exercise gave similar results to the standard routine",
+      "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7434884/",
+      "kind": "primary"
+    },
+    "needsVerification": false
+  },
+  {
+    "id": "rec-co2-check",
+    "zoneIds": ["brain", "heart"],
+    "title": "Check CO2 near your sleeping area",
+    "steps": [
+      "Read the CO2 level at your sleep station if a monitor is available.",
+      "If it looks high, ventilate or move to a better-ventilated spot, and report it."
+    ],
+    "evidence": {
+      "label": "NASA OCHMO-TB-004: carbon dioxide exposure limits",
+      "url": "https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-004-carbon-dioxide.pdf",
+      "kind": "primary"
+    },
+    "needsVerification": false
+  },
+  {
+    "id": "rec-remeasure-rest",
+    "zoneIds": ["heart", "immune", "metabolism"],
+    "title": "Re-measure at rest",
+    "steps": [
+      "Sit quietly for 5 minutes.",
+      "Measure again at the same site and in the same position.",
+      "For glucose, repeat the fasting reading before acting on it."
+    ],
+    "evidence": {
+      "label": "Health monitoring report: repeat the measurement before escalating (design proposal)",
+      "url": "reports/Monitoreo de salud de astronautas.md",
+      "kind": "design-inference"
+    },
+    "needsVerification": true
+  }
+]

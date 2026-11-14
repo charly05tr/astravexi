@@ -1,0 +1,169 @@
+{
+  "findings": [
+    {
+      "id": "temp-hyperthermia",
+      "whatChanged": "Your resting temperature was {observed}, at or above 40.0 C.",
+      "whyItMatters": "40 C is the level secondary sources describe as severe. In flight the resting baseline already runs about 1 C higher, so a reading this high is treated as an urgent signal.",
+      "whatToDo": "Re-measure at rest. The Crew Medical Officer sees this on board and the flight surgeon is notified through the simulated link.",
+      "recommendationIds": ["rec-remeasure-rest"]
+    },
+    {
+      "id": "temp-hypothermia",
+      "whatChanged": "Your resting temperature was {observed}, below 35.0 C.",
+      "whyItMatters": "Below 35 C is the cut secondary sources use for a low body temperature, so it is treated as an urgent signal.",
+      "whatToDo": "Re-measure at rest, at the same site. The Crew Medical Officer sees this on board and the flight surgeon is notified through the simulated link.",
+      "recommendationIds": ["rec-remeasure-rest"]
+    },
+    {
+      "id": "temp-fever-symptomatic",
+      "whatChanged": "Your temperature was {observed}, at or above 38.0 C, and you reported symptoms.",
+      "whyItMatters": "The immune system is one of the areas the Human Research Program tracks in closed environments. Temperature is the early signal, and symptoms make a high reading more relevant.",
+      "whatToDo": "Re-measure at rest and tell the Crew Medical Officer how you feel.",
+      "recommendationIds": ["rec-remeasure-rest"]
+    },
+    {
+      "id": "temp-shift-explained",
+      "whatChanged": "Your temperature was {observed}. That is {delta} compared with your own baseline of {baseline}.",
+      "whyItMatters": "At rest, core temperature in flight rises by about 1 C (Stahn et al. 2017). A reading under 0.5 C above your own baseline is within that expected shift, so it is Information, not a fever alert.",
+      "whatToDo": "No change needed. Keep measuring at rest and at the same site.",
+      "recommendationIds": []
+    },
+    {
+      "id": "temp-above-baseline",
+      "whatChanged": "Your resting temperature was {observed}, {delta} compared with your own baseline of {baseline}.",
+      "whyItMatters": "A rise of 0.5 C or more over your own baseline can be an early sign that the immune system is under strain in a closed environment.",
+      "whatToDo": "Measure again tomorrow at rest. If it stays up, the alert can grow to Caution.",
+      "recommendationIds": ["rec-remeasure-rest"]
+    },
+    {
+      "id": "temp-fever-no-baseline",
+      "whatChanged": "Your resting temperature was {observed}, at or above 38.0 C. There is not yet a baseline to compare it with.",
+      "whyItMatters": "Without your own baseline the app cannot tell whether this is your normal in-flight level, so this alert is unverified.",
+      "whatToDo": "Re-measure at rest and keep adding daily readings so the baseline can build.",
+      "recommendationIds": ["rec-remeasure-rest"]
+    },
+    {
+      "id": "temp-sustained-high",
+      "whatChanged": "Your resting temperature has been at least 1.0 C above your own baseline of {baseline} on several recent days. The latest was {observed}.",
+      "whyItMatters": "A sustained rise, not a single reading, is the pattern that separates a real change from the normal in-flight shift.",
+      "whatToDo": "Re-measure at rest and review your exercise load. Tell the Crew Medical Officer if it continues.",
+      "recommendationIds": ["rec-remeasure-rest", "rec-exercise-load"]
+    },
+    {
+      "id": "hr-tachy-symptomatic",
+      "whatChanged": "Your heart rate was {observed}, above 100 bpm, and you reported symptoms.",
+      "whyItMatters": "A resting rate above 100 bpm with symptoms is treated as an urgent signal. Spaceflight changes how the cardiovascular system regulates itself.",
+      "whatToDo": "Re-measure at rest. The Crew Medical Officer sees this on board and the flight surgeon is notified through the simulated link.",
+      "recommendationIds": ["rec-remeasure-rest"]
+    },
+    {
+      "id": "hr-brady-symptomatic",
+      "whatChanged": "Your heart rate was {observed}, below 50 bpm, and you reported symptoms.",
+      "whyItMatters": "A resting rate below 50 bpm with symptoms is treated as an urgent signal. The 50 bpm cut is a design choice that needs validation.",
+      "whatToDo": "Re-measure at rest. The Crew Medical Officer sees this on board and the flight surgeon is notified through the simulated link.",
+      "recommendationIds": ["rec-remeasure-rest"]
+    },
+    {
+      "id": "hr-above-baseline",
+      "whatChanged": "Your resting heart rate was at least 15% above your own baseline of {baseline} on several recent days. The latest was {observed}.",
+      "whyItMatters": "Resting heart rate that stays above your own baseline can follow poor sleep, low hydration, heavy exercise or high CO2. The cardiovascular system is one of the areas the Human Research Program tracks.",
+      "whatToDo": "Review sleep, hydration, exercise load and CO2 first. These are routine changes you can try today.",
+      "recommendationIds": ["rec-sleep-window", "rec-hydration", "rec-exercise-load", "rec-co2-check"]
+    },
+    {
+      "id": "bp-crisis-systolic",
+      "whatChanged": "Your systolic blood pressure was {observed}, above 180 mmHg.",
+      "whyItMatters": "Above 180/120 is the range guidelines call a hypertensive crisis. It stays a Warning until the Crew Medical Officer acknowledges it, even if a later reading is normal.",
+      "whatToDo": "Re-measure seated at rest. The Crew Medical Officer sees this on board and the flight surgeon is notified through the simulated link.",
+      "recommendationIds": ["rec-remeasure-rest"]
+    },
+    {
+      "id": "bp-crisis-diastolic",
+      "whatChanged": "Your diastolic blood pressure was {observed}, above 120 mmHg.",
+      "whyItMatters": "Above 180/120 is the range guidelines call a hypertensive crisis. It stays a Warning until the Crew Medical Officer acknowledges it, even if a later reading is normal.",
+      "whatToDo": "Re-measure seated at rest. The Crew Medical Officer sees this on board and the flight surgeon is notified through the simulated link.",
+      "recommendationIds": ["rec-remeasure-rest"]
+    },
+    {
+      "id": "bp-stage2-systolic",
+      "whatChanged": "Your systolic blood pressure was at or above 140 mmHg on two days in a row. The latest was {observed}.",
+      "whyItMatters": "Repeated readings at this level fall in the stage 2 range of the ACC/AHA guideline, so the alert moves to Caution and the Crew Medical Officer is informed.",
+      "whatToDo": "Re-measure at rest and review your exercise load.",
+      "recommendationIds": ["rec-remeasure-rest", "rec-exercise-load"]
+    },
+    {
+      "id": "bp-stage2-diastolic",
+      "whatChanged": "Your diastolic blood pressure was at or above 90 mmHg on two days in a row. The latest was {observed}.",
+      "whyItMatters": "Repeated readings at this level fall in the stage 2 range of the ACC/AHA guideline, so the alert moves to Caution and the Crew Medical Officer is informed.",
+      "whatToDo": "Re-measure at rest and review your exercise load.",
+      "recommendationIds": ["rec-remeasure-rest", "rec-exercise-load"]
+    },
+    {
+      "id": "glucose-hypo-l2",
+      "whatChanged": "Your glucose was {observed}, below 54 mg/dL.",
+      "whyItMatters": "Below 54 mg/dL is level 2 hypoglycemia in the ADA Standards of Care, treated as an urgent signal.",
+      "whatToDo": "Repeat the reading. The Crew Medical Officer sees this on board and the flight surgeon is notified through the simulated link.",
+      "recommendationIds": ["rec-remeasure-rest"]
+    },
+    {
+      "id": "glucose-low",
+      "whatChanged": "Your glucose was {observed}, below 70 mg/dL.",
+      "whyItMatters": "Below 70 mg/dL is level 1 hypoglycemia in the ADA Standards of Care. Nutrition is an area the Human Research Program tracks on long missions.",
+      "whatToDo": "Repeat the reading before acting on it, and tell the Crew Medical Officer.",
+      "recommendationIds": ["rec-remeasure-rest"]
+    },
+    {
+      "id": "glucose-high",
+      "whatChanged": "Your glucose was {observed}, at or above 200 mg/dL.",
+      "whyItMatters": "A reading this high is a reason to repeat the measurement and involve the Crew Medical Officer. The 200 mg/dL cut is a design choice that needs validation.",
+      "whatToDo": "Repeat the fasting reading before acting on it, and tell the Crew Medical Officer.",
+      "recommendationIds": ["rec-remeasure-rest"]
+    },
+    {
+      "id": "glucose-fasting-rising",
+      "whatChanged": "Your fasting glucose was at or above 100 mg/dL on three days in a row and rising. The latest was {observed}.",
+      "whyItMatters": "Fasting values of 100 to 125 mg/dL are the range the ADA calls prediabetes on Earth. The rising trend rule is a design inference.",
+      "whatToDo": "Repeat the fasting reading, and note meals, exercise and sleep next to it.",
+      "recommendationIds": ["rec-remeasure-rest"]
+    },
+    {
+      "id": "sleep-mean-low",
+      "whatChanged": "Your sleep over the last 7 days averaged {observed}, under 6.0 h.",
+      "whyItMatters": "Crews sleep about 6 h in flight against 8.5 h scheduled. Inadequate sleep and irregular schedules is one of the risks the Human Research Program tracks.",
+      "whatToDo": "Try a fixed sleep window and adjust light before and after sleep. Check CO2 near your sleeping area.",
+      "recommendationIds": ["rec-sleep-window", "rec-light", "rec-co2-check"]
+    },
+    {
+      "id": "sleep-short-run",
+      "whatChanged": "You slept 5.0 h or less on three nights in a row. The latest night was {observed}.",
+      "whyItMatters": "Five hours or less of sleep is linked to poorer sustained attention, which matters for work on board.",
+      "whatToDo": "Try a fixed sleep window and adjust light around sleep. Check CO2 near your sleeping area.",
+      "recommendationIds": ["rec-sleep-window", "rec-light", "rec-co2-check"]
+    },
+    {
+      "id": "mood-phq2-positive",
+      "whatChanged": "Your latest mood score was {observed}, at or above 3.",
+      "whyItMatters": "A PHQ-2 score of 3 or more is the usual cut-off for a positive screen for low mood. It is a prompt to check in, not a diagnosis. Isolation and confinement are risks the Human Research Program tracks.",
+      "whatToDo": "Keep a regular rest schedule. If low mood lasts, tell the Crew Medical Officer. Only the tier, never your score, leaves your device.",
+      "recommendationIds": ["rec-sleep-window"]
+    },
+    {
+      "id": "mood-mean-above-baseline",
+      "whatChanged": "Your mood score averaged {observed} over the last 7 days, above your own baseline of {baseline}. A higher score is worse.",
+      "whyItMatters": "A trend away from your own usual level is more informative than one score. Isolation, confinement and poor sleep strain mood on long missions.",
+      "whatToDo": "Keep a regular rest schedule. If low mood lasts, tell the Crew Medical Officer. Only the tier, never your score, leaves your device.",
+      "recommendationIds": ["rec-sleep-window"]
+    }
+  ],
+  "corroboration": {
+    "title": "Two sustained signals point the same way",
+    "intro": "More than one sustained signal in this zone is outside your baseline at the same time:",
+    "whyItMatters": "Signals that move together are less likely to be noise. This is why the zone is raised to Caution. Corroboration never raises a zone to Warning.",
+    "whatToDo": "Start with these routine changes.",
+    "recommendationIdsByZone": {
+      "brain": ["rec-sleep-window", "rec-light", "rec-co2-check"],
+      "heart": ["rec-remeasure-rest", "rec-hydration", "rec-exercise-load"],
+      "immune": ["rec-remeasure-rest", "rec-hydration"]
+    }
+  }
+}
