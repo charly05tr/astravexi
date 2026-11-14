@@ -1,0 +1,30 @@
+{
+  "name": "Demo crew member",
+  "firstDay": 121,
+  "demoDay": 150,
+  "scenario": {
+    "sleepDriftFromDay": 144,
+    "moodDriftFromDay": 144,
+    "heartRateDriftFromDay": 146
+  },
+  "baseline": {
+    "sleepStored": 65,
+    "sleepSpread": 3,
+    "heartRate": 62,
+    "heartRateSpread": 1,
+    "temperatureStored": 377,
+    "temperatureSpread": 1,
+    "systolic": 112,
+    "systolicSpread": 3,
+    "diastolic": 70,
+    "diastolicSpread": 2,
+    "glucose": 90,
+    "glucoseSpread": 4
+  },
+  "drift": {
+    "sleepStoredMin": 53,
+    "sleepStoredMax": 59,
+    "heartRateMin": 73,
+    "heartRateMax": 74
+  }
+}
