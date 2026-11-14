@@ -1,0 +1,49 @@
+{
+  "name": "astravexi",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource/fira-sans": "^5.3.0",
+    "@fontsource/overpass": "^5.3.0",
+    "@fontsource/overpass-mono": "^5.3.0",
+    "@phosphor-icons/react": "^2.1.10",
+    "dexie": "^4.4.7",
+    "react": ">=19.2 <19.4",
+    "react-dom": ">=19.2 <19.4",
+    "recharts": "^3.10.1",
+    "zustand": "^5.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.10",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "eslint": "^10.15.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "fake-indexeddb": "^6.2.8",
+    "globals": "^17.14.0",
+    "jsdom": "^29.1.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  },
+  "overrides": {
+    "recharts": {
+      "react-is": "$react"
+    }
+  }
+}
