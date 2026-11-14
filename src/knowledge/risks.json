@@ -1,0 +1,58 @@
+[
+  {
+    "id": "sleep-inadequate",
+    "name": "Inadequate sleep and irregular schedules",
+    "hazardIds": ["isolation-confinement", "hostile-closed-environments"],
+    "zoneIds": ["brain"],
+    "source": { "label": "NASA HRP: Risk from inadequate sleep and irregular schedules", "url": "https://www.nasa.gov/reference/risk-from-inadequate-sleep-and-irregular-schedules/", "kind": "primary" },
+    "mappingIsInference": false
+  },
+  {
+    "id": "behavioral-conditions",
+    "name": "Behavioral conditions and psychiatric disorders",
+    "hazardIds": ["isolation-confinement", "distance-from-earth", "radiation"],
+    "zoneIds": ["brain"],
+    "source": { "label": "NASA HRP: Risk of behavioral conditions and psychiatric disorders", "url": "https://www.nasa.gov/reference/risk-of-behavioral-conditions-and-psychiatric-disorders/", "kind": "primary" },
+    "mappingIsInference": false
+  },
+  {
+    "id": "sans",
+    "name": "Spaceflight-associated neuro-ocular syndrome (SANS)",
+    "hazardIds": ["gravity-fields"],
+    "zoneIds": ["eyes"],
+    "source": { "label": "NASA HRP: Risk of SANS", "url": "https://www.nasa.gov/reference/risk-of-spaceflight-associated-neuro-ocular-syndrome-sans/", "kind": "primary" },
+    "mappingIsInference": false
+  },
+  {
+    "id": "cardiovascular",
+    "name": "Cardiovascular adaptations",
+    "hazardIds": ["gravity-fields"],
+    "zoneIds": ["heart"],
+    "source": { "label": "NASA HRP: Risk of cardiovascular adaptations", "url": "https://www.nasa.gov/reference/risk-of-cardiovascular-adaptations/", "kind": "primary" },
+    "mappingIsInference": false
+  },
+  {
+    "id": "bone-changes",
+    "name": "Spaceflight-induced bone changes",
+    "hazardIds": ["gravity-fields"],
+    "zoneIds": ["bone"],
+    "source": { "label": "NASA HRP: Risk of spaceflight-induced bone changes", "url": "https://www.nasa.gov/reference/risk-of-spaceflight-induced-bone-changes/", "kind": "primary" },
+    "mappingIsInference": false
+  },
+  {
+    "id": "nutrition",
+    "name": "Inadequate food and nutrition",
+    "hazardIds": ["distance-from-earth", "hostile-closed-environments"],
+    "zoneIds": ["metabolism"],
+    "source": { "label": "NASA HRP: Risk of inadequate food and nutrition", "url": "https://www.nasa.gov/reference/risk-of-inadequate-food-and-nutrition/", "kind": "primary" },
+    "mappingIsInference": true
+  },
+  {
+    "id": "immune",
+    "name": "Altered immune system responses",
+    "hazardIds": ["hostile-closed-environments", "isolation-confinement", "radiation"],
+    "zoneIds": ["immune"],
+    "source": { "label": "NASA HRP: Risk of altered immune system responses", "url": "https://www.nasa.gov/reference/risk-of-altered-immune-system-responses/", "kind": "primary" },
+    "mappingIsInference": false
+  }
+]

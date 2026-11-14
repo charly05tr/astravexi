@@ -1,0 +1,44 @@
+[
+  {
+    "id": "brain",
+    "label": "Brain",
+    "functionSummary": "Mood, sleep and cognition. Isolation, confinement and poor sleep strain it during long missions.",
+    "riskIds": ["sleep-inadequate", "behavioral-conditions"],
+    "indicatorIds": ["sleepHours", "phq2"]
+  },
+  {
+    "id": "eyes",
+    "label": "Eyes",
+    "functionSummary": "Vision. Spaceflight-associated neuro-ocular syndrome (SANS) can change the eye and optic nerve in microgravity.",
+    "riskIds": ["sans"],
+    "indicatorIds": []
+  },
+  {
+    "id": "heart",
+    "label": "Heart",
+    "functionSummary": "Heart rate and blood pressure. Microgravity changes cardiovascular regulation and exercise capacity.",
+    "riskIds": ["cardiovascular"],
+    "indicatorIds": ["heartRate", "bpSystolic", "bpDiastolic"]
+  },
+  {
+    "id": "bone",
+    "label": "Bone",
+    "functionSummary": "Skeleton and muscle. Low gravity loads bone less, which can reduce bone density over a long mission.",
+    "riskIds": ["bone-changes"],
+    "indicatorIds": []
+  },
+  {
+    "id": "metabolism",
+    "label": "Metabolism",
+    "functionSummary": "Glucose handling and nutrition. Prolonged rest and altered diet change insulin sensitivity.",
+    "riskIds": ["nutrition"],
+    "indicatorIds": ["glucose"]
+  },
+  {
+    "id": "immune",
+    "label": "Immune",
+    "functionSummary": "Immune response. Closed environments, isolation and radiation can alter it; temperature is the early signal.",
+    "riskIds": ["immune"],
+    "indicatorIds": ["temperature"]
+  }
+]
