@@ -220,8 +220,8 @@ export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSugg
           <EmptyState>
             Not monitored in this prototype. No indicator feeds this zone, so it shows no alert, trend or score.
           </EmptyState>
-          {detail ? null : topSuggestion}
           {symptomAction}
+          {detail ? null : topSuggestion}
         </>
       ) : (
         <>
@@ -231,9 +231,9 @@ export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSugg
             </ul>
           ) : null}
           {!hasFindings && model.status === 'noData' ? <EmptyState>{emptyText}</EmptyState> : null}
+          {symptomAction}
           {detail ? null : topSuggestion}
           <div className="zone-panel__actions">
-            {symptomAction}
             <button type="button" className="button zone-panel__more" aria-haspopup="dialog" onClick={() => onDetail(true)}>
               View details
               <ChevronRight size={16} aria-hidden="true" />

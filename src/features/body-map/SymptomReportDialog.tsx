@@ -1,4 +1,4 @@
-import { Activity } from 'lucide-react';
+import { Activity, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { useUi } from '../../app/ui-state';
 import type { ZoneId } from '../../core/health/model';
@@ -6,7 +6,6 @@ import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import {
   ZONE_SYMPTOMS,
-  formatSymptomSummary,
   hasZoneSymptoms,
 } from './symptom-model';
 
@@ -15,9 +14,11 @@ export interface SymptomTriggerProps {
   zoneLabel: string;
 }
 
+const DISCOMFORT_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+
 /**
- * Minimal anatomical symptom trigger and modal dialog.
- * Keeps the main zone summary card uncluttered while letting crew tap symptoms directly after clicking a 3D organ.
+ * Anatomical symptom trigger and readable summary card positioned directly above Recommended change
+ * so crew immediately connect reported symptoms with the LLM-simulated recommendation below.
  */
 export function SymptomReportAction({ zoneId, zoneLabel }: SymptomTriggerProps) {
   const [open, setOpen] = useState(false);
@@ -26,20 +27,74 @@ export function SymptomReportAction({ zoneId, zoneLabel }: SymptomTriggerProps) 
   const report = symptomReports[zoneId];
   const options = ZONE_SYMPTOMS[zoneId];
   const active = hasZoneSymptoms(report);
-  const summary = formatSymptomSummary(report);
+  const selectedLabels = report.tags
+    .map((id) => options.find((o) => o.id === id)?.label)
+    .filter((v): v is string => Boolean(v));
 
   return (
     <div className="symptom-action" data-testid="anatomical-symptom-report">
-      {summary ? <p className="symptom-action__summary">{summary}</p> : null}
-      <button
-        type="button"
-        className="button button--small zone-panel__more"
-        aria-haspopup="dialog"
-        onClick={() => setOpen(true)}
-      >
-        <Activity size={15} aria-hidden="true" />
-        {active ? 'Edit symptom' : 'Report symptom'}
-      </button>
+      {!active ? (
+        <button
+          type="button"
+          className="button button--small zone-panel__more"
+          aria-haspopup="dialog"
+          onClick={() => setOpen(true)}
+        >
+          <Activity size={15} aria-hidden="true" />
+          Report symptom
+        </button>
+      ) : (
+        <section className="symptom-card" aria-label="Reported symptom">
+          <div className="symptom-card__head">
+            <p className="eyebrow symptom-card__eyebrow">
+              <Activity size={13} aria-hidden="true" />
+              Reported symptom
+            </p>
+            <button
+              type="button"
+              className="button button--small symptom-card__edit"
+              aria-haspopup="dialog"
+              aria-label="Edit symptom"
+              onClick={() => setOpen(true)}
+            >
+              <Pencil size={12} aria-hidden="true" />
+              Edit
+            </button>
+          </div>
+
+          <div className="symptom-card__tags">
+            {selectedLabels.length > 0 ? (
+              selectedLabels.map((label) => (
+                <span key={label} className="symptom-pill">
+                  {label}
+                </span>
+              ))
+            ) : (
+              <span className="symptom-pill">Localized discomfort</span>
+            )}
+          </div>
+
+          {report.discomfort > 0 ? (
+            <div className="symptom-card__meter" aria-label={`Discomfort ${report.discomfort} out of 10`}>
+              <span className="symptom-card__meter-label">
+                Discomfort <strong className="mono">{report.discomfort}/10</strong>
+              </span>
+              <span className="symptom-meter__dots" aria-hidden="true">
+                {DISCOMFORT_LEVELS.map((step) => (
+                  <span
+                    key={step}
+                    className={
+                      step <= report.discomfort
+                        ? 'symptom-meter__dot symptom-meter__dot--filled'
+                        : 'symptom-meter__dot'
+                    }
+                  />
+                ))}
+              </span>
+            </div>
+          ) : null}
+        </section>
+      )}
 
       {open ? (
         <Dialog

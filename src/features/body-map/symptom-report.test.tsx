@@ -55,11 +55,18 @@ describe('SymptomReportAction integration', () => {
 
     await m.user.click(within(dialog).getByRole('button', { name: /done/i }));
 
-    // Summary line displays cleanly on the ZonePanel and triggers LLM-simulated Recommended change
-    expect(screen.getByText('Near-vision blur · discomfort 5/10')).toBeInTheDocument();
+    // Readable symptom card renders above Recommended change (cause -> effect flow)
+    const symptomCard = screen.getByRole('region', { name: /reported symptom/i });
+    expect(within(symptomCard).getByText('Near-vision blur')).toBeInTheDocument();
+    expect(within(symptomCard).getByText('5/10')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /edit symptom/i })).toBeInTheDocument();
+
     const eyesSuggestionHeading = screen.getByRole('heading', { name: /recommended change/i });
     expect(eyesSuggestionHeading).toBeInTheDocument();
+    expect(
+      symptomCard.compareDocumentPosition(eyesSuggestionHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
     const eyesSuggestionCard = eyesSuggestionHeading.closest('section')!;
     expect(within(eyesSuggestionCard).getByText(/reduce close-focus strain/i)).toBeInTheDocument();
     expect(within(eyesSuggestionCard).getByText(/reported symptom: near-vision blur/i)).toBeInTheDocument();
@@ -74,10 +81,16 @@ describe('SymptomReportAction integration', () => {
     const brainDialog = screen.getByRole('dialog', { name: /brain symptoms/i });
     await m.user.click(within(brainDialog).getByRole('button', { name: /headache \/ pressure/i }));
     await m.user.click(within(brainDialog).getByRole('button', { name: /done/i }));
-    expect(screen.getByText('Headache / pressure')).toBeInTheDocument();
 
-    // Recommended change right below the atypical chart updates to the simulated LLM triage card
-    const brainSection = screen.getByRole('heading', { name: /recommended change/i }).closest('section')!;
+    const brainSymptomCard = screen.getByRole('region', { name: /reported symptom/i });
+    expect(within(brainSymptomCard).getByText('Headache / pressure')).toBeInTheDocument();
+
+    // Recommended change appears directly below the reported symptom card (below the atypical chart)
+    const brainSuggestionHeading = screen.getByRole('heading', { name: /recommended change/i });
+    expect(
+      brainSymptomCard.compareDocumentPosition(brainSuggestionHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    const brainSection = brainSuggestionHeading.closest('section')!;
     expect(within(brainSection).getByText(/boost local airflow/i)).toBeInTheDocument();
     expect(within(brainSection).getByText(/sleep:/i)).toBeInTheDocument();
     expect(within(brainSection).getByText(/co2 \d+ ppm/i)).toBeInTheDocument();
@@ -88,7 +101,7 @@ describe('SymptomReportAction integration', () => {
     await m.user.click(within(reopenDialog).getByRole('button', { name: /clear/i }));
     await m.user.click(within(reopenDialog).getByRole('button', { name: /done/i }));
 
-    expect(screen.queryByText('Headache / pressure')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /reported symptom/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /report symptom/i })).toBeInTheDocument();
   });
 });
