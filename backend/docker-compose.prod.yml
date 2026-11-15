@@ -1,0 +1,62 @@
+name: astravexi
+
+# Backend-only production stack. Run from backend/ (compose reads backend/.env automatically):
+#   docker compose -f docker-compose.prod.yml up -d --build
+services:
+  web:
+    build:
+      context: .
+      dockerfile: dockerfile
+    env_file: .env
+    environment:
+      DEBUG: "False"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./nginx
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in backend/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # The official image runs envsubst over /etc/nginx/templates/*.template (only ${DOMAIN} is defined).
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - certbot_www:/var/www/certbot:ro
+      # Read-write: the entrypoint creates a temporary self-signed cert on first run.
+      - certbot_conf:/etc/letsencrypt
+    depends_on:
+      - web
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt
+    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done'
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  certbot_www:
+  certbot_conf:
