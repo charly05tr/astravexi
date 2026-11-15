@@ -76,6 +76,15 @@ export const ZONE_PIN: Readonly<Record<ZoneId, string | readonly [number, number
 };
 
 /**
+ * Zones whose pin sits on the top of their mesh instead of its centre. The brain's centre is only ~3 cm
+ * above the eyes' centre, so both pins land on the same spot; its crown is ~10 cm above them.
+ */
+export const PIN_ON_TOP: ReadonlySet<ZoneId> = new Set(['brain']);
+
+/** Zones whose label opens to the left of the pin, so neighbouring head labels never share a side. */
+export const PIN_LABEL_LEFT: ReadonlySet<ZoneId> = new Set(['eyes']);
+
+/**
  * Resolves a click from the meshes under the pointer, nearest first. Enclosing bones are skipped while an
  * organ lies behind them, so clicking the head picks the brain, not the skull; with no organ behind, the
  * bone itself is picked. A mesh with no zone (lungs) stops the pick.

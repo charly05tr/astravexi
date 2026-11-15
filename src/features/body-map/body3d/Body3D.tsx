@@ -9,7 +9,18 @@ import type { ZoneId, ZoneStatus } from '../../../core/health/model';
 import { tierTheme } from '../../../theme/tiers';
 import { tierStyle } from '../../../ui/TierChip';
 import type { BodyModelProps, ZoneView } from '../body-model';
-import { EXPLODABLE, EXPLODE_TARGET, ORGAN_ZONE, ZONE_FOCUS, ZONE_PIN, explodingOrgans, meshesOfZone, pickZone } from './organ-map';
+import {
+  EXPLODABLE,
+  EXPLODE_TARGET,
+  ORGAN_ZONE,
+  PIN_LABEL_LEFT,
+  PIN_ON_TOP,
+  ZONE_FOCUS,
+  ZONE_PIN,
+  explodingOrgans,
+  meshesOfZone,
+  pickZone,
+} from './organ-map';
 
 export const BODY_MODEL_URL = '/models/body.glb';
 /** The model is authored in centimetres; the scene works in metres. */
@@ -118,7 +129,10 @@ function Pins({
         if (mesh) {
           // Parents' world matrices may be stale before the first frame: refresh the whole chain first.
           mesh.updateWorldMatrix(true, false);
-          out.set(zone.id, new Box3().setFromObject(mesh).getCenter(new Vector3()));
+          const box = new Box3().setFromObject(mesh);
+          const point = box.getCenter(new Vector3());
+          if (PIN_ON_TOP.has(zone.id)) point.y = box.max.y;
+          out.set(zone.id, point);
         }
       } else {
         out.set(zone.id, new Vector3(...pin).multiplyScalar(MODEL_SCALE));
@@ -141,7 +155,7 @@ function Pins({
           <Html key={zone.id} position={at} center zIndexRange={[20, 0]}>
             <button
               type="button"
-              className={`organ-pin${alerting ? ' organ-pin--alert' : ''}${off ? ' organ-pin--hidden' : ''}`}
+              className={`organ-pin${alerting ? ' organ-pin--alert' : ''}${PIN_LABEL_LEFT.has(zone.id) ? ' organ-pin--left' : ''}${off ? ' organ-pin--hidden' : ''}`}
               tabIndex={off ? -1 : undefined}
               aria-hidden={off || undefined}
               style={tierStyle(zone.status)}
