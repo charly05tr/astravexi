@@ -4,6 +4,7 @@ import type { ZoneId } from '../../core/health/model';
 import { Panel } from '../../ui/Panel';
 import { TierChip, tierStyle } from '../../ui/TierChip';
 import { CmoPanel } from '../cmo/CmoPanel';
+import { HabitsPanel } from '../habits/HabitsPanel';
 import { ROLE_LABEL } from '../profiles/role-labels';
 import type { CrewDetailView } from './crew-model';
 
@@ -56,30 +57,35 @@ export function CrewMemberDetail({
           />
         </div>
 
-        <Panel title="Trends" id="crew-trends" hint="Last 30 days. Mood is not charted: it stays a tier.">
-          {detail.trends.length === 0 ? (
-            <p className="empty">No readings to chart yet.</p>
-          ) : (
-            <ul className="indicator-list">
-              {detail.trends.map((t) => (
-                <li key={t.id} className="indicator">
-                  <div className="indicator__head">
-                    <strong>{t.label}</strong>
-                  </div>
-                  <Suspense fallback={<div className="trend" />}>
-                    <TrendChart
-                      points={t.trend.points}
-                      baseline={t.trend.baseline}
-                      label={t.label}
-                      precision={t.precision}
-                      unit={t.unit}
-                    />
-                  </Suspense>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Panel>
+        <div className="stack">
+          <Panel title="Habits" id="crew-habits" hint="Read-only. Habits are set and checked off by the astronaut.">
+            <HabitsPanel view={detail.habits} emptyText="No habits saved yet." />
+          </Panel>
+          <Panel title="Trends" id="crew-trends" hint="Last 30 days. Mood is not charted: it stays a tier.">
+            {detail.trends.length === 0 ? (
+              <p className="empty">No readings to chart yet.</p>
+            ) : (
+              <ul className="indicator-list">
+                {detail.trends.map((t) => (
+                  <li key={t.id} className="indicator">
+                    <div className="indicator__head">
+                      <strong>{t.label}</strong>
+                    </div>
+                    <Suspense fallback={<div className="trend" />}>
+                      <TrendChart
+                        points={t.trend.points}
+                        baseline={t.trend.baseline}
+                        label={t.label}
+                        precision={t.precision}
+                        unit={t.unit}
+                      />
+                    </Suspense>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+        </div>
       </div>
     </section>
   );

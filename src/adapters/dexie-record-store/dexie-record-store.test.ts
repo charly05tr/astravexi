@@ -33,6 +33,29 @@ describe('dexie record store', () => {
   });
 });
 
+describe('schema v2 -> v3 migration (habits tables)', () => {
+  it('adds the habit tables without touching existing rows', async () => {
+    const name = uniqueName();
+    const old = new Dexie(name);
+    old.version(2).stores({
+      manualReadings: 'id, day, indicatorId',
+      decisions: 'id, t',
+      acks: 'id, [zoneId+groupId]',
+      outbox: 'id, &dedupeKey, state',
+      meta: 'key',
+    });
+    await old.open();
+    await old.table('manualReadings').put({ ...reading('heartRate', 64, 2), id: 'keep-me', updatedAt: '2026-06-01T00:00:00.000Z' });
+    await old.table('meta').put({ key: 'mission', value: { destination: 'Mars' }, updatedAt: '2026-06-01T00:00:00.000Z' });
+    old.close();
+
+    const store = await openDexieRecordStore(name);
+    expect((await store.load()).manualReadings.map((r) => r.id)).toEqual(['keep-me']);
+    expect(await store.getMeta('mission')).toEqual({ destination: 'Mars' });
+    expect(await store.loadHabits()).toEqual({ habits: [], completions: [], badges: [] });
+  });
+});
+
 describe('schema v1 -> v2 migration (sync-ready ids and updatedAt)', () => {
   const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 

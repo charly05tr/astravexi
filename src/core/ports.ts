@@ -1,5 +1,6 @@
 import type { FollowUpSuggestion } from './follow-up/blocks';
 import type { PartialFollowUp } from './follow-up/partial';
+import type { Habit, HabitBadge, HabitCompletion, HabitSnapshot } from './habits/model';
 import type { CrewProfile, PinRecord } from './profiles/model';
 import type {
   DeviceCredentials,
@@ -171,6 +172,22 @@ export interface RecordStore {
    * taken by another id, are skipped. Idempotent. Returns how many rows were written.
    */
   applyRemote(changes: RecordChanges): Promise<number>;
+  /**
+   * Habits, check-offs and badges of the astronaut. They live in their own tables and are deliberately NOT part
+   * of `load`, `changedSince` or `applyRemote`: this data stays on the device and is never synced.
+   */
+  loadHabits(): Promise<HabitSnapshot>;
+  /** Stores the habit only when its `sourceKey` is unknown. Returns true when it was stored. */
+  putHabitIfAbsent(habit: Habit): Promise<boolean>;
+  /** Replaces an existing habit (archive and restore). No-op for an unknown id. */
+  updateHabit(habit: Habit): Promise<void>;
+  /** Removes the habit and every one of its check-offs. */
+  deleteHabit(id: string): Promise<void>;
+  /** Idempotent by (habit, day): the same pair stores one check-off. */
+  putCompletion(completion: HabitCompletion): Promise<void>;
+  removeCompletion(habitId: string, day: MissionDay): Promise<void>;
+  /** Stores the badge only when it is not earned yet. Returns true when it was stored. */
+  putBadgeIfAbsent(badge: HabitBadge): Promise<boolean>;
   /** Deletes every table. Only the DEMO reset use-case may call it. */
   clearAll(): Promise<void>;
 }

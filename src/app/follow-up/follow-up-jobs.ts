@@ -7,7 +7,8 @@ import type { FollowUpContext, FollowUpSuggestionProvider } from '../../core/por
 export type FollowUpJob =
   /** `partial` holds only finished, valid blocks that streamed in so far. */
   | { id: string; status: 'processing'; partial: PartialFollowUp | null; notified: boolean }
-  | { id: string; status: 'ready'; suggestion: FollowUpSuggestion; notified: boolean }
+  /** `model` is the model the request was sent to, kept so a habit saved from the result records it. */
+  | { id: string; status: 'ready'; suggestion: FollowUpSuggestion; model: string; notified: boolean }
   /** The AI could not help. The accepted recommendation stands on its own. */
   | { id: string; status: 'failed'; message: string; notified: boolean }
   /** No key is set: nothing was requested. Drives the one-line setup hint. */
@@ -39,7 +40,10 @@ export interface FollowUpJobsState {
  * zones. Only `cancelAll` (profile change, app unmount) or `dismiss` aborts one. Not persisted: a full
  * browser reload drops pending jobs.
  */
-export function createFollowUpJobs(provider: FollowUpSuggestionProvider): StoreApi<FollowUpJobsState> {
+export function createFollowUpJobs(
+  provider: FollowUpSuggestionProvider,
+  options: { modelName?: () => string } = {},
+): StoreApi<FollowUpJobsState> {
   const controllers = new Map<string, AbortController>();
 
   return createStore<FollowUpJobsState>((set, get) => {
@@ -55,6 +59,7 @@ export function createFollowUpJobs(provider: FollowUpSuggestionProvider): StoreA
           put({ id, status: 'unconfigured', notified: true });
           return;
         }
+        const model = options.modelName?.() || provider.id;
         const controller = new AbortController();
         controllers.set(id, controller);
         put({ id, status: 'processing', partial: null, notified: false });
@@ -75,7 +80,7 @@ export function createFollowUpJobs(provider: FollowUpSuggestionProvider): StoreA
         Promise.resolve()
           .then(() => provider.suggest(context, { signal: controller.signal, onPartial }))
           .then(
-            (suggestion) => finish({ id, status: 'ready', suggestion, notified: false }),
+            (suggestion) => finish({ id, status: 'ready', suggestion, model, notified: false }),
             (error: unknown) =>
               finish({
                 id,

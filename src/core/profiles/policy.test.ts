@@ -4,10 +4,10 @@ import type { Role } from './model';
 import { PermissionError, assertCan, can, policyContextOf } from './policy';
 import type { Action } from './policy';
 
-const ACTIONS: Action[] = ['checkIn', 'decideRecommendation', 'acknowledgeAlert', 'viewCrew', 'manageProfiles'];
+const ACTIONS: Action[] = ['checkIn', 'decideRecommendation', 'manageHabits', 'acknowledgeAlert', 'viewCrew', 'manageProfiles'];
 
 const MATRIX: Record<Role, Action[]> = {
-  astronaut: ['checkIn', 'decideRecommendation'],
+  astronaut: ['checkIn', 'decideRecommendation', 'manageHabits'],
   cmo: ['acknowledgeAlert', 'viewCrew', 'manageProfiles'],
   flightSurgeon: ['acknowledgeAlert', 'viewCrew'],
 };

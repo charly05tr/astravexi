@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { OutboxMessage, Reading } from '../core/health/model';
+import type { Habit, HabitBadge, HabitCompletion } from '../core/habits/model';
 import type { RecordStore } from '../core/ports';
 import { emptyChanges } from '../core/sync/model';
 import { ack, reading } from '../test-support/builders';
@@ -18,6 +19,36 @@ const message = (id: string, dedupeKey: string, state: OutboxMessage['state'] = 
     trigger: [],
     zoneTiers: {} as OutboxMessage['payload']['zoneTiers'],
   },
+  updatedAt: '2026-06-01T00:00:00.000Z',
+});
+
+const habit = (id: string, sourceKey = `rec|new_habit|${id}`): Habit => ({
+  id,
+  name: `Habit ${id}`,
+  frequency: { kind: 'daily' },
+  frequencyText: 'Daily',
+  timeOfDay: 'Morning',
+  durationMinutes: 10,
+  note: null,
+  sourceKey,
+  origin: { recommendationId: 'rec', model: 'test-model', createdAt: '2026-06-01T00:00:00.000Z' },
+  createdDay: 150,
+  archived: false,
+  updatedAt: '2026-06-01T00:00:00.000Z',
+});
+
+const completion = (habitId: string, day: number): HabitCompletion => ({
+  id: `${habitId}:${day}`,
+  habitId,
+  day,
+  completedAt: '2026-06-01T00:00:00.000Z',
+  updatedAt: '2026-06-01T00:00:00.000Z',
+});
+
+const badge = (id: HabitBadge['id']): HabitBadge => ({
+  id,
+  unlockedDay: 150,
+  unlockedAt: '2026-06-01T00:00:00.000Z',
   updatedAt: '2026-06-01T00:00:00.000Z',
 });
 
@@ -185,12 +216,80 @@ export function recordStoreContract(label: string, create: () => Promise<RecordS
       });
     });
 
+    describe('habits', () => {
+      it('starts empty and keeps habits out of load, changedSince and applyRemote (they never sync)', async () => {
+        const store = await create();
+        expect(await store.loadHabits()).toEqual({ habits: [], completions: [], badges: [] });
+        await store.putHabitIfAbsent(habit('h1'));
+        await store.putCompletion(completion('h1', 150));
+        await store.putBadgeIfAbsent(badge('first_habit'));
+        expect(await store.load()).toEqual({ manualReadings: [], decisions: [], acks: [], outbox: [] });
+        expect(await store.changedSince(null)).toEqual(emptyChanges());
+      });
+
+      it('putHabitIfAbsent is idempotent by sourceKey, whatever the id', async () => {
+        const store = await create();
+        expect(await store.putHabitIfAbsent(habit('h1', 'k'))).toBe(true);
+        expect(await store.putHabitIfAbsent(habit('h2', 'k'))).toBe(false);
+        expect(await store.putHabitIfAbsent(habit('h1', 'other'))).toBe(false); // same id
+        expect(await store.putHabitIfAbsent(habit('h3', 'k3'))).toBe(true);
+        expect((await store.loadHabits()).habits.map((h) => h.id).sort()).toEqual(['h1', 'h3']);
+      });
+
+      it('updateHabit replaces a stored habit and ignores an unknown one', async () => {
+        const store = await create();
+        await store.putHabitIfAbsent(habit('h1'));
+        await store.updateHabit({ ...habit('h1'), archived: true });
+        await store.updateHabit(habit('ghost'));
+        const { habits } = await store.loadHabits();
+        expect(habits).toHaveLength(1);
+        expect(habits[0]?.archived).toBe(true);
+      });
+
+      it('stores one completion per (habit, day) and removes it again', async () => {
+        const store = await create();
+        await store.putHabitIfAbsent(habit('h1'));
+        await store.putCompletion(completion('h1', 150));
+        await store.putCompletion(completion('h1', 150));
+        await store.putCompletion(completion('h1', 151));
+        expect((await store.loadHabits()).completions.map((c) => c.day).sort()).toEqual([150, 151]);
+        await store.removeCompletion('h1', 150);
+        await store.removeCompletion('h1', 999); // nothing there: no-op
+        expect((await store.loadHabits()).completions.map((c) => c.day)).toEqual([151]);
+      });
+
+      it('deleteHabit removes the habit and its completions, and only those', async () => {
+        const store = await create();
+        await store.putHabitIfAbsent(habit('h1'));
+        await store.putHabitIfAbsent(habit('h2'));
+        await store.putCompletion(completion('h1', 150));
+        await store.putCompletion(completion('h2', 150));
+        await store.putBadgeIfAbsent(badge('first_completion'));
+        await store.deleteHabit('h1');
+        const snap = await store.loadHabits();
+        expect(snap.habits.map((h) => h.id)).toEqual(['h2']);
+        expect(snap.completions.map((c) => c.habitId)).toEqual(['h2']);
+        expect(snap.badges.map((b) => b.id)).toEqual(['first_completion']); // badges are earned for good
+      });
+
+      it('putBadgeIfAbsent unlocks a badge once', async () => {
+        const store = await create();
+        expect(await store.putBadgeIfAbsent(badge('streak_7'))).toBe(true);
+        expect(await store.putBadgeIfAbsent({ ...badge('streak_7'), unlockedDay: 999 })).toBe(false);
+        expect((await store.loadHabits()).badges).toEqual([badge('streak_7')]);
+      });
+    });
+
     it('clearAll empties every table and the meta', async () => {
       const store = await create();
       await store.addReadings([reading('glucose', 90, 1)]);
       await store.putOutboxIfAbsent(message('m1', 'heart:g1'));
+      await store.putHabitIfAbsent(habit('h1'));
+      await store.putCompletion(completion('h1', 150));
+      await store.putBadgeIfAbsent(badge('first_habit'));
       await store.setMeta('clock', 1);
       await store.clearAll();
+      expect(await store.loadHabits()).toEqual({ habits: [], completions: [], badges: [] });
       expect(await store.load()).toEqual({ manualReadings: [], decisions: [], acks: [], outbox: [] });
       expect(await store.getMeta('clock')).toBeUndefined();
     });

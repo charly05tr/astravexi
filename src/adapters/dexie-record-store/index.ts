@@ -1,6 +1,7 @@
 import Dexie from 'dexie';
 import type { Table } from 'dexie';
 import type { Acknowledgement, OutboxMessage, Reading, RecommendationDecision } from '../../core/health/model';
+import type { Habit, HabitBadge, HabitCompletion } from '../../core/habits/model';
 import type { RecordStore } from '../../core/ports';
 import { LEGACY_PROFILE_ID } from '../../core/profiles/model';
 import { emptyChanges } from '../../core/sync/model';
@@ -39,6 +40,9 @@ class AstravexiDb extends Dexie {
   acks!: Table<Acknowledgement, string>;
   outbox!: Table<OutboxMessage, string>;
   meta!: Table<MetaRow, string>;
+  habits!: Table<Habit, string>;
+  habitCompletions!: Table<HabitCompletion, string>;
+  habitBadges!: Table<HabitBadge, string>;
 
   constructor(name: string) {
     super(name);
@@ -75,6 +79,12 @@ class AstravexiDb extends Dexie {
           row.updatedAt ??= stamp;
         });
       });
+    // Version 3 (habits): three new tables, nothing existing is touched. They are device-local and never synced.
+    this.version(3).stores({
+      habits: 'id, &sourceKey',
+      habitCompletions: 'id, habitId, day',
+      habitBadges: 'id',
+    });
   }
 }
 
@@ -204,16 +214,62 @@ export async function openDexieRecordStore(name: string, options: DexieStoreOpti
       });
       return written;
     },
-    async clearAll() {
-      await db.transaction('rw', [db.manualReadings, db.decisions, db.acks, db.outbox, db.meta], async () => {
-        await Promise.all([
-          db.manualReadings.clear(),
-          db.decisions.clear(),
-          db.acks.clear(),
-          db.outbox.clear(),
-          db.meta.clear(),
-        ]);
+    async loadHabits() {
+      const [habits, completions, badges] = await Promise.all([
+        db.habits.toArray(),
+        db.habitCompletions.toArray(),
+        db.habitBadges.toArray(),
+      ]);
+      return { habits, completions, badges };
+    },
+    async putHabitIfAbsent(habit) {
+      return db.transaction('rw', db.habits, async () => {
+        if ((await db.habits.get(habit.id)) || (await db.habits.where('sourceKey').equals(habit.sourceKey).first())) return false;
+        await db.habits.add(habit);
+        return true;
       });
+    },
+    async updateHabit(habit) {
+      await db.transaction('rw', db.habits, async () => {
+        if (await db.habits.get(habit.id)) await db.habits.put(habit);
+      });
+    },
+    async deleteHabit(id) {
+      await db.transaction('rw', db.habits, db.habitCompletions, async () => {
+        await db.habitCompletions.where('habitId').equals(id).delete();
+        await db.habits.delete(id);
+      });
+    },
+    async putCompletion(completion) {
+      await db.habitCompletions.put(completion);
+    },
+    async removeCompletion(habitId, day) {
+      await db.habitCompletions.where('habitId').equals(habitId).and((c) => c.day === day).delete();
+    },
+    async putBadgeIfAbsent(badge) {
+      return db.transaction('rw', db.habitBadges, async () => {
+        if (await db.habitBadges.get(badge.id)) return false;
+        await db.habitBadges.add(badge);
+        return true;
+      });
+    },
+    async clearAll() {
+      await db.transaction(
+        'rw',
+        [db.manualReadings, db.decisions, db.acks, db.outbox, db.meta, db.habits, db.habitCompletions, db.habitBadges],
+        async () => {
+          await Promise.all([
+            db.manualReadings.clear(),
+            db.decisions.clear(),
+            db.acks.clear(),
+            db.outbox.clear(),
+            db.meta.clear(),
+            db.habits.clear(),
+            db.habitCompletions.clear(),
+            db.habitBadges.clear(),
+          ]);
+        },
+      );
     },
   };
 }

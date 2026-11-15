@@ -5,6 +5,7 @@ import { BodyMapContainer } from '../features/body-map/BodyMapContainer';
 import { CheckInContainer } from '../features/check-in/CheckInContainer';
 import { CmoContainer } from '../features/cmo/CmoContainer';
 import { CrewContainer } from '../features/crew/CrewContainer';
+import { HabitsContainer } from '../features/habits/HabitsContainer';
 import { SourcesView } from '../features/disclosures/SourcesView';
 import { AlertRailContainer } from '../features/insights/AlertRailContainer';
 import { ZonePanelContainer } from '../features/insights/ZonePanelContainer';
@@ -20,8 +21,10 @@ import { useAppState } from './app-context';
 import { useUi } from './ui-state';
 import type { View } from './ui-state';
 
-const VIEWS: ReadonlyArray<{ id: View; label: string }> = [
+const VIEWS: ReadonlyArray<{ id: View; label: string; action?: 'manageHabits' }> = [
   { id: 'dashboard', label: 'Dashboard' },
+  // Only roles that manage habits get the tab; the CMO reads them from the crew member's detail.
+  { id: 'habits', label: 'My habits', action: 'manageHabits' },
   { id: 'comms', label: 'Comms' },
   { id: 'sources', label: 'Sources' },
 ];
@@ -43,7 +46,7 @@ function Header() {
           <span className="sr-only">{brand.productName}</span>
         </div>
         <nav className="nav" aria-label="Views">
-          {VIEWS.map((v) => (
+          {VIEWS.filter((v) => !v.action || can(role, v.action)).map((v) => (
             <button
               key={v.id}
               type="button"
@@ -190,6 +193,8 @@ export function AppShell() {
         ) : null}
         {view === 'dashboard' ? (
           <Dashboard />
+        ) : view === 'habits' ? (
+          <HabitsContainer />
         ) : view === 'comms' ? (
           <Comms />
         ) : view === 'profiles' ? (

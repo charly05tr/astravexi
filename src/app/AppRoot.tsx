@@ -82,7 +82,10 @@ export function AppRoot({
     [followUps, settings],
   );
   const modelCatalog = useMemo(() => aiModels ?? createAiModelCatalog(), [aiModels]);
-  const followUpJobs = useMemo(() => createFollowUpJobs(followUpProvider), [followUpProvider]);
+  const followUpJobs = useMemo(
+    () => createFollowUpJobs(followUpProvider, { modelName: () => settings.get().model }),
+    [followUpProvider, settings],
+  );
   // Jobs belong to the signed-in profile: a profile change, or the app going away, aborts them.
   useEffect(() => {
     let profileId = store.getState().actor.profileId;

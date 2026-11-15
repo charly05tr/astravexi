@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 import type { ReactNode } from 'react';
 import type { ZoneId } from '../core/health/model';
 
-export type View = 'dashboard' | 'comms' | 'sources' | 'profiles' | 'sync';
+export type View = 'dashboard' | 'habits' | 'comms' | 'sources' | 'profiles' | 'sync';
 
 export interface UiState {
   view: View;
