@@ -52,6 +52,20 @@ function explodedBox(mesh: Mesh): Box3 {
   return box.applyMatrix4(mesh.matrixWorld);
 }
 
+/**
+ * World-space box of a mesh at rest. Box3.setFromObject uses geometry.boundingBox, which three expands by
+ * every morph target, so an explodable organ's box would also cover its pulled-out position.
+ */
+function restBox(mesh: Mesh): Box3 {
+  // Parents' world matrices may be stale before the first frame: refresh the whole chain first.
+  mesh.updateWorldMatrix(true, false);
+  const position = mesh.geometry.getAttribute('position');
+  const box = new Box3();
+  const v = new Vector3();
+  for (let i = 0; i < position.count; i += 1) box.expandByPoint(v.fromBufferAttribute(position, i));
+  return box.applyMatrix4(mesh.matrixWorld);
+}
+
 /** Box of the zone's exploding organs once pulled out, or null when the zone has none. */
 function explodedBoxOf(meshes: ReadonlyMap<string, Mesh>, zone: ZoneId | null): Box3 | null {
   const names = explodingOrgans(zone);
@@ -127,9 +141,7 @@ function Pins({
       } else if (typeof pin === 'string') {
         const mesh = meshes.get(pin);
         if (mesh) {
-          // Parents' world matrices may be stale before the first frame: refresh the whole chain first.
-          mesh.updateWorldMatrix(true, false);
-          const box = new Box3().setFromObject(mesh);
+          const box = restBox(mesh);
           const point = box.getCenter(new Vector3());
           if (PIN_ON_TOP.has(zone.id)) point.y = box.max.y;
           out.set(zone.id, point);
