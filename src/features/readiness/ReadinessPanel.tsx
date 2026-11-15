@@ -4,7 +4,6 @@ import { useAppContext, useAppState } from '../../app/app-context';
 import { useUi } from '../../app/ui-state';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
-import { Panel } from '../../ui/Panel';
 import { tierStyle } from '../../ui/TierChip';
 import { tierTheme } from '../../theme/tiers';
 import {
@@ -187,44 +186,57 @@ export function StageReadinessTrigger() {
   );
 }
 
-/** Operational readiness summary panel displayed at the top of the Comms view for CMO & crew synchronization. */
+/** Compact single-row readiness bar at the top of Comms so status and task clearances scan in one glance. */
 export function CommsReadinessOverview() {
-  const { assessment } = useReadiness();
+  const { assessment, cmoBrief, setView } = useReadiness();
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
   if (!assessment) return null;
+  const pendingAck = cmoBrief?.pendingAckCount ?? 0;
 
   return (
     <div className="comms__full" data-testid="comms-readiness">
-      <Panel
-        id="readiness"
-        title="Operational readiness & mission tasks"
-        icon={<ReadinessIcon level={assessment.level} size={20} />}
-        hint="Translates onboard physiology + habitat bounds into local task guidance. Privacy-preserving (no raw mood scores)."
+      <section
+        className="comms-readiness-bar"
+        style={tierStyle(assessment.statusEquivalent)}
+        aria-label="Mission readiness overview"
       >
-        <div className="stack" style={{ gap: 12 }}>
-          <div className="readiness-hero readiness-hero--compact" style={tierStyle(assessment.statusEquivalent)}>
-            <span className="readiness-hero__badge">
-              <ReadinessIcon level={assessment.level} size={16} />
-              <strong>{assessment.label}</strong>
-            </span>
-            <span className="small muted">{assessment.summary}</span>
-          </div>
-          <div className="readiness-grid readiness-grid--4col">
-            {assessment.activities.map((act) => (
-              <article key={act.id} className="readiness-card" style={tierStyle(act.statusEquivalent)}>
-                <div className="readiness-card__head">
-                  <strong>{act.label}</strong>
-                  <span className="tier-chip">
-                    <ClearanceIcon clearance={act.clearance} />
-                    {act.clearanceLabel}
-                  </span>
-                </div>
-                <p className="readiness-card__text">{act.guidance}</p>
-              </article>
-            ))}
-          </div>
-          <p className="readiness-disclaimer">{assessment.disclaimer}</p>
+        <div className="comms-readiness-bar__status">
+          <span className="readiness-hero__badge">
+            <ReadinessIcon level={assessment.level} size={16} />
+            <strong>{assessment.label}</strong>
+          </span>
+          <span className="small muted">{assessment.summary}</span>
         </div>
-      </Panel>
+
+        <div className="comms-readiness-bar__tasks">
+          {assessment.activities.map((act) => (
+            <span key={act.id} className="comms-task-chip" style={tierStyle(act.statusEquivalent)}>
+              <ClearanceIcon clearance={act.clearance} />
+              <span className="comms-task-chip__name">{act.label}</span>
+              <span className="comms-task-chip__state">{act.clearanceLabel}</span>
+            </span>
+          ))}
+        </div>
+
+        <div className="comms-readiness-bar__action">
+          <Button size="small" onClick={() => setDetailsOpen(true)}>
+            Task details
+          </Button>
+        </div>
+      </section>
+
+      {detailsOpen ? (
+        <ReadinessDialog
+          assessment={assessment}
+          pendingAckCount={pendingAck}
+          onOpenComms={() => {
+            setDetailsOpen(false);
+            setView('comms');
+          }}
+          onClose={() => setDetailsOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

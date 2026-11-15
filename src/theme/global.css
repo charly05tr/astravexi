@@ -2379,5 +2379,121 @@ details > summary {
   border-top: 1px solid var(--line-soft);
 }
 
+/* ---------- Simplified Comms layout ---------- */
+.comms-readiness-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 12px 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--tier-color);
+  background: var(--surface);
+}
 
+.comms-readiness-bar__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.comms-readiness-bar__tasks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.comms-task-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line-soft);
+  background: var(--tier-surface);
+  color: var(--text);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.comms-task-chip__name {
+  font-weight: 500;
+}
+
+.comms-task-chip__state {
+  font-weight: 700;
+  color: var(--tier-color);
+}
+
+.cmo-signals {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cmo-signal {
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.84rem;
+}
+
+.cmo-tech,
+.outbox-payload {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.cmo-tech > summary,
+.outbox-payload > summary {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.cmo-tech__list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.link-controls--compact {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+  gap: 8px;
+}
+
+.link-controls__top,
+.link-controls__slider-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.outbox-reply {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.outbox-card__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
 

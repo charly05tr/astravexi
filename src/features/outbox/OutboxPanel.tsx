@@ -18,10 +18,10 @@ export interface OutboxPanelProps {
   onSend(id: string): void;
 }
 
-/** What leaves the device: the payload preview for one card. Mood and other private scores are tier-only. */
+/** What leaves the device: the payload preview for one card. Collapsed by default to keep outbox scannable. */
 export function PayloadPreview({ json, sent }: { json: string; sent: boolean }) {
   return (
-    <details open>
+    <details className="outbox-payload">
       <summary>{sent ? 'What was sent' : 'What would be sent'}</summary>
       <pre className="payload" aria-label="Message payload">
         {json}
@@ -40,14 +40,30 @@ export function OutboxPanel(props: OutboxPanelProps) {
       id="outbox"
       title="Earth outbox"
       icon={<Send size={20} aria-hidden="true" />}
-      hint="Warnings wait here until you send them. Only tiers and the listed triggers leave; mood is sent as a tier, never a score."
+      hint="Warnings queue here before leaving. Mood leaves as a tier only."
     >
-      <p className="sim-label">{link}</p>
-      <div className="link-controls">
+      <div className="link-controls link-controls--compact">
+        <div className="link-controls__top">
+          <p className="sim-label">{link}</p>
+          {props.blackoutEnabled ? (
+            <label className="toggle">
+              <input
+                type="checkbox"
+                role="switch"
+                checked={props.blackout}
+                onChange={(e) => props.onBlackout(e.target.checked)}
+              />
+              Link blackout
+            </label>
+          ) : null}
+        </div>
         <div className="field">
-          <label className="field__label" htmlFor="link-delay">
-            One-way delay: <span className="mono">{props.oneWayDelayMin} min</span>
-          </label>
+          <div className="link-controls__slider-head">
+            <label className="field__label" htmlFor="link-delay">
+              One-way delay: <span className="mono">{props.oneWayDelayMin} min</span>
+            </label>
+            <span className="field__hint">Earliest reply: 2× delay</span>
+          </div>
           <input
             id="link-delay"
             className="slider"
@@ -59,23 +75,11 @@ export function OutboxPanel(props: OutboxPanelProps) {
             aria-valuetext={`${props.oneWayDelayMin} minutes one way`}
             onChange={(e) => props.onDelay(Number(e.target.value))}
           />
-          <p className="field__hint">Earliest reply is 2 x the delay after sending. The delay is read when you send.</p>
         </div>
-        {props.blackoutEnabled ? (
-          <label className="toggle">
-            <input
-              type="checkbox"
-              role="switch"
-              checked={props.blackout}
-              onChange={(e) => props.onBlackout(e.target.checked)}
-            />
-            Link blackout
-          </label>
-        ) : null}
       </div>
 
       {props.cards.length === 0 ? (
-        <EmptyState>No messages. A Warning creates one message per zone and check-in.</EmptyState>
+        <EmptyState>No messages yet.</EmptyState>
       ) : (
         <ul className="item-list">
           {props.cards.map((c) => (
@@ -85,15 +89,15 @@ export function OutboxPanel(props: OutboxPanelProps) {
                 <span className={`state-pill${c.state === 'held' ? ' state-pill--held' : ''}`}>{c.stateLabel}</span>
               </div>
               <p className="item__meta">{c.createdText}</p>
-              <p>{c.replyText}</p>
-              {c.state === 'queued' ? (
-                <div>
+              <p className="outbox-reply">{c.replyText}</p>
+              <div className="outbox-card__footer">
+                {c.state === 'queued' ? (
                   <Button size="small" variant="primary" disabled={!c.canSend} onClick={() => props.onSend(c.id)}>
                     Send now
                   </Button>
-                </div>
-              ) : null}
-              <PayloadPreview json={c.payloadJson} sent={c.state === 'sent' || c.state === 'replyPossible'} />
+                ) : null}
+                <PayloadPreview json={c.payloadJson} sent={c.state === 'sent' || c.state === 'replyPossible'} />
+              </div>
             </li>
           ))}
         </ul>

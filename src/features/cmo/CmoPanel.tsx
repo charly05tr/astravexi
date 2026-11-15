@@ -19,7 +19,7 @@ export function CmoPanel({
       id="cmo"
       title="Crew Medical Officer"
       icon={<Stethoscope size={20} aria-hidden="true" />}
-      hint="On board. Caution and Warning items only. Mood shows as a tier, never as a score."
+      hint="Board review items only. Mood displays as a tier, never a score."
     >
       {zones.length === 0 ? (
         <EmptyState>Nothing needs review.</EmptyState>
@@ -32,22 +32,19 @@ export function CmoPanel({
                 <TierChip status={zone.status} />
               </div>
               {zone.corroborated ? (
-                <p className="item__meta">Raised to Caution because two sustained signals agree. Tiers only.</p>
+                <p className="item__meta">Corroborated: 2 sustained signals agree (tier-only).</p>
               ) : null}
-              <ul className="item-list">
+              <ul className="cmo-signals">
                 {zone.items.map((item) => (
-                  <li key={item.key} className="item__meta">
-                    <span style={{ color: 'var(--text)' }}>
-                      {item.tierOnlyText ?? `${item.indicatorLabel}${item.valueText ? `: ${item.valueText}` : ''}`}
-                    </span>{' '}
-                    - {item.ruleId} <SourceBadge source={item.source} />
+                  <li key={item.key} className="cmo-signal">
+                    {item.tierOnlyText ?? `${item.indicatorLabel}${item.valueText ? `: ${item.valueText}` : ''}`}
                   </li>
                 ))}
               </ul>
               {zone.latched.map((group) => (
                 <div key={group.groupId} className="stack" style={{ gap: 6 }}>
                   <p className="latched" style={tierStyle('warning')}>
-                    Warning{group.latest.length > 0 ? ` - latest re-measure ${group.latest.join(', ')}` : ''}
+                    Warning{group.latest.length > 0 ? ` · latest re-measure ${group.latest.join(', ')}` : ''}
                   </p>
                   <div>
                     <Button
@@ -61,6 +58,16 @@ export function CmoPanel({
                   </div>
                 </div>
               ))}
+              <details className="cmo-tech">
+                <summary>Technical details ({zone.items.length})</summary>
+                <ul className="cmo-tech__list">
+                  {zone.items.map((item) => (
+                    <li key={item.key}>
+                      <span className="mono">{item.ruleId}</span> <SourceBadge source={item.source} />
+                    </li>
+                  ))}
+                </ul>
+              </details>
             </li>
           ))}
         </ul>
