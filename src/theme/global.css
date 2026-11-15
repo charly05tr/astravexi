@@ -1877,3 +1877,65 @@ details > summary {
     scroll-behavior: auto !important;
   }
 }
+
+.zone-panel__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.symptom-action {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.symptom-action__summary {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.symptom-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.symptom-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.symptom-chip:hover {
+  border-color: var(--text-muted);
+}
+
+.symptom-chip[aria-pressed='true'] {
+  background: var(--surface-raised);
+  color: var(--on-raised);
+  border-color: var(--surface-raised);
+}
+
+.symptom-chip__label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.symptom-chip__hint {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}

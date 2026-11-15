@@ -4,6 +4,7 @@ import { useAppActions, useAppContext, useAppState } from '../../app/app-context
 import type { SuggestionContext } from '../../core/ports';
 import { EmptyState } from '../../ui/Panel';
 import { CheckInContainer } from '../check-in/CheckInContainer';
+import { SymptomReportAction } from '../body-map/SymptomReportDialog';
 import { SuggestionList } from '../suggestions/SuggestionList';
 import { useSuggestions } from '../suggestions/use-suggestions';
 import { ZonePanel } from './ZonePanel';
@@ -74,6 +75,7 @@ export function ZonePanelContainer() {
       update={
         <ZoneUpdate key={model.zoneId} label={model.label} indicatorIds={zone.indicatorIds} />
       }
+      symptomAction={<SymptomReportAction zoneId={model.zoneId} zoneLabel={model.label} />}
     />
   );
 }

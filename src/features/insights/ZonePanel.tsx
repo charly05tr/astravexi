@@ -26,6 +26,8 @@ export interface ZonePanelProps {
   onDetail(open: boolean): void;
   /** The zone-scoped reading form (slot). */
   update?: ReactNode;
+  /** Clean trigger for localized anatomical symptom intake (slot). */
+  symptomAction?: ReactNode;
 }
 
 function VerifyMark() {
@@ -186,7 +188,7 @@ export function summaryIndicator(model: ZonePanelModel): IndicatorView | null {
  * Presentational zone panel: no store access. Everything it shows comes in through `model` and the slots.
  * Two levels: a summary (status, one chart, one recommendation) and the full detail on demand.
  */
-export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSuggestion, update, detail, onDetail }: ZonePanelProps) {
+export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSuggestion, update, symptomAction, detail, onDetail }: ZonePanelProps) {
   const hasFindings = model.findings.length > 0 || model.corroboration !== null;
   const primary = summaryIndicator(model);
   const emptyText =
@@ -214,9 +216,12 @@ export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSugg
       <p className="zone-panel__summary">{model.functionSummary}</p>
 
       {!model.monitored ? (
-        <EmptyState>
-          Not monitored in this prototype. No indicator feeds this zone, so it shows no alert, trend or score.
-        </EmptyState>
+        <>
+          <EmptyState>
+            Not monitored in this prototype. No indicator feeds this zone, so it shows no alert, trend or score.
+          </EmptyState>
+          {symptomAction}
+        </>
       ) : (
         <>
           {primary ? (
@@ -226,10 +231,13 @@ export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSugg
           ) : null}
           {!hasFindings && model.status === 'noData' ? <EmptyState>{emptyText}</EmptyState> : null}
           {detail ? null : topSuggestion}
-          <button type="button" className="button zone-panel__more" aria-haspopup="dialog" onClick={() => onDetail(true)}>
-            View details
-            <ChevronRight size={16} aria-hidden="true" />
-          </button>
+          <div className="zone-panel__actions">
+            {symptomAction}
+            <button type="button" className="button zone-panel__more" aria-haspopup="dialog" onClick={() => onDetail(true)}>
+              View details
+              <ChevronRight size={16} aria-hidden="true" />
+            </button>
+          </div>
         </>
       )}
 
