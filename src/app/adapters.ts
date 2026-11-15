@@ -8,8 +8,8 @@ import type { DemoDeps } from './demo/demo-use-cases';
 /** Meta key of the LIVE mission config in the LIVE database. */
 export const MISSION_META_KEY = 'mission';
 
-/** The cabin CO2 ports: the NASA reference and its cache (both modes), and the simulated cabin (DEMO only). */
-export type EnvironmentAdapters = Pick<EnvironmentDeps, 'reference' | 'cache' | 'simulated'>;
+/** The cabin CO2 ports: the NASA reference and its cache (both modes), and the simulated cabin timeline (DEMO only). */
+export type EnvironmentAdapters = Pick<EnvironmentDeps, 'reference' | 'cache' | 'timeline'>;
 
 export interface LiveAdapters {
   mode: 'live';

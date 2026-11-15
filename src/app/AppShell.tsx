@@ -4,6 +4,7 @@ import { useBrand } from '../brand/brand-context';
 import { BodyMapContainer } from '../features/body-map/BodyMapContainer';
 import { CheckInContainer } from '../features/check-in/CheckInContainer';
 import { CmoContainer } from '../features/cmo/CmoContainer';
+import { CabinAnalysisContainer } from '../features/environment/CabinAnalysisContainer';
 import { CrewContainer } from '../features/crew/CrewContainer';
 import { HabitsContainer } from '../features/habits/HabitsContainer';
 import { SourcesView } from '../features/disclosures/SourcesView';
@@ -21,10 +22,12 @@ import { useAppState } from './app-context';
 import { useUi } from './ui-state';
 import type { View } from './ui-state';
 
-const VIEWS: ReadonlyArray<{ id: View; label: string; action?: 'manageHabits' }> = [
+const VIEWS: ReadonlyArray<{ id: View; label: string; action?: 'manageHabits' | 'viewCabinEnvironment' }> = [
   { id: 'dashboard', label: 'Dashboard' },
   // Only roles that manage habits get the tab; the CMO reads them from the crew member's detail.
   { id: 'habits', label: 'My habits', action: 'manageHabits' },
+  // The CMO's cabin and crew analysis (the cabin CO2 panel lives here, not on the dashboard).
+  { id: 'cabin', label: 'Cabin & crew', action: 'viewCabinEnvironment' },
   { id: 'comms', label: 'Comms' },
   { id: 'sources', label: 'Sources' },
 ];
@@ -195,6 +198,10 @@ export function AppShell() {
           <Dashboard />
         ) : view === 'habits' ? (
           <HabitsContainer />
+        ) : view === 'cabin' ? (
+          <div className="crew-stage">
+            <CabinAnalysisContainer />
+          </div>
         ) : view === 'comms' ? (
           <Comms />
         ) : view === 'profiles' ? (

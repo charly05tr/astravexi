@@ -2774,3 +2774,41 @@ details > summary {
   flex-wrap: nowrap;
   justify-content: flex-end;
 }
+
+/* ---------- Cabin & crew analysis ---------- */
+.cabin-analysis {
+  padding-bottom: var(--space-lg);
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.filter-row .button[aria-pressed='true'] {
+  border-color: var(--text);
+  font-weight: 600;
+}
+
+.cabin-analysis details > summary {
+  cursor: pointer;
+}
+
+.signals {
+  display: grid;
+  gap: 12px;
+  margin: 8px 0 0;
+}
+
+.signals dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+}
+
+.signals ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}

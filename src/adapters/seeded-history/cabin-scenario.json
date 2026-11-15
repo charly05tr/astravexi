@@ -1,0 +1,58 @@
+{
+  "note": "Scripted DEMO episodes that make every attribution verdict appear. Days are mission days; hours are hours of the day. Reading deltas are in stored units (sleep in tenths of an hour). Episodes sit before day 139 so they stay outside the baseline windows the zone rules use on the demo day (day 150).",
+  "radiationRateMsvPerDay": 0.5,
+  "cabinEpisodes": [
+    {
+      "id": "heat-crew-wide",
+      "variable": "cabinTemperature",
+      "fromDay": 132,
+      "fromHour": 22,
+      "toDay": 133,
+      "toHour": 7,
+      "delta": 6.5,
+      "purpose": "Cabin temperature above 27 C overnight into day 133, with a heart-rate rise across the whole crew: likely external."
+    },
+    {
+      "id": "humidity-one-person",
+      "variable": "humidity",
+      "fromDay": 127,
+      "fromHour": 20,
+      "toDay": 128,
+      "toHour": 7,
+      "delta": 38,
+      "purpose": "Relative humidity above 75 % overnight into day 128; only one crew member sleeps much less: possibly external, individual susceptibility."
+    }
+  ],
+  "readingEpisodes": [
+    {
+      "id": "heat-heart-rate",
+      "seeds": [20260, 20261, 20262],
+      "day": 133,
+      "indicatorId": "heartRate",
+      "delta": 9
+    },
+    {
+      "id": "isolated-heart-rate",
+      "seeds": [20262],
+      "day": 135,
+      "indicatorId": "heartRate",
+      "delta": 10,
+      "purpose": "One crew member alone, cabin nominal: likely internal."
+    },
+    {
+      "id": "shared-sleep-loss",
+      "seeds": [20260, 20261, 20262],
+      "day": 130,
+      "indicatorId": "sleepHours",
+      "delta": -15,
+      "purpose": "The whole crew sleeps less with a nominal cabin: possibly external, a shared cause outside the monitored environment."
+    },
+    {
+      "id": "humidity-sleep-loss",
+      "seeds": [20261],
+      "day": 128,
+      "indicatorId": "sleepHours",
+      "delta": -20
+    }
+  ]
+}

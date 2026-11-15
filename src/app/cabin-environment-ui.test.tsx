@@ -15,12 +15,22 @@ const reference = {
   sourceUrl: 'https://visualization.osdr.nasa.gov/eda/',
 };
 
-describe('cabin CO2 panel (CMO crew dashboard)', () => {
-  it('shows the simulated value, its status and the NASA reference below the crew list', async () => {
+/** Opens the "Cabin & crew" page, where the CO2 panel lives. */
+async function openCabinPage(app: Awaited<ReturnType<typeof mountApp>>) {
+  await app.user.click(await screen.findByRole('button', { name: /^cabin & crew$/i }));
+}
+
+describe('cabin CO2 panel (CMO cabin & crew page)', () => {
+  it('is no longer on the CMO dashboard', async () => {
     await mountApp('demo', { role: 'cmo', cabinSource: { fetchReference: async () => reference } });
+    await screen.findByRole('list', { name: /^crew members$/i });
+    expect(screen.queryByRole('region', { name: /^cabin co2$/i })).toBeNull();
+  });
+
+  it('shows the simulated value, its status and the NASA reference on the cabin & crew page', async () => {
+    const app = await mountApp('demo', { role: 'cmo', cabinSource: { fetchReference: async () => reference } });
+    await openCabinPage(app);
     const panel = await screen.findByRole('region', { name: /^cabin co2$/i });
-    const crew = await screen.findByRole('list', { name: /^crew members$/i });
-    expect(crew.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     expect(within(panel).getByText('SYNTHETIC')).toBeInTheDocument();
     expect(within(panel).getByText(/mmHg\)/)).toBeInTheDocument();
@@ -34,14 +44,16 @@ describe('cabin CO2 panel (CMO crew dashboard)', () => {
   });
 
   it('shows an explicit error and no comparison when NASA is unreachable and nothing is cached', async () => {
-    await mountApp('demo', { role: 'cmo' });
+    const app = await mountApp('demo', { role: 'cmo' });
+    await openCabinPage(app);
     const panel = await screen.findByRole('region', { name: /^cabin co2$/i });
     expect(within(panel).getByRole('alert')).toHaveTextContent(/NASA ISS reference is unavailable/i);
     expect(within(panel).queryByText(/reference threshold/i)).toBeNull();
   });
 
   it('shows no simulated values in LIVE', async () => {
-    await mountApp('live', { role: 'cmo', cabinSource: { fetchReference: async () => reference } });
+    const app = await mountApp('live', { role: 'cmo', cabinSource: { fetchReference: async () => reference } });
+    await openCabinPage(app);
     const panel = await screen.findByRole('region', { name: /^cabin co2$/i });
     expect(within(panel).getByText(/no simulated cabin CO2 in LIVE mode/i)).toBeInTheDocument();
     expect(within(panel).queryByText('SYNTHETIC')).toBeNull();
@@ -50,6 +62,7 @@ describe('cabin CO2 panel (CMO crew dashboard)', () => {
   it('is not shown to a flight surgeon', async () => {
     await mountApp('demo', { role: 'flightSurgeon' });
     await screen.findByRole('region', { name: /^crew$/i });
+    expect(screen.queryByRole('button', { name: /^cabin & crew$/i })).toBeNull();
     expect(screen.queryByRole('region', { name: /^cabin co2$/i })).toBeNull();
   });
 });

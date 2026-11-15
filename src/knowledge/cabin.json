@@ -1,0 +1,155 @@
+{
+  "config": {
+    "minBaselineReadings": 5,
+    "outlierZ": 3,
+    "crewZ": 2,
+    "crewMinOthers": 2,
+    "crewFraction": 0.5,
+    "crewWindowMin": 720,
+    "baselineWindowMin": 40320,
+    "spreadFloor": {
+      "sleepHours": 0.25,
+      "phq2": 0.5,
+      "heartRate": 1,
+      "temperature": 0.1,
+      "bpSystolic": 3,
+      "bpDiastolic": 2,
+      "glucose": 5
+    }
+  },
+  "variables": [
+    {
+      "id": "co2",
+      "label": "Cabin CO2",
+      "unit": "ppm",
+      "operating": { "max": 3947 },
+      "comfort": null,
+      "contextOnly": false,
+      "source": {
+        "label": "NASA-STD-3001 Vol. 2 [V2 6004]: 1-hour average ppCO2 at or below 3 mmHg (about 3947 ppm), OCHMO-TB-004",
+        "url": "https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-004-carbon-dioxide.pdf",
+        "kind": "primary"
+      },
+      "needsVerification": true,
+      "note": "The standard limits the 1-hour average; the simulation compares each 15-minute sample, which gives the same answer for episodes longer than an hour."
+    },
+    {
+      "id": "cabinTemperature",
+      "label": "Cabin temperature",
+      "unit": "°C",
+      "operating": { "min": 18, "max": 27 },
+      "comfort": { "min": 20, "max": 25 },
+      "contextOnly": false,
+      "source": {
+        "label": "NASA-STD-3001 Vol. 2 [V2 6012] crew health limit 18-27 °C and [V2 6013] crew performance zone 20-25 °C, OCHMO-TB-002 (ECLSS)",
+        "url": "https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-002-eclss.pdf",
+        "kind": "primary"
+      },
+      "needsVerification": true,
+      "note": "The standard defines the limits as a joint temperature and humidity envelope; this prototype checks each variable against its own range."
+    },
+    {
+      "id": "humidity",
+      "label": "Relative humidity",
+      "unit": "%",
+      "operating": { "min": 25, "max": 75 },
+      "comfort": { "min": 30, "max": 60 },
+      "contextOnly": false,
+      "source": {
+        "label": "NASA-STD-3001 Vol. 2 [V2 6012] crew health limit 25-75 % and [V2 6013] crew performance zone 30-60 %, OCHMO-TB-002 (ECLSS)",
+        "url": "https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-002-eclss.pdf",
+        "kind": "primary"
+      },
+      "needsVerification": true,
+      "note": "Same joint envelope caveat as cabin temperature."
+    },
+    {
+      "id": "radiationDose",
+      "label": "Radiation dose (mission total)",
+      "unit": "mSv",
+      "operating": null,
+      "comfort": null,
+      "cumulativeLimit": 600,
+      "contextOnly": true,
+      "source": {
+        "label": "NASA-STD-3001 Vol. 1 Rev C [V1 4030]: career effective dose below 600 mSv",
+        "url": "https://standards.nasa.gov/sites/default/files/standards/NASA/C//nasa-std-3001-vol-1-rev-c-signature.pdf",
+        "kind": "primary"
+      },
+      "needsVerification": true,
+      "note": "Context only. No NASA source in this repository links ISS-level dose rates to an acute change in heart rate, blood pressure or the other monitored vitals, so dose never explains an atypical reading. The career limit counts all flights; the running total shown covers this mission only. The simulated dose rate is illustrative and not taken from a NASA source."
+    }
+  ],
+  "links": [
+    {
+      "variable": "co2",
+      "indicatorId": "sleepHours",
+      "lagMin": 720,
+      "excursionSide": "above",
+      "outlierDirection": "below",
+      "effect": "Elevated CO2 is listed among the environmental conditions that reduce sleep quality and quantity; the CO2 brief lists decreased sleep at high exposure.",
+      "source": {
+        "label": "OCHMO sleep accommodations technical brief (NASA-STD-3001): elevated CO2, noise, temperature and humidity affect sleep",
+        "url": "https://www.nasa.gov/wp-content/uploads/2023/03/sleep-accomodations-technical-brief-ochmo.pdf",
+        "kind": "primary"
+      },
+      "needsVerification": true
+    },
+    {
+      "variable": "cabinTemperature",
+      "indicatorId": "sleepHours",
+      "lagMin": 720,
+      "excursionSide": "either",
+      "outlierDirection": "below",
+      "effect": "ISS crew cite temperature among the reasons for reduced sleep on orbit; a cold cabin was one reason Apollo 11 crew could not sleep.",
+      "source": {
+        "label": "OCHMO sleep accommodations technical brief (NASA-STD-3001): reasons cited by ISS crew for reduced sleep",
+        "url": "https://www.nasa.gov/wp-content/uploads/2023/03/sleep-accomodations-technical-brief-ochmo.pdf",
+        "kind": "primary"
+      },
+      "needsVerification": true
+    },
+    {
+      "variable": "humidity",
+      "indicatorId": "sleepHours",
+      "lagMin": 720,
+      "excursionSide": "either",
+      "outlierDirection": "below",
+      "effect": "Humidity is listed among the environmental conditions that affect sleep quality and quantity.",
+      "source": {
+        "label": "OCHMO sleep accommodations technical brief (NASA-STD-3001): environmental conditions that affect sleep",
+        "url": "https://www.nasa.gov/wp-content/uploads/2023/03/sleep-accomodations-technical-brief-ochmo.pdf",
+        "kind": "primary"
+      },
+      "needsVerification": true
+    },
+    {
+      "variable": "cabinTemperature",
+      "indicatorId": "heartRate",
+      "lagMin": 360,
+      "excursionSide": "above",
+      "outlierDirection": "above",
+      "effect": "Heat strain models predict heart rate from the ambient environment (with work, clothing and acclimation); a warm cabin is expected to raise heart rate.",
+      "source": {
+        "label": "Pandolf et al., heat strain prediction of rectal temperature, heart rate and sweat loss from the environment, NASA SOAR 1993 (NTRS 19940029146)",
+        "url": "https://ntrs.nasa.gov/citations/19940029146",
+        "kind": "secondary"
+      },
+      "needsVerification": true
+    },
+    {
+      "variable": "cabinTemperature",
+      "indicatorId": "temperature",
+      "lagMin": 360,
+      "excursionSide": "above",
+      "outlierDirection": "above",
+      "effect": "Heat strain models predict core (rectal) temperature from the ambient environment; a warm cabin is expected to raise body temperature.",
+      "source": {
+        "label": "Pandolf et al., heat strain prediction of rectal temperature, heart rate and sweat loss from the environment, NASA SOAR 1993 (NTRS 19940029146)",
+        "url": "https://ntrs.nasa.gov/citations/19940029146",
+        "kind": "secondary"
+      },
+      "needsVerification": true
+    }
+  ]
+}
