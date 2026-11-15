@@ -87,35 +87,38 @@ describe('inventory-model stock, xEHR allergy, and <60 min redundancy rules', ()
 });
 
 describe('MedicalInventoryPanel UI integration', () => {
-  it('opens HMS & xEHR dialog from the stage pill, toggles allergy conflict, logs consumption, and launches from triage', async () => {
+  it('opens HMS & xEHR dialog from inside the organ box, flags allergy conflicts, logs used medication into the organ card, and launches from triage', async () => {
     const m = await mountApp('demo');
 
-    // Open HMS Kit modal from the bottom stage pill
+    // Open Medical kit & stock modal directly from inside the Brain organ box (ZonePanel)
     const trigger = screen.getByTestId('inventory-trigger');
+    expect(trigger).toHaveTextContent(/medical kit & stock/i);
     await m.user.click(trigger);
 
     const dialog = screen.getByTestId('inventory-dialog');
     expect(within(dialog).getByText(HMS_SAFEGUARD_TEXT)).toBeInTheDocument();
 
-    // Switch to xEHR Allergies and toggle "Ophthalmic preservatives (BAK)"
+    // Switch to xEHR Allergies and toggle "NSAIDs (Ibuprofen / Naproxen)"
     await m.user.click(within(dialog).getByRole('button', { name: /xehr allergies/i }));
-    const bakCheckbox = within(dialog).getByLabelText(/ophthalmic preservatives/i);
-    await m.user.click(bakCheckbox);
+    const nsaidCheckbox = within(dialog).getByLabelText(/nsaids/i);
+    await m.user.click(nsaidCheckbox);
 
-    // Switch back to HMS Stock and confirm conflict alert + safe alternative appear
+    // Switch back to HMS Stock (scoped to Brain) and confirm conflict alert + safe alternative appear
     await m.user.click(within(dialog).getByRole('button', { name: /hms stock/i }));
-    const conflictItem = dialog.querySelector<HTMLElement>('[data-supply-id="hms-preserved-tears"]')!;
-    expect(within(conflictItem).getByText(/xehr conflict: ophthalmic preservatives/i)).toBeInTheDocument();
-    expect(within(conflictItem).getByText(/preservative-free ocular vials/i)).toBeInTheDocument();
+    const conflictItem = dialog.querySelector<HTMLElement>('[data-supply-id="hms-nsaids-pack"]')!;
+    expect(within(conflictItem).getByText(/xehr conflict: nsaids/i)).toBeInTheDocument();
+    expect(within(conflictItem).getByText(/non-nsaid fever\/discomfort pack/i)).toBeInTheDocument();
 
-    // Log 1 unit used of Preservative-free ocular vials (starts at 18 vials -> 17 vials)
-    const tearVials = dialog.querySelector<HTMLElement>('[data-supply-id="hms-preservative-free-tears"]')!;
-    expect(within(tearVials).getByText(/18 vials/i)).toBeInTheDocument();
-    await m.user.click(within(tearVials).getByRole('button', { name: /log 1 used of preservative-free ocular vials/i }));
-    expect(within(tearVials).getByText(/17 vials/i)).toBeInTheDocument();
+    // Log 1 unit used of the compatible Non-NSAID fever/discomfort pack (10 packs -> 9 packs)
+    const nonNsaidPack = dialog.querySelector<HTMLElement>('[data-supply-id="hms-acetaminophen-pack"]')!;
+    expect(within(nonNsaidPack).getByText(/10 packs/i)).toBeInTheDocument();
+    await m.user.click(within(nonNsaidPack).getByRole('button', { name: /log 1 used of non-nsaid fever\/discomfort pack/i }));
+    expect(within(nonNsaidPack).getByText(/9 packs/i)).toBeInTheDocument();
 
-    // Close HMS modal cleanly
+    // Close HMS modal cleanly and confirm the organ box now displays the logged medication card
     await m.user.click(screen.getByRole('button', { name: /close hms inventory/i }));
+    const organInventoryCard = screen.getByTestId('zone-inventory-action');
+    expect(within(organInventoryCard).getByText(/non-nsaid fever\/discomfort pack × 1/i)).toBeInTheDocument();
     expect(screen.getByTestId('inventory-trigger')).toHaveTextContent(/1 allergy/i);
 
     // Open Guided Triage and verify HMS & xEHR integration launcher works

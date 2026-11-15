@@ -11,6 +11,7 @@ import { SymptomReportAction } from '../body-map/SymptomReportDialog';
 import { createInitialSymptomReports } from '../body-map/symptom-model';
 import { ZoneBenchmarkSection, ZoneEnvironmentCard } from '../environment/EnvironmentDialog';
 import { evaluateZoneEnvironment } from '../environment/environment-model';
+import { ZoneInventoryAction } from '../inventory/MedicalInventoryPanel';
 import { GuidedTriageAction } from '../triage/GuidedTriagePanel';
 import { SuggestionList } from '../suggestions/SuggestionList';
 import { useSuggestions } from '../suggestions/use-suggestions';
@@ -118,6 +119,7 @@ export function ZonePanelContainer() {
         <ZoneUpdate key={model.zoneId} label={model.label} indicatorIds={zone.indicatorIds} />
       }
       symptomAction={<SymptomReportAction zoneId={model.zoneId} zoneLabel={model.label} />}
+      inventoryAction={<ZoneInventoryAction zoneId={model.zoneId} zoneLabel={model.label} />}
       triageAction={
         <GuidedTriageAction
           zoneId={model.zoneId}

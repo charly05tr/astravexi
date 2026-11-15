@@ -245,73 +245,111 @@ export function MedicalInventoryDialog({
 }
 
 /**
- * Prominent top-bar button inside Header (right alongside Dashboard / Comms / Sources) so HMS stock,
- * xEHR allergy alerts, and <60 min duplicate-test guards stay immediately visible from every view.
+ * Organ-scoped medical kit & stock action rendered inside each organ's box (ZonePanel).
+ * Lets the crew see and log medications/supplies used for that organ, plus active xEHR allergy alerts.
  */
-export function HeaderInventoryTrigger() {
+export function ZoneInventoryAction({
+  zoneId,
+  zoneLabel,
+}: {
+  zoneId: ZoneId;
+  zoneLabel: string;
+}) {
   const { knowledge } = useAppContext();
   const session = useAppState((s) => s.session);
-  const { xehrAllergies, hmsUsedCounts, selectedZoneId } = useUi();
+  const { xehrAllergies, hmsUsedCounts } = useUi();
   const [open, setOpen] = useState(false);
 
+  const zone = useMemo(
+    () => knowledge.zones.find((z) => z.id === zoneId) ?? null,
+    [knowledge, zoneId],
+  );
   const readings = useMemo(
     () => (session ? [...session.synthetic, ...session.manual] : []),
     [session],
   );
 
-  const evalAll = useMemo(() => {
+  const evaluation = useMemo(() => {
     if (!session) return null;
     return evaluateInventoryAndAllergies({
-      zoneId: null,
+      zoneId,
       indicators: knowledge.indicators,
+      zoneIndicatorIds: zone?.indicatorIds,
       readings,
       asOf: session.evaluation.asOf,
       allergies: xehrAllergies,
       usedCounts: hmsUsedCounts,
     });
-  }, [session, knowledge.indicators, readings, xehrAllergies, hmsUsedCounts]);
+  }, [session, zoneId, knowledge.indicators, zone, readings, xehrAllergies, hmsUsedCounts]);
 
-  if (!evalAll) return null;
+  if (!evaluation) return null;
 
-  const alertCount =
-    evalAll.allergyConflictsCount + evalAll.redundantChecks.length + evalAll.lowOrDepletedCount;
-  const hasStatus = evalAll.statusEquivalent !== 'none';
-  const badgeText =
-    evalAll.allergyConflictsCount > 0
-      ? `${evalAll.allergyConflictsCount} allergy`
-      : evalAll.redundantChecks.length > 0
-        ? `${evalAll.redundantChecks.length} <60m`
-        : alertCount > 0
-          ? `${alertCount} notice`
-          : null;
-
-  const activeZone = selectedZoneId
-    ? knowledge.zones.find((z) => z.id === selectedZoneId) ?? null
-    : null;
+  const usedItems = evaluation.items.filter((item) => (hmsUsedCounts[item.id] ?? 0) > 0);
+  const hasAlert = evaluation.statusEquivalent !== 'none';
+  const pillLabel =
+    evaluation.allergyConflictsCount > 0
+      ? `${evaluation.allergyConflictsCount} allergy`
+      : evaluation.redundantChecks.length > 0
+        ? `${evaluation.redundantChecks.length} <60m`
+        : usedItems.length > 0
+          ? `${usedItems.length} logged`
+          : `${evaluation.items.length} supplies`;
 
   return (
-    <>
-      <button
-        type="button"
-        className={`header__kit-btn${hasStatus ? ' header__kit-btn--alert' : ''}`}
-        style={hasStatus ? tierStyle(evalAll.statusEquivalent) : undefined}
-        aria-haspopup="dialog"
-        data-testid="inventory-trigger"
-        onClick={() => setOpen(true)}
-      >
-        <PackageCheck size={16} aria-hidden="true" />
-        <span>Medical Kit</span>
-        {badgeText ? <span className="header__kit-badge">{badgeText}</span> : null}
-      </button>
+    <div className="zone-inventory-action" data-testid="zone-inventory-action">
+      {usedItems.length > 0 ? (
+        <section className="symptom-card zone-meds-card" aria-label={`Logged supplies for ${zoneLabel}`}>
+          <div className="symptom-card__head">
+            <p className="eyebrow symptom-card__eyebrow">
+              <PackageCheck size={13} aria-hidden="true" />
+              Used supplies · {zoneLabel}
+            </p>
+            <button
+              type="button"
+              className="button button--small symptom-card__edit"
+              aria-haspopup="dialog"
+              data-testid="inventory-trigger"
+              onClick={() => setOpen(true)}
+            >
+              + Add / Stock
+              {evaluation.allergyConflictsCount > 0 ? ` · ${evaluation.allergyConflictsCount} allergy` : ''}
+            </button>
+          </div>
+          <div className="symptom-card__tags">
+            {usedItems.map((item) => (
+              <span key={item.id} className="symptom-pill">
+                {item.name} × {hmsUsedCounts[item.id]} ({item.remaining} {item.unit} left)
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <button
+          type="button"
+          className="button button--small zone-panel__more"
+          aria-haspopup="dialog"
+          data-testid="inventory-trigger"
+          onClick={() => setOpen(true)}
+        >
+          <PackageCheck size={15} aria-hidden="true" />
+          Medical kit &amp; stock
+          <span
+            className="triage-action__pill"
+            style={hasAlert ? tierStyle(evaluation.statusEquivalent) : tierStyle('none')}
+          >
+            {pillLabel}
+          </span>
+        </button>
+      )}
 
       {open ? (
         <MedicalInventoryDialog
-          initialZoneId={activeZone?.id ?? null}
-          initialZoneLabel={activeZone?.label}
+          initialZoneId={zoneId}
+          initialZoneLabel={zoneLabel}
           onClose={() => setOpen(false)}
         />
       ) : null}
-    </>
+    </div>
   );
 }
 

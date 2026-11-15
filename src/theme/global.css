@@ -2056,29 +2056,16 @@ details > summary {
   opacity: 0.85;
 }
 
-/* ---------- Module 2 & 3: Stage bottom controls, Habitat & Readiness ---------- */
-.stage__controls {
-  position: fixed;
-  bottom: calc(var(--space-lg) + 32px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
+/* ---------- Module 2 & 3: Header telemetry pills (Habitat & Readiness) ---------- */
 .stage__habitat {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--on-raised) 22%, transparent);
-  background: rgba(20, 35, 43, 0.8);
-  color: var(--on-raised);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
@@ -2107,8 +2094,13 @@ details > summary {
 }
 
 .stage__habitat:hover {
-  background: rgba(20, 35, 43, 0.94);
-  border-color: color-mix(in srgb, var(--on-raised) 45%, transparent);
+  background: var(--panel);
+  border-color: var(--text-muted);
+}
+
+.zone-inventory-action {
+  display: flex;
+  flex-direction: column;
 }
 
 .env-presets {
