@@ -245,10 +245,10 @@ export function MedicalInventoryDialog({
 }
 
 /**
- * Compact stage pill positioned beside Readiness & Habitat so the crew can check HMS stock,
- * xEHR allergy conflicts, and <60 min duplicate test alerts without cluttering the dashboard.
+ * Prominent top-bar button inside Header (right alongside Dashboard / Comms / Sources) so HMS stock,
+ * xEHR allergy alerts, and <60 min duplicate-test guards stay immediately visible from every view.
  */
-export function StageInventoryTrigger() {
+export function HeaderInventoryTrigger() {
   const { knowledge } = useAppContext();
   const session = useAppState((s) => s.session);
   const { xehrAllergies, hmsUsedCounts, selectedZoneId } = useUi();
@@ -276,6 +276,15 @@ export function StageInventoryTrigger() {
   const alertCount =
     evalAll.allergyConflictsCount + evalAll.redundantChecks.length + evalAll.lowOrDepletedCount;
   const hasStatus = evalAll.statusEquivalent !== 'none';
+  const badgeText =
+    evalAll.allergyConflictsCount > 0
+      ? `${evalAll.allergyConflictsCount} allergy`
+      : evalAll.redundantChecks.length > 0
+        ? `${evalAll.redundantChecks.length} <60m`
+        : alertCount > 0
+          ? `${alertCount} notice`
+          : null;
+
   const activeZone = selectedZoneId
     ? knowledge.zones.find((z) => z.id === selectedZoneId) ?? null
     : null;
@@ -284,23 +293,15 @@ export function StageInventoryTrigger() {
     <>
       <button
         type="button"
-        className={hasStatus ? 'stage__readiness' : 'stage__habitat'}
+        className={`header__kit-btn${hasStatus ? ' header__kit-btn--alert' : ''}`}
         style={hasStatus ? tierStyle(evalAll.statusEquivalent) : undefined}
         aria-haspopup="dialog"
         data-testid="inventory-trigger"
         onClick={() => setOpen(true)}
       >
-        <PackageCheck size={13} aria-hidden="true" />
-        <span>
-          HMS Kit
-          {evalAll.allergyConflictsCount > 0
-            ? ` · ${evalAll.allergyConflictsCount} allergy`
-            : evalAll.redundantChecks.length > 0
-              ? ` · ${evalAll.redundantChecks.length} <60m`
-              : alertCount > 0
-                ? ` · ${alertCount} notice`
-                : ''}
-        </span>
+        <PackageCheck size={16} aria-hidden="true" />
+        <span>Medical Kit</span>
+        {badgeText ? <span className="header__kit-badge">{badgeText}</span> : null}
       </button>
 
       {open ? (

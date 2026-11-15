@@ -343,6 +343,44 @@ kbd {
   text-align: center;
 }
 
+.header__kit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.header__kit-btn:hover {
+  border-color: var(--text-muted);
+  background: var(--panel);
+}
+
+.header__kit-btn--alert {
+  border-color: var(--tier-color);
+  background: var(--tier-surface);
+  color: var(--text);
+}
+
+.header__kit-badge {
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--tier-color);
+  background: var(--panel);
+  color: var(--tier-color);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .main {
   padding: var(--space-xl);
   width: 100%;

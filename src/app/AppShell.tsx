@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useBrand } from '../brand/brand-context';
 import { BodyMapContainer } from '../features/body-map/BodyMapContainer';
 import { StageHabitatBar } from '../features/environment/EnvironmentDialog';
-import { StageInventoryTrigger } from '../features/inventory/MedicalInventoryPanel';
+import { HeaderInventoryTrigger } from '../features/inventory/MedicalInventoryPanel';
 import { CmoContainer } from '../features/cmo/CmoContainer';
 import { CommsReadinessOverview, StageReadinessTrigger } from '../features/readiness/ReadinessPanel';
 import { SourcesView } from '../features/disclosures/SourcesView';
@@ -57,6 +57,7 @@ function Header() {
             </button>
           ))}
         </nav>
+        <HeaderInventoryTrigger />
         <div className="header__status">
           <div className="badges">
             <Badge variant="solid">{mode === 'live' ? 'LIVE' : 'DEMO'}</Badge>
@@ -122,7 +123,6 @@ function Dashboard() {
         <div className="stage__controls">
           <StageReadinessTrigger />
           <StageHabitatBar />
-          <StageInventoryTrigger />
         </div>
         <p className="stage__hint" aria-hidden="true">
           {focusZoneId ? 'Esc or Full body to go back' : 'Drag to rotate · Scroll to zoom · Click an organ'}
