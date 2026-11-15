@@ -33,7 +33,7 @@ export interface CmoZoneView {
 }
 
 const zoneRank = (z: CmoZoneView) => Math.max(tierRank(z.status as Tier), ...z.items.map((i) => tierRank(i.tier)));
-const shortLabel = (label: string) => label.replace(/\s*\(.*\)\s*$/, '');
+export const shortLabel = (label: string) => label.replace(/\s*\(.*\)\s*$/, '');
 
 /**
  * The Crew Medical Officer view: every Caution-and-above item, through the same tier-only privacy

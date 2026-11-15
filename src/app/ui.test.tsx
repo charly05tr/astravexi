@@ -400,6 +400,7 @@ describe('golden flows through the UI', () => {
     await m.user.click(acks[0]!);
     await waitFor(() => expect(within(cmo).queryByRole('button', { name: /acknowledge/i })).toBeNull());
     expect(outboxCards()).toHaveLength(1); // the message remains
+    await act(async () => m.actAs('astronaut')); // the CMO's dashboard is the crew, not the body
     await goTo(m, 'Dashboard');
     expect(railRow('heart')).not.toHaveTextContent(/warning/i);
   });

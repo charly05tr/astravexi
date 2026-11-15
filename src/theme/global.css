@@ -2086,3 +2086,146 @@ details > summary {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------- Crew dashboard (CMO and flight surgeon) ---------- */
+.crew-stage {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.crew {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space);
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.crew__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.crew__head--member {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px var(--space);
+}
+
+.crew__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 24px;
+}
+
+.crew__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space);
+}
+
+.crew-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: var(--space);
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+}
+
+.crew-card:hover {
+  border-color: var(--tier-color);
+}
+
+.crew-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.crew-card__who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.crew-card__name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.crew-card__count {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+.crew-card__number {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--tier-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.crew-card__findings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.crew-card__finding {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.item--row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.crew__columns {
+  display: grid;
+  grid-template-columns: minmax(320px, 440px) 1fr;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .crew-stage {
+    height: auto;
+    overflow: visible;
+  }
+  .crew__columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

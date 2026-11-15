@@ -31,7 +31,7 @@ export async function createProfileSession(mode: AppMode, options: ComposeOption
     sync: await composeSyncService(services, options),
     async enter(profile) {
       await services.adoptLegacyIfPending(profile);
-      return createAppStore(await composeAdapters(mode, profile, options));
+      return createAppStore(await composeAdapters(mode, profile, { ...options, profiles: services.profiles }));
     },
   };
 }
