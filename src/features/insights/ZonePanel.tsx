@@ -1,10 +1,10 @@
-import { ArrowSquareOut, Flag } from '@phosphor-icons/react';
+import { ArrowLeft, ArrowSquareOut, Flag } from '@phosphor-icons/react';
 import { lazy, Suspense } from 'react';
+import type { ReactNode } from 'react';
 import { SourceBadge } from '../../ui/Badge';
-import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/Panel';
 import { TierChip, tierStyle } from '../../ui/TierChip';
-import type { CorroborationView, FindingView, IndicatorView, ProposalView, ZonePanelModel } from './zone-panel-model';
+import type { CorroborationView, FindingView, IndicatorView, ZonePanelModel } from './zone-panel-model';
 
 const TrendChart = lazy(() => import('./TrendChart'));
 
@@ -12,7 +12,13 @@ export interface ZonePanelProps {
   model: ZonePanelModel;
   /** Mode copy for an empty LIVE zone. */
   isLive: boolean;
-  onDecide(recommendationId: string, findingKey: string, decision: 'accepted' | 'dismissed'): void;
+  /** True when the user picked this zone; false when the panel follows the highest-priority zone. */
+  focused: boolean;
+  onBack(): void;
+  /** Routine-change suggestions for this zone (slot: the provider is async). */
+  suggestions?: ReactNode;
+  /** The zone-scoped reading form (slot). */
+  update?: ReactNode;
 }
 
 function VerifyMark() {
@@ -24,50 +30,7 @@ function VerifyMark() {
   );
 }
 
-function Proposals({
-  proposals,
-  findingKey,
-  onDecide,
-}: {
-  proposals: ProposalView[];
-  findingKey: string;
-  onDecide: ZonePanelProps['onDecide'];
-}) {
-  if (proposals.length === 0) return null;
-  return (
-    <div className="stack" style={{ gap: 8 }}>
-      {proposals.map(({ recommendation: r, decision }) => (
-        <div className="proposal" key={r.id}>
-          <p className="proposal__title">Proposed routine change: {r.title}</p>
-          <ul>
-            {r.steps.map((s) => (
-              <li key={s}>{s}</li>
-            ))}
-          </ul>
-          <p className="citation">
-            <span>Evidence: {r.evidence.label}</span>
-            {r.needsVerification ? <VerifyMark /> : null}
-          </p>
-          {decision === 'accepted' ? (
-            <p className="status-line">Accepted</p>
-          ) : (
-            <div className="proposal__actions">
-              <Button size="small" variant="primary" onClick={() => onDecide(r.id, findingKey, 'accepted')}>
-                Accept
-              </Button>
-              <Button size="small" onClick={() => onDecide(r.id, findingKey, 'dismissed')}>
-                Dismiss
-              </Button>
-              <span className="muted">Optional. Your choice never changes the alert.</span>
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Finding({ f, onDecide }: { f: FindingView; onDecide: ZonePanelProps['onDecide'] }) {
+function Finding({ f }: { f: FindingView }) {
   return (
     <article className="finding" style={tierStyle(f.tier)} data-rule-id={f.ruleId}>
       <div className="finding__head">
@@ -102,12 +65,11 @@ function Finding({ f, onDecide }: { f: FindingView; onDecide: ZonePanelProps['on
         )}
         {f.needsVerification ? <VerifyMark /> : null}
       </p>
-      <Proposals proposals={f.proposals} findingKey={f.key} onDecide={onDecide} />
     </article>
   );
 }
 
-function Corroboration({ c, onDecide }: { c: CorroborationView; onDecide: ZonePanelProps['onDecide'] }) {
+function Corroboration({ c }: { c: CorroborationView }) {
   return (
     <article className="finding" style={tierStyle('caution')} data-testid="corroboration">
       <div className="finding__head">
@@ -131,53 +93,67 @@ function Corroboration({ c, onDecide }: { c: CorroborationView; onDecide: ZonePa
         <dt>What to do</dt>
         <dd>{c.whatToDo}</dd>
       </dl>
-      <Proposals proposals={c.proposals} findingKey={c.findingKey} onDecide={onDecide} />
     </article>
   );
 }
 
+/** One indicator as a chart card: title and latest value on top, the 30-day line below, then the legend. */
 function IndicatorRow({ ind }: { ind: IndicatorView }) {
+  const hasManual = ind.trend.points.some((p) => p.source === 'MANUAL');
   return (
     <li className="indicator">
       <div className="indicator__head">
-        <strong>{ind.label}</strong>
+        <div>
+          <strong>{ind.label}</strong>
+          {ind.last ? (
+            <p className="indicator__state">
+              Last reading {ind.last.time}
+              {ind.last.afterExercise ? ', after exercise' : ''}
+            </p>
+          ) : null}
+          {ind.notes.map((n) => (
+            <p className="indicator__state" key={n}>
+              {n}
+            </p>
+          ))}
+        </div>
         {ind.last ? (
           <span className="indicator__value">
             {ind.last.text} <SourceBadge source={ind.last.source} />
           </span>
         ) : null}
       </div>
-      {ind.last ? (
-        <p className="indicator__state">
-          Last reading {ind.last.time}
-          {ind.last.afterExercise ? ', after exercise' : ''}
-        </p>
-      ) : null}
-      {ind.notes.map((n) => (
-        <p className="indicator__state" key={n}>
-          {n}
-        </p>
-      ))}
       {ind.trend.points.length > 0 ? (
         <>
           <Suspense fallback={<div className="trend" />}>
-            <TrendChart points={ind.trend.points} baseline={ind.trend.baseline} label={ind.label} precision={ind.precision} />
+            <TrendChart
+              points={ind.trend.points}
+              baseline={ind.trend.baseline}
+              label={ind.label}
+              precision={ind.precision}
+              unit={ind.unit}
+            />
           </Suspense>
-          <div className="trend__legend">
-            <span className="trend__key">
-              <svg width="12" height="12" aria-hidden="true">
-                <circle className="dot-synthetic" cx="6" cy="6" r="4" />
-              </svg>
-              SYNTHETIC
-            </span>
-            <span className="trend__key">
-              <svg width="12" height="12" aria-hidden="true">
-                <polygon className="dot-manual" points="6,1 11,6 6,11 1,6" />
-              </svg>
-              MANUAL
-            </span>
-            {ind.trend.baseline !== null ? <span>Dashed line: your baseline</span> : null}
-          </div>
+          <ul className="trend__legend">
+            <li className="trend__key">
+              <span className="legend-line" aria-hidden="true" />
+              Daily reading, last {ind.trend.points.length} days
+            </li>
+            {hasManual ? (
+              <li className="trend__key">
+                <svg width="12" height="12" aria-hidden="true">
+                  <polygon className="dot-manual" points="6,1 11,6 6,11 1,6" />
+                </svg>
+                MANUAL
+              </li>
+            ) : null}
+            {ind.trend.baseline !== null ? (
+              <li className="trend__key">
+                <span className="legend-line legend-line--dashed" aria-hidden="true" />
+                Your baseline
+              </li>
+            ) : null}
+          </ul>
         </>
       ) : null}
       <p className="field__hint">How to measure: {ind.howToMeasure}</p>
@@ -185,46 +161,66 @@ function IndicatorRow({ ind }: { ind: IndicatorView }) {
   );
 }
 
-/** Presentational zone panel: no store access. Everything it shows comes in through `model`. */
-export function ZonePanel({ model, isLive, onDecide }: ZonePanelProps) {
+/** Presentational zone panel: no store access. Everything it shows comes in through `model` and the slots. */
+export function ZonePanel({ model, isLive, focused, onBack, suggestions, update }: ZonePanelProps) {
+  const hasFindings = model.findings.length > 0 || model.corroboration !== null;
   return (
-    <section className="panel zone-panel" aria-labelledby="zone-panel-title" data-zone-id={model.zoneId}>
+    <section className="zone-panel" aria-labelledby="zone-panel-title" data-zone-id={model.zoneId} style={tierStyle(model.status)}>
       <div className="zone-panel__head">
-        <h2 id="zone-panel-title">{model.label}</h2>
+        <div className="zone-panel__heading">
+          <p className="eyebrow">{focused ? 'Focused zone' : 'Highest priority now'}</p>
+          <h2 id="zone-panel-title">{model.label}</h2>
+        </div>
         <TierChip status={model.status} />
       </div>
-      <p>{model.functionSummary}</p>
+      {focused ? (
+        <button type="button" className="link-button" onClick={onBack}>
+          <ArrowLeft size={14} weight="bold" aria-hidden="true" />
+          Full body
+          <kbd>Esc</kbd>
+        </button>
+      ) : null}
+      <p className="zone-panel__summary">{model.functionSummary}</p>
 
       {!model.monitored ? (
-        <div style={{ marginTop: 12 }}>
-          <EmptyState>
-            Not monitored in this prototype. No indicator feeds this zone, so it shows no alert, trend or score.
-          </EmptyState>
-        </div>
+        <EmptyState>
+          Not monitored in this prototype. No indicator feeds this zone, so it shows no alert, trend or score.
+        </EmptyState>
       ) : (
-        <div className="stack" style={{ marginTop: 12 }}>
-          {model.findings.length === 0 && !model.corroboration ? (
-            <EmptyState>
-              {model.status === 'noData'
-                ? isLive
-                  ? 'No readings yet. Add your first check-in.'
-                  : 'No recent reading. Add a check-in.'
-                : 'No active findings in this zone.'}
-            </EmptyState>
-          ) : null}
-          {model.corroboration ? <Corroboration c={model.corroboration} onDecide={onDecide} /> : null}
-          {model.findings.map((f) => (
-            <Finding key={f.key} f={f} onDecide={onDecide} />
-          ))}
-          <div>
-            <h3 style={{ fontSize: '1rem', marginBottom: 8 }}>Indicators</h3>
+        <>
+          <section className="zone-section" aria-labelledby="zone-indicators">
+            <h3 id="zone-indicators">Indicators</h3>
             <ul className="indicator-list">
               {model.indicators.map((i) => (
                 <IndicatorRow key={i.id} ind={i} />
               ))}
             </ul>
-          </div>
-        </div>
+          </section>
+
+          {suggestions}
+
+          <section className="zone-section" aria-labelledby="zone-why">
+            <h3 id="zone-why">Why this status</h3>
+            {!hasFindings ? (
+              <EmptyState>
+                {model.status === 'noData'
+                  ? isLive
+                    ? 'No readings yet. Add your first check-in.'
+                    : 'No recent reading. Add a check-in.'
+                  : 'No active findings in this zone.'}
+              </EmptyState>
+            ) : (
+              <div className="stack">
+                {model.corroboration ? <Corroboration c={model.corroboration} /> : null}
+                {model.findings.map((f) => (
+                  <Finding key={f.key} f={f} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {update}
+        </>
       )}
     </section>
   );

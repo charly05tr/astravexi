@@ -15,16 +15,22 @@ const other: BrandConfig = {
   productName: 'Other Brand',
   eventLabel: 'Some Other Event',
   colors: {
-    blueYonder: '#88CCEE',
-    neonBlue: '#3355AA',
-    electricBlue: '#223388',
-    deepBlue: '#101830',
-    rocketRed: '#CC3311',
-    martianRed: '#882211',
-    neonYellow: '#FFEE33',
+    sage: '#6A9970',
+    mint: '#B7F0C6',
+    peach: '#F0A080',
+    steel: '#4F7F99',
+    sky: '#88CCEE',
+    deepTeal: '#2F4F5F',
+    mist: '#C8D8E0',
+    night: '#101820',
     white: '#FFFFFF',
+    canvas: '#F4F5F7',
+    ink: '#0A0A0A',
+    inkMuted: '#4A4F52',
+    border: '#7A7A7A',
+    borderSubtle: '#DDDDDE',
   },
-  gradient: 'linear-gradient(to bottom right, #223388, #101830)',
+  gradient: 'linear-gradient(to bottom, #FFFFFF, #F4F5F7)',
   fonts: { display: 'Georgia, serif', body: 'Arial, sans-serif', mono: 'Courier, monospace' },
   logos: { full: '/brand-b/logo.svg', mark: '/brand-b/mark.svg', favicon: '/brand-b/favicon.svg' },
 };
@@ -61,10 +67,10 @@ describe('brand swap leaves tier meaning unchanged', () => {
   it('changes the brand CSS variables, and only those, when another BrandConfig is applied', () => {
     applyBrand(brand);
     const root = document.documentElement;
-    expect(root.style.getPropertyValue('--brand-deep-blue')).toBe(brand.colors.deepBlue);
-    expect(root.style.getPropertyValue('--surface')).toBe('var(--brand-deep-blue)');
+    expect(root.style.getPropertyValue('--brand-deep-teal')).toBe(brand.colors.deepTeal);
+    expect(root.style.getPropertyValue('--surface')).toBe('var(--brand-canvas)');
     applyBrand(other);
-    expect(root.style.getPropertyValue('--brand-deep-blue')).toBe(other.colors.deepBlue);
+    expect(root.style.getPropertyValue('--brand-deep-teal')).toBe(other.colors.deepTeal);
     expect(root.style.getPropertyValue('--brand-gradient')).toBe(other.gradient);
     expect(root.style.getPropertyValue('--font-display')).toBe(other.fonts.display);
     expect(document.title).toBe('Other Brand');

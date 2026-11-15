@@ -3,42 +3,59 @@ import type { BrandConfig } from './brand.types';
 /**
  * THE brand. Swapping the brand means editing this file, public/brand/* and (for other typefaces) fonts.ts.
  * Nothing else in the app may contain a brand color, font name or logo path.
+ *
+ * Palette from the brand sheet ("Paleta de color", "Colores principales", "Monocroma corporativo"). The
+ * stage (semaphore) colors are NOT here: they encode alert tiers and live in src/theme/tiers.ts.
+ * Neutrals follow the minimal light reference: off-white page, white cards, grey borders, near-black ink.
  */
 const colors = {
-  blueYonder: '#2E96F5',
-  neonBlue: '#0960E1',
-  electricBlue: '#0042A6',
-  deepBlue: '#07173F',
-  rocketRed: '#E43700',
-  martianRed: '#8E1100',
-  neonYellow: '#EAFE07',
+  sage: '#7DA887',
+  mint: '#A9F5BB',
+  peach: '#F5B49D',
+  steel: '#5B8EA8',
+  sky: '#90D3F5',
+  deepTeal: '#446B7E',
+  mist: '#BDD2DC',
+  night: '#14232B',
   white: '#FFFFFF',
+  canvas: '#F9FAFB',
+  ink: '#121212',
+  inkMuted: '#53595C',
+  border: '#8E8E8E',
+  borderSubtle: '#E4E4E5',
 } as const;
 
 export const brand: BrandConfig = {
   productName: 'Astravexi', // placeholder: the repository name
   eventLabel: 'NASA Space Apps Challenge 2026',
   colors,
-  // The brand's "45 degrees" runs from the top-left corner to the bottom-right corner.
-  gradient: `linear-gradient(to bottom right, ${colors.electricBlue}, ${colors.deepBlue})`,
+  gradient: `linear-gradient(to bottom, ${colors.white}, ${colors.canvas})`,
   fonts: {
-    display: "'Fira Sans', system-ui, sans-serif",
-    body: "'Overpass', system-ui, sans-serif",
-    mono: "'Overpass Mono', ui-monospace, monospace",
+    display: "'Inter', system-ui, sans-serif",
+    body: "'Space Grotesk', system-ui, sans-serif",
+    mono: "'Space Grotesk', ui-monospace, monospace",
   },
   logos: { full: '/brand/logo.svg', mark: '/brand/logo-mark.svg', favicon: '/brand/favicon.svg' },
   roles: {
-    surface: 'deepBlue',
-    surfaceRaised: 'electricBlue',
-    text: 'white',
-    textMuted: 'blueYonder',
-    accent: 'neonYellow',
-    focus: 'neonYellow',
+    surface: 'canvas',
+    panel: 'white',
+    surfaceRaised: 'deepTeal',
+    onRaised: 'white',
+    text: 'ink',
+    textMuted: 'inkMuted',
+    border: 'border',
+    borderSubtle: 'borderSubtle',
+    accent: 'peach',
+    focus: 'steel',
+    chartSeries: 'deepTeal',
   },
   textPairs: [
-    ['white', 'deepBlue'],
-    ['white', 'electricBlue'],
-    ['blueYonder', 'deepBlue'],
+    ['ink', 'white'],
+    ['ink', 'canvas'],
+    ['inkMuted', 'white'],
+    ['inkMuted', 'canvas'],
+    ['white', 'deepTeal'],
+    ['deepTeal', 'white'],
   ],
-  scene: { hologram: 'blueYonder', starTint: 'white', marsBase: 'martianRed', marsHighlight: 'rocketRed' },
+  scene: { background: 'night', keyLight: 'white', rimLight: 'sky', starTint: 'white' },
 };

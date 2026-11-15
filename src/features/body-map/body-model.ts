@@ -15,6 +15,8 @@ export interface BodyModelProps {
   zones: readonly ZoneView[];
   selectedZoneId: ZoneId | null;
   onSelectZone(id: ZoneId): void;
+  /** The zone the user explicitly focused (null = whole body). Renderers that can zoom frame it. */
+  focusZoneId?: ZoneId | null;
   /** True when the user asked for reduced motion: no pulses, drift or auto-rotate. */
   reducedMotion?: boolean;
 }

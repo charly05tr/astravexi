@@ -6,7 +6,15 @@ import { CheckInForm } from './CheckInForm';
 import { buildEntry, emptyCheckInForm } from './check-in-model';
 import type { CheckInFormState, NumericFieldId } from './check-in-model';
 
-export function CheckInContainer() {
+/**
+ * The check-in form with its state. Without `indicatorIds` it is the full daily check-in; with them it is
+ * scoped to one zone (only that zone's fields), e.g. "Update Brain readings" in the zone panel.
+ */
+export function CheckInContainer({
+  indicatorIds,
+  label,
+  submitLabel,
+}: { indicatorIds?: readonly IndicatorId[]; label?: string; submitLabel?: string } = {}) {
   const { knowledge } = useAppContext();
   const actions = useAppActions();
   const [form, setForm] = useState<CheckInFormState>(emptyCheckInForm);
@@ -14,7 +22,13 @@ export function CheckInContainer() {
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const indicators = useMemo(() => new Map(knowledge.indicators.map((i) => [i.id, i])), [knowledge]);
+  const indicators = useMemo(
+    () =>
+      new Map(
+        knowledge.indicators.filter((i) => !indicatorIds || indicatorIds.includes(i.id)).map((i) => [i.id, i]),
+      ),
+    [knowledge, indicatorIds],
+  );
   const monitored = useMemo(() => new Set<IndicatorId>(indicators.keys()), [indicators]);
 
   const submit = async () => {
@@ -57,6 +71,8 @@ export function CheckInContainer() {
       onContext={(context: ReadingContext) => setForm((f) => ({ ...f, context }))}
       onSymptomatic={(symptomatic) => setForm((f) => ({ ...f, symptomatic }))}
       onSubmit={() => void submit()}
+      label={label}
+      submitLabel={submitLabel}
     />
   );
 }

@@ -1,4 +1,5 @@
 import { WarningCircle } from '@phosphor-icons/react';
+import { useId } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import type { Indicator, IndicatorId, ReadingContext } from '../../core/health/model';
 import type { CheckInErrors } from '../../core/use-cases/check-in';
@@ -19,6 +20,9 @@ export interface CheckInFormProps {
   onContext(context: ReadingContext): void;
   onSymptomatic(value: boolean): void;
   onSubmit(): void;
+  /** Accessible name of the form. Defaults to "Daily check-in". */
+  label?: string;
+  submitLabel?: string;
 }
 
 function FieldError({ id, message }: { id: string; message?: string }) {
@@ -32,6 +36,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 }
 
 function NumberField({
+  prefix,
   id,
   label,
   unit,
@@ -41,6 +46,7 @@ function NumberField({
   placeholder,
   onChange,
 }: {
+  prefix: string;
   id: IndicatorId;
   label: string;
   unit: string;
@@ -50,7 +56,7 @@ function NumberField({
   placeholder?: string;
   onChange(value: string): void;
 }) {
-  const inputId = `ci-${id}`;
+  const inputId = `${prefix}${id}`;
   return (
     <div className="field">
       <label className="field__label" htmlFor={inputId}>
@@ -88,6 +94,7 @@ function Segmented({ name, legend, children }: { name: string; legend: string; c
 /** Daily check-in. Presentational: state and submission live in CheckInContainer. */
 export function CheckInForm(props: CheckInFormProps) {
   const { form, errors, indicators, submitting, message } = props;
+  const pre = `ci${useId().replace(/[^a-zA-Z0-9]/g, '')}-`;
   const ind = (id: IndicatorId) => indicators.get(id);
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -99,6 +106,7 @@ export function CheckInForm(props: CheckInFormProps) {
     return (
       <NumberField
         key={id}
+        prefix={pre}
         id={id}
         label={i.label}
         unit={i.unit}
@@ -111,24 +119,26 @@ export function CheckInForm(props: CheckInFormProps) {
     );
   };
   const phq = ind('phq2');
+  const hasBp = Boolean(ind('bpSystolic') || ind('bpDiastolic'));
+  const hasContext = Boolean(ind('heartRate') || ind('temperature') || hasBp);
 
   return (
-    <form className="form" onSubmit={submit} noValidate aria-label="Daily check-in">
+    <form className="form" onSubmit={submit} noValidate aria-label={props.label ?? 'Daily check-in'}>
       {field('sleepHours', 'e.g. 6.5')}
 
       {phq ? (
         <Segmented name="phq2" legend="Mood (PHQ-2): how often in the last 2 weeks have you been bothered by...">
           {PHQ_QUESTIONS.map((question, index) => (
             <div className="field" key={question}>
-              <span className="field__label" id={`ci-phq-${index}`}>
+              <span className="field__label" id={`${pre}phq-${index}`}>
                 {question}
               </span>
-              <div className="segmented" role="radiogroup" aria-labelledby={`ci-phq-${index}`}>
+              <div className="segmented" role="radiogroup" aria-labelledby={`${pre}phq-${index}`}>
                 {PHQ_SCALE.map((scale, value) => (
                   <label key={scale}>
                     <input
                       type="radio"
-                      name={`phq-${index}`}
+                      name={`${pre}phq-${index}`}
                       checked={form.phq[index as 0 | 1] === value}
                       aria-label={`${question}: ${value}, ${scale}`}
                       onChange={() => props.onPhq(index as 0 | 1, value)}
@@ -140,30 +150,33 @@ export function CheckInForm(props: CheckInFormProps) {
             </div>
           ))}
           <p className="field__hint">0 Not at all, 1 Several days, 2 More than half the days, 3 Nearly every day. Only the tier of this score ever leaves your device.</p>
-          <FieldError id="ci-phq2-error" message={errors.phq2} />
+          <FieldError id={`${pre}phq2-error`} message={errors.phq2} />
         </Segmented>
       ) : null}
 
       {field('heartRate', 'e.g. 62')}
       {field('temperature', 'e.g. 37.7')}
 
-      <fieldset className="fieldset">
-        <legend>Blood pressure</legend>
-        <div className="field__row">
-          <div style={{ flex: 1 }}>{field('bpSystolic', 'Top number')}</div>
-          <div style={{ flex: 1 }}>{field('bpDiastolic', 'Bottom number')}</div>
-        </div>
-      </fieldset>
+      {hasBp ? (
+        <fieldset className="fieldset">
+          <legend>Blood pressure</legend>
+          <div className="field__row">
+            <div style={{ flex: 1 }}>{field('bpSystolic', 'Top number')}</div>
+            <div style={{ flex: 1 }}>{field('bpDiastolic', 'Bottom number')}</div>
+          </div>
+        </fieldset>
+      ) : null}
 
       {field('glucose', 'e.g. 90')}
 
+      {hasContext ? (
       <fieldset className="fieldset">
         <legend>Heart rate, temperature and blood pressure were measured</legend>
         <div className="segmented" role="radiogroup" aria-label="Measured at rest or after exercise">
           <label>
             <input
               type="radio"
-              name="ci-context"
+              name={`${pre}context`}
               checked={form.context === 'rest'}
               onChange={() => props.onContext('rest')}
             />
@@ -172,7 +185,7 @@ export function CheckInForm(props: CheckInFormProps) {
           <label>
             <input
               type="radio"
-              name="ci-context"
+              name={`${pre}context`}
               checked={form.context === 'exercise'}
               onChange={() => props.onContext('exercise')}
             />
@@ -191,10 +204,11 @@ export function CheckInForm(props: CheckInFormProps) {
         </label>
         <p className="field__hint">Applies to temperature and heart rate. Examples: chills, palpitations, dizziness, chest discomfort.</p>
       </fieldset>
+      ) : null}
 
-      <FieldError id="ci-form-error" message={errors.form} />
+      <FieldError id={`${pre}form-error`} message={errors.form} />
       <Button type="submit" variant="primary" disabled={submitting}>
-        Save check-in
+        {props.submitLabel ?? 'Save check-in'}
       </Button>
       <p className="status-line" role="status">
         {message}

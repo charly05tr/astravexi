@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { ZoneStatus } from '../core/health/model';
-import { TIER_CHIP_SURFACE, TIER_CHIP_TEXT, tierTheme } from '../theme/tiers';
+import { TIER_CHIP_TEXT, tierTheme } from '../theme/tiers';
 import type { TierShape } from '../theme/tiers';
 
 const SHAPE_PATHS: Record<TierShape, string> = {
@@ -37,12 +37,11 @@ export function TierShapeGlyph({ status, size = 26 }: { status: ZoneStatus; size
   );
 }
 
-/** Color, icon, shape and text label together. The chip owns its surface so it survives any brand. */
+/** Color, icon, shape and text label together: a semaphore-colored pill with dark text, independent of the brand. */
 export function TierChip({ status }: { status: ZoneStatus }) {
   const theme = tierTheme(status);
   const style = {
     ...tierStyle(status),
-    ['--chip-surface' as string]: TIER_CHIP_SURFACE,
     ['--chip-text' as string]: TIER_CHIP_TEXT,
   } as CSSProperties;
   return (

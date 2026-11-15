@@ -6,7 +6,6 @@ import type {
   Knowledge,
   Reading,
   ReadingSource,
-  Recommendation,
   RecommendationDecision,
   SourceRef,
   Tier,
@@ -14,17 +13,13 @@ import type {
 } from '../../core/health/model';
 import { compareReadings } from '../../core/health/series';
 import { statToDisplay, storedToDisplay, tierRank } from '../../core/health/tiers';
+import type { SuggestionFinding } from '../../core/ports';
 import type { Content } from '../../knowledge';
 import { formatMissionTime, formatValue } from '../shared/format';
 import { explainFinding } from './explanation';
 import type { FindingExplanation } from './explanation';
 import { buildTrend } from './trend-data';
 import type { Trend } from './trend-data';
-
-export interface ProposalView {
-  recommendation: Recommendation;
-  decision?: 'accepted';
-}
 
 export interface FindingView {
   key: string;
@@ -40,7 +35,6 @@ export interface FindingView {
   explanation: Omit<FindingExplanation, 'recommendations'>;
   citation: SourceRef;
   needsVerification: boolean;
-  proposals: ProposalView[];
 }
 
 export interface CorroborationView {
@@ -50,7 +44,6 @@ export interface CorroborationView {
   whyItMatters: string;
   whatToDo: string;
   findingKey: string;
-  proposals: ProposalView[];
 }
 
 export interface IndicatorView {
@@ -75,6 +68,8 @@ export interface ZonePanelModel {
   findings: FindingView[];
   corroboration: CorroborationView | null;
   indicators: IndicatorView[];
+  /** What a suggestion provider needs: the zone's findings with their curated recommendation ids. */
+  suggestionFindings: SuggestionFinding[];
 }
 
 export interface ZonePanelInput {
@@ -87,23 +82,10 @@ export interface ZonePanelInput {
   asOf: AsOf;
 }
 
-function proposalsFor(
-  recs: readonly Recommendation[],
-  findingKey: string,
-  decisions: readonly RecommendationDecision[],
-): ProposalView[] {
-  const out: ProposalView[] = [];
-  for (const recommendation of recs) {
-    const made = decisions.filter((d) => d.recommendationId === recommendation.id && d.findingKey === findingKey);
-    if (made.some((d) => d.decision === 'dismissed')) continue; // dismissed: logged, then removed
-    out.push(made.some((d) => d.decision === 'accepted') ? { recommendation, decision: 'accepted' } : { recommendation });
-  }
-  return out;
-}
-
 function findingView(f: Finding, input: ZonePanelInput): FindingView {
   const rule = input.knowledge.rules.find((r) => r.id === f.ruleId);
   const indicator = input.knowledge.indicators.find((i) => i.id === f.indicatorId)!;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- recommendations go to the suggestion provider
   const { recommendations, ...text } = explainFinding(
     f,
     rule,
@@ -127,7 +109,6 @@ function findingView(f: Finding, input: ZonePanelInput): FindingView {
     explanation: text,
     citation: rule?.source ?? { label: 'No citation recorded', url: '', kind: 'design-inference' },
     needsVerification: f.needsVerification,
-    proposals: proposalsFor(recommendations, f.key, input.decisions),
   };
 }
 
@@ -143,9 +124,6 @@ function corroborationView(input: ZonePanelInput): CorroborationView | null {
       tier: f.tier,
     }));
   const tpl = input.content.corroboration;
-  const recs = (tpl.recommendationIdsByZone[input.zone.id] ?? [])
-    .map((id) => input.content.recommendations.get(id))
-    .filter((r): r is Recommendation => r !== undefined);
   const findingKey = `corroboration:${input.zone.id}`;
   return {
     title: tpl.title,
@@ -154,7 +132,6 @@ function corroborationView(input: ZonePanelInput): CorroborationView | null {
     whyItMatters: tpl.whyItMatters,
     whatToDo: tpl.whatToDo,
     findingKey,
-    proposals: proposalsFor(recs, findingKey, input.decisions),
   };
 }
 
@@ -195,19 +172,53 @@ function indicatorViews(input: ZonePanelInput): IndicatorView[] {
   return views;
 }
 
+function suggestionFindings(input: ZonePanelInput, findings: FindingView[], corroboration: CorroborationView | null): SuggestionFinding[] {
+  const zone = input.evaluation.zones[input.zone.id];
+  const out: SuggestionFinding[] = [];
+  if (corroboration) {
+    out.push({
+      key: corroboration.findingKey,
+      ruleId: null,
+      indicatorId: null,
+      indicatorLabel: corroboration.title,
+      tier: 'caution',
+      whatChanged: corroboration.intro,
+      recommendationIds: input.content.corroboration.recommendationIdsByZone[input.zone.id] ?? [],
+    });
+  }
+  for (const f of zone.findings) {
+    const view = findings.find((v) => v.key === f.key);
+    const rule = input.knowledge.rules.find((r) => r.id === f.ruleId);
+    const template = input.content.templates.get(rule?.templateId ?? f.ruleId);
+    out.push({
+      key: f.key,
+      ruleId: f.ruleId,
+      indicatorId: f.indicatorId,
+      indicatorLabel: view?.indicatorLabel ?? f.indicatorId,
+      tier: f.tier,
+      whatChanged: view?.explanation.whatChanged ?? '',
+      recommendationIds: template?.recommendationIds ?? [],
+    });
+  }
+  return out;
+}
+
 /** Everything the zone panel shows, derived from the evaluation. Pure: no store, no React. */
 export function buildZonePanelModel(input: ZonePanelInput): ZonePanelModel {
   const zone = input.evaluation.zones[input.zone.id];
   const monitored = input.zone.indicatorIds.length > 0;
+  // A zone that is not monitored shows its function text only: no findings, trends or scores.
+  const findings = monitored ? zone.findings.map((f) => findingView(f, input)) : [];
+  const corroboration = monitored ? corroborationView(input) : null;
   return {
     zoneId: input.zone.id,
     label: input.zone.label,
     functionSummary: input.zone.functionSummary,
     status: zone.status,
     monitored,
-    // A zone that is not monitored shows its function text only: no findings, trends or scores.
-    findings: monitored ? zone.findings.map((f) => findingView(f, input)) : [],
-    corroboration: monitored ? corroborationView(input) : null,
+    findings,
+    corroboration,
     indicators: monitored ? indicatorViews(input) : [],
+    suggestionFindings: monitored ? suggestionFindings(input, findings, corroboration) : [],
   };
 }

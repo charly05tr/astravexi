@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 import { useStore } from 'zustand';
 import type { Knowledge } from '../core/health/model';
+import type { SuggestionProvider } from '../core/ports';
 import type { Content } from '../knowledge';
 import type { AppState, AppStore } from './store/app-store';
 
@@ -9,6 +10,8 @@ export interface AppContextValue {
   store: AppStore;
   knowledge: Knowledge;
   content: Content;
+  /** Routine-change suggestions: curated rules today, an LLM adapter later. */
+  suggestions: SuggestionProvider;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);

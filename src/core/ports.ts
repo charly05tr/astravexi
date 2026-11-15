@@ -1,11 +1,65 @@
 import type {
   Acknowledgement,
+  IndicatorId,
   MissionDay,
   MissionMinute,
   OutboxMessage,
   Reading,
   RecommendationDecision,
+  SourceRef,
+  Tier,
+  ZoneId,
+  ZoneStatus,
 } from './health/model';
+
+/** One finding that crossed a threshold, as a suggestion provider sees it. */
+export interface SuggestionFinding {
+  /** The finding key decisions are stored against (or `corroboration:<zone>`). */
+  key: string;
+  ruleId: string | null;
+  indicatorId: IndicatorId | null;
+  indicatorLabel: string;
+  tier: Tier;
+  /** Plain-language "what changed" line, already filled from its template. */
+  whatChanged: string;
+  /** Curated recommendation ids the knowledge base links to this finding. */
+  recommendationIds: readonly string[];
+}
+
+/**
+ * Everything a provider may use to suggest routine changes for one zone. It carries tiers and explanation
+ * text, never raw mood scores, so an LLM adapter can send it off-device without a privacy review per field.
+ */
+export interface SuggestionContext {
+  zone: { id: ZoneId; label: string; status: ZoneStatus };
+  missionDay: MissionDay;
+  findings: readonly SuggestionFinding[];
+  decisions: readonly RecommendationDecision[];
+}
+
+export interface Suggestion {
+  /** Stable id: decisions are stored as (id, findingKey). */
+  id: string;
+  findingKey: string;
+  title: string;
+  steps: readonly string[];
+  /** Why this suggestion, tied to the finding it answers. */
+  rationale: string;
+  evidence: SourceRef | null;
+  needsVerification: boolean;
+  /** Who produced it. The UI labels generated advice differently from curated advice. */
+  origin: 'rules' | 'llm';
+  decision?: 'accepted';
+}
+
+/**
+ * Suggests changes to the daily routine when a zone has findings. Async on purpose: today a rule lookup
+ * answers at once, tomorrow an LLM adapter answers over the network behind the same contract.
+ */
+export interface SuggestionProvider {
+  readonly id: string;
+  suggest(context: SuggestionContext, options?: { signal?: AbortSignal }): Promise<Suggestion[]>;
+}
 
 /** Everything the record store holds. Synthetic history is never part of it. */
 export interface StoreSnapshot {

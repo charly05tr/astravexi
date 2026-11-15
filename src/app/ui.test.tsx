@@ -10,15 +10,32 @@ const rail = () => screen.getByRole('list', { name: /body zones by alert tier/i 
 const railRow = (zone: string) => rail().querySelector<HTMLElement>(`[data-zone-id="${zone}"]`)!;
 const outboxCards = () => screen.queryAllByTestId('outbox-message');
 
-/** Types into a check-in field. Scoped to the form: charts also carry aria-labels with the same words. */
+const dailyForm = () => screen.queryByRole('form', { name: /daily check-in/i });
+
+/** Opens the daily check-in drawer from the header, unless it is already open. */
+async function openCheckIn(m: Mounted) {
+  if (!dailyForm()) await m.user.click(screen.getByRole('button', { name: /^check-in$/i }));
+  return within(dailyForm()!);
+}
+/** Switches the main view from the header navigation. */
+async function goTo(m: Mounted, view: 'Dashboard' | 'Comms' | 'Sources') {
+  await m.user.click(within(screen.getByRole('navigation', { name: 'Views' })).getByRole('button', { name: new RegExp(`^${view}`) }));
+}
+
+/** Types into a daily check-in field. Scoped to the form: charts also carry aria-labels with the same words. */
 async function fill(m: Mounted, label: RegExp, value: string) {
-  const form = screen.queryByRole('form', { name: /daily check-in/i });
-  const scope = form ? within(form) : screen;
-  await m.user.clear(scope.getByLabelText(label));
-  await m.user.type(scope.getByLabelText(label), value);
+  // Outside the shell (mission setup) there is no check-in drawer: type into the page.
+  const form = screen.queryByRole('button', { name: /^check-in$/i }) ? await openCheckIn(m) : screen;
+  await m.user.clear(form.getByLabelText(label));
+  await m.user.type(form.getByLabelText(label), value);
 }
 async function save(m: Mounted) {
-  await m.user.click(screen.getByRole('button', { name: /save check-in/i }));
+  const form = await openCheckIn(m);
+  await m.user.click(form.getByRole('button', { name: /save check-in/i }));
+}
+async function phq(m: Mounted, name: RegExp) {
+  const form = await openCheckIn(m);
+  await m.user.click(form.getByRole('radio', { name }));
 }
 async function enterBp(m: Mounted, sys: string, dia: string) {
   await fill(m, /^systolic blood pressure/i, sys);
@@ -42,7 +59,7 @@ describe('app shell: disclaimer and mode badge on both views, both modes', () =>
       };
       check();
       expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
-      await m.user.click(screen.getByRole('button', { name: 'Sources' }));
+      await goTo(m, 'Sources');
       expect(screen.getByRole('heading', { name: /sources and disclosures/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Sources' })).toHaveAttribute('aria-current', 'page');
       check();
@@ -122,10 +139,11 @@ describe('LIVE first run', () => {
   });
 
   it('starts empty: zones read No data, the panel invites the first check-in, nothing is synthetic', async () => {
-    await mountApp('live');
+    const m = await mountApp('live');
     expect(rail()).toHaveTextContent(/no recent reading/i);
     expect(screen.getByText(/add your first check-in/i)).toBeInTheDocument();
     expect(screen.queryByText('SYNTHETIC')).toBeNull();
+    await goTo(m, 'Comms');
     expect(screen.getByText(/no messages/i)).toBeInTheDocument();
     expect(screen.getByText(/nothing needs review/i)).toBeInTheDocument();
   });
@@ -200,7 +218,7 @@ describe('zone panel content', () => {
 
   it('logs a Dismiss, removes the suggestion and leaves the tier alone', async () => {
     const m = await mountApp('demo');
-    const before = screen.getAllByRole('button', { name: 'Dismiss' }).length;
+    const before = (await screen.findAllByRole('button', { name: 'Dismiss' })).length;
     expect(before).toBeGreaterThan(0);
     const status = m.state().session!.evaluation.zones.brain.status;
     await m.user.click(screen.getAllByRole('button', { name: 'Dismiss' })[0]!);
@@ -211,7 +229,7 @@ describe('zone panel content', () => {
 
   it('logs an Accept and shows it as accepted', async () => {
     const m = await mountApp('demo');
-    await m.user.click(screen.getAllByRole('button', { name: 'Accept' })[0]!);
+    await m.user.click((await screen.findAllByRole('button', { name: 'Accept' }))[0]!);
     await waitFor(() => expect(screen.getAllByText('Accepted').length).toBeGreaterThan(0));
     expect(m.state().session!.decisions.at(-1)?.decision).toBe('accepted');
   });
@@ -219,14 +237,16 @@ describe('zone panel content', () => {
 
 describe('daily check-in form', () => {
   it('has exactly two PHQ-2 questions and no item 9 or self-harm item', async () => {
-    await mountApp('demo');
-    const form = screen.getByRole('form', { name: /daily check-in/i });
+    const m = await mountApp('demo');
+    await openCheckIn(m);
+    const form = dailyForm()!;
     expect(within(form).getAllByText(/little interest or pleasure|feeling down, depressed or hopeless/i)).toHaveLength(2);
     expect(form.textContent).not.toMatch(/self-harm|better off dead|hurt yourself|item 9/i);
   });
 
   it('shows hints, units and the rest, symptom and glucose controls', async () => {
-    await mountApp('demo');
+    const m = await mountApp('demo');
+    await openCheckIn(m);
     expect(screen.getByText(/count the pulse for 60 s/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/fasting glucose/i)).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /at rest/i })).toBeChecked();
@@ -241,14 +261,14 @@ describe('daily check-in form', () => {
     await fill(m, /^temperature/i, '50');
     await save(m);
     expect(await screen.findByText(/enter a value between 30 and 45 C/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^temperature/i)).toHaveAttribute('aria-invalid', 'true');
+    expect(within(dailyForm()!).getByLabelText(/^temperature/i)).toHaveAttribute('aria-invalid', 'true');
     expect(m.state().session!.manual).toHaveLength(before);
   });
 
   it('rejects half a blood pressure pair and half a PHQ-2', async () => {
     const m = await mountApp('demo');
     await fill(m, /^systolic blood pressure/i, '120');
-    await m.user.click(screen.getByRole('radio', { name: /little interest.*: 2,/i }));
+    await phq(m, /little interest.*: 2,/i);
     await save(m);
     expect(screen.getByText(/enter both blood pressure values/i)).toBeInTheDocument();
     expect(screen.getByText(/answer both questions/i)).toBeInTheDocument();
@@ -275,6 +295,7 @@ describe('daily check-in form', () => {
         <AppRoot store={store} knowledge={loadKnowledge({ glucose: false })} autoStart={false} />
       </BrandProvider>,
     );
+    fireEvent.click(screen.getByRole('button', { name: /^check-in$/i }));
     expect(screen.queryByLabelText(/fasting glucose/i)).toBeNull();
     expect(screen.getByLabelText(/^temperature/i)).toBeInTheDocument();
   });
@@ -283,15 +304,16 @@ describe('daily check-in form', () => {
 describe('golden flows through the UI', () => {
   it('BP 185/125 shows a Warning on the heart zone and exactly one outbox message', async () => {
     const m = await mountApp('demo');
-    expect(outboxCards()).toHaveLength(0);
     await enterBp(m, '185', '125');
     await waitFor(() => expect(railRow('heart')).toHaveTextContent(/warning/i));
     expect(rail().querySelector('[data-zone-id]')).toBe(railRow('heart')); // sorted to the top
+    // The form reset and confirmed the save as MANUAL.
+    expect(screen.getByText(/saved as manual/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^comms/i })).toHaveTextContent('1');
+    await goTo(m, 'Comms');
     expect(outboxCards()).toHaveLength(1);
     expect(outboxCards()[0]).toHaveTextContent(/queued/i);
     expect(outboxCards()[0]).toHaveTextContent(/earliest reply T\+24 min after sending/i);
-    // The form reset and confirmed the save as MANUAL.
-    expect(screen.getByText(/saved as manual/i)).toBeInTheDocument();
   });
 
   it('38.1 C stays Information with the in-flight shift explanation', async () => {
@@ -302,30 +324,34 @@ describe('golden flows through the UI', () => {
     expect(railRow('immune')).not.toHaveTextContent(/caution|warning|notice/i);
     await m.user.click(railRow('immune'));
     expect(screen.getByText(/rises by about 1 C/i)).toBeInTheDocument();
+    await goTo(m, 'Comms');
     expect(outboxCards()).toHaveLength(0);
   });
 
   it('latches the Warning after a normal re-measure until the CMO acknowledges it', async () => {
     const m = await mountApp('demo');
     await enterBp(m, '185', '125');
-    await waitFor(() => expect(outboxCards()).toHaveLength(1));
+    await waitFor(() => expect(railRow('heart')).toHaveTextContent(/warning/i));
     m.world.wait(120);
     await enterBp(m, '130', '80');
     await waitFor(() => expect(screen.getAllByText(/latest re-measure/i).length).toBeGreaterThan(0));
     expect(railRow('heart')).toHaveTextContent(/warning/i);
+    await goTo(m, 'Comms');
     const cmo = screen.getByRole('region', { name: /crew medical officer/i });
     const acks = within(cmo).getAllByRole('button', { name: /acknowledge heart warning/i });
     expect(acks.length).toBe(1); // one per (zone, group)
     await m.user.click(acks[0]!);
     await waitFor(() => expect(within(cmo).queryByRole('button', { name: /acknowledge/i })).toBeNull());
-    expect(railRow('heart')).not.toHaveTextContent(/warning/i);
     expect(outboxCards()).toHaveLength(1); // the message remains
+    await goTo(m, 'Dashboard');
+    expect(railRow('heart')).not.toHaveTextContent(/warning/i);
   });
 });
 
 describe('Crew Medical Officer panel', () => {
   it('shows the corroborated brain zone as tiers, never as scores', async () => {
-    await mountApp('demo');
+    const m = await mountApp('demo');
+    await goTo(m, 'Comms');
     const cmo = screen.getByRole('region', { name: /crew medical officer/i });
     expect(within(cmo).getByText('Brain')).toBeInTheDocument();
     expect(within(cmo).getByText(/mood: notice/i)).toBeInTheDocument();
@@ -334,9 +360,10 @@ describe('Crew Medical Officer panel', () => {
 
   it('keeps a mood score out of every CMO and outbox text even when mood is high', async () => {
     const m = await mountApp('demo');
-    await m.user.click(screen.getByRole('radio', { name: /little interest.*: 3,/i }));
-    await m.user.click(screen.getByRole('radio', { name: /feeling down.*: 3,/i }));
+    await phq(m, /little interest.*: 3,/i);
+    await phq(m, /feeling down.*: 3,/i);
     await enterBp(m, '185', '125');
+    await goTo(m, 'Comms');
     await waitFor(() => expect(outboxCards()).toHaveLength(1));
     const cmo = screen.getByRole('region', { name: /crew medical officer/i });
     expect(cmo.textContent).not.toMatch(/\b6\b|points|phq/i);
@@ -347,15 +374,17 @@ describe('outbox', () => {
   async function withWarning() {
     const m = await mountApp('demo');
     await enterBp(m, '185', '125');
+    await goTo(m, 'Comms');
     await waitFor(() => expect(outboxCards()).toHaveLength(1));
     return m;
   }
 
   it('payload preview shows tiers only: no PHQ values, mood is at most a tier', async () => {
     const m = await mountApp('demo');
-    await m.user.click(screen.getByRole('radio', { name: /little interest.*: 3,/i }));
-    await m.user.click(screen.getByRole('radio', { name: /feeling down.*: 3,/i }));
+    await phq(m, /little interest.*: 3,/i);
+    await phq(m, /feeling down.*: 3,/i);
     await enterBp(m, '185', '125');
+    await goTo(m, 'Comms');
     await waitFor(() => expect(outboxCards()).toHaveLength(1));
     const preview = within(outboxCards()[0]!).getByLabelText('Message payload');
     expect(within(outboxCards()[0]!).getByText('What would be sent')).toBeInTheDocument();
@@ -368,7 +397,8 @@ describe('outbox', () => {
   });
 
   it('labels the link as simulated, with the demo scale', async () => {
-    await mountApp('demo');
+    const m = await mountApp('demo');
+    await goTo(m, 'Comms');
     expect(screen.getByText(/simulated link\. 1 s = 1 min/i)).toBeInTheDocument();
   });
 
@@ -413,7 +443,7 @@ describe('outbox', () => {
 describe('sources view', () => {
   it('lists every rule with its citation and verification flag, and the disclosures', async () => {
     const m = await mountApp('demo');
-    await m.user.click(screen.getByRole('button', { name: 'Sources' }));
+    await goTo(m, 'Sources');
     const rows = document.querySelectorAll('tr[data-rule-id]');
     expect(rows).toHaveLength(knowledge.rules.length);
     const flagged = knowledge.rules.filter((r) => r.needsVerification).length;
@@ -422,5 +452,46 @@ describe('sources view', () => {
     expect(screen.getByRole('heading', { name: /licenses and credits/i })).toBeInTheDocument();
     expect(screen.getAllByText(/NASA Space Apps Challenge 2026/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/SIL Open Font License/i).length).toBeGreaterThan(0);
+  });
+});
+
+describe('focus and suggestions', () => {
+  it('shows suggestions only for a zone with findings, and none for a zone without', async () => {
+    const m = await mountApp('demo');
+    expect(await screen.findByRole('heading', { name: /what you can change in your routine/i })).toBeInTheDocument();
+    await m.user.click(railRow('eyes'));
+    expect(screen.queryByRole('heading', { name: /what you can change in your routine/i })).toBeNull();
+  });
+
+  it('marks a picked zone as focused and Full body returns to the highest-priority zone', async () => {
+    const m = await mountApp('demo');
+    expect(screen.getByText(/highest priority now/i)).toBeInTheDocument();
+    await m.user.click(railRow('heart'));
+    expect(screen.getByText(/focused zone/i)).toBeInTheDocument();
+    await m.user.click(screen.getByRole('button', { name: /full body/i }));
+    expect(screen.getByRole('heading', { level: 2, name: 'Brain' })).toBeInTheDocument();
+  });
+
+  it('Esc closes the check-in first, then leaves the focused zone', async () => {
+    const m = await mountApp('demo');
+    await m.user.click(railRow('heart'));
+    await openCheckIn(m);
+    await m.user.keyboard('{Escape}');
+    expect(dailyForm()).toBeNull();
+    expect(screen.getByRole('heading', { level: 2, name: 'Heart' })).toBeInTheDocument();
+    await m.user.keyboard('{Escape}');
+    expect(screen.getByRole('heading', { level: 2, name: 'Brain' })).toBeInTheDocument();
+  });
+
+  it('saves a reading from the zone-scoped form, which shows only that zone\'s fields', async () => {
+    const m = await mountApp('demo');
+    await m.user.click(railRow('immune'));
+    await m.user.click(screen.getByText(/update immune readings/i));
+    const form = within(screen.getByRole('form', { name: /update immune readings/i }));
+    expect(form.queryByLabelText(/fasting glucose/i)).toBeNull();
+    const before = m.state().session!.manual.length;
+    await m.user.type(form.getByLabelText(/^temperature/i), '37.2');
+    await m.user.click(form.getByRole('button', { name: /save readings/i }));
+    await waitFor(() => expect(m.state().session!.manual.length).toBe(before + 1));
   });
 });

@@ -1,25 +1,41 @@
 /** The shape of a brand. Components read values only through this type; the values live in brand.config.ts. */
 export type BrandColorName =
-  | 'blueYonder'
-  | 'neonBlue'
-  | 'electricBlue'
-  | 'deepBlue'
-  | 'rocketRed'
-  | 'martianRed'
-  | 'neonYellow'
-  | 'white';
+  | 'sage'
+  | 'mint'
+  | 'peach'
+  | 'steel'
+  | 'sky'
+  | 'deepTeal'
+  | 'mist'
+  | 'night'
+  | 'white'
+  | 'canvas'
+  | 'ink'
+  | 'inkMuted'
+  | 'border'
+  | 'borderSubtle';
 
 export interface BrandRoles {
-  /** Page and panel background. Must not be Rocket Red or Neon Yellow. */
+  /** Page background. */
   surface: BrandColorName;
-  /** Active controls and emphasis surfaces. Must not be Rocket Red or Neon Yellow. */
+  /** Cards and panels, one step above the page (no shadow). */
+  panel: BrandColorName;
+  /** Primary controls and the active state. */
   surfaceRaised: BrandColorName;
+  /** Text on `surfaceRaised`. */
+  onRaised: BrandColorName;
   text: BrandColorName;
   textMuted: BrandColorName;
-  /** Accent marks only (never a surface). */
+  /** Card borders. */
+  border: BrandColorName;
+  /** Dividers and quiet outlines. */
+  borderSubtle: BrandColorName;
+  /** Accent marks only: never a surface and never text (too light for contrast). */
   accent: BrandColorName;
   /** Keyboard focus ring. */
   focus: BrandColorName;
+  /** Chart series 1 (single-series line charts). */
+  chartSeries: BrandColorName;
 }
 
 export interface BrandConfig {
@@ -32,8 +48,8 @@ export interface BrandConfig {
   fonts: { display: string; body: string; mono: string };
   logos: { full: string; mark: string; favicon: string };
   roles: BrandRoles;
-  /** [text, background] role names or color names that must reach 4.5:1. */
+  /** [text, background] color names that must reach 4.5:1. */
   textPairs: ReadonlyArray<readonly [BrandColorName, BrandColorName]>;
-  /** Colors the 3D scene derives from (batch 4). */
-  scene: { hologram: BrandColorName; starTint: BrandColorName; marsBase: BrandColorName; marsHighlight: BrandColorName };
+  /** Colors the 3D scene derives from. */
+  scene: { background: BrandColorName; keyLight: BrandColorName; rimLight: BrandColorName; starTint: BrandColorName };
 }
