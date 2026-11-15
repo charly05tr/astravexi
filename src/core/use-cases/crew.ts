@@ -1,4 +1,6 @@
 import type { Acknowledgement, Evaluation, MissionMinute, Reading, ZoneId } from '../health/model';
+import { deriveHabitsView } from '../habits/gamification';
+import type { HabitsView } from '../habits/gamification';
 import type { HistorySource, ProfileStore, RecordStore } from '../ports';
 import type { CrewProfile, Role } from '../profiles/model';
 import { assertCan } from '../profiles/policy';
@@ -31,6 +33,8 @@ export interface CrewMember {
   evaluation: Evaluation;
   /** Mission minute of the latest reading at or before now; null when there is none. */
   lastReadingT: MissionMinute | null;
+  /** The member's habits and progress, for the CMO to read. Read-only: there is no use-case that writes them here. */
+  habits: HabitsView;
 }
 
 export interface CrewReview {
@@ -59,6 +63,7 @@ async function buildMember(deps: Deps, profile: CrewProfile, data: CrewMemberDat
     acks: snapshot.acks,
     evaluation,
     lastReadingT,
+    habits: deriveHabitsView(await data.store.loadHabits(), deps.clock.today()),
   };
 }
 

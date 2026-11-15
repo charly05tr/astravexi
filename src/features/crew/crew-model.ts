@@ -1,5 +1,6 @@
 import type { Indicator, Knowledge, Tier, ZoneId, ZoneStatus } from '../../core/health/model';
 import { statusRank, tierRank } from '../../core/health/tiers';
+import type { HabitsView } from '../../core/habits/gamification';
 import type { Role } from '../../core/profiles/model';
 import type { CrewMember } from '../../core/use-cases/crew';
 import { buildCmoView, shortLabel } from '../cmo/cmo-model';
@@ -51,6 +52,8 @@ export interface CrewDetailView {
   cmoZones: CmoZoneView[];
   /** Shareable indicators only: a tier-only indicator (mood) never gets a chart of its values. */
   trends: CrewTrendView[];
+  /** The member's habits and progress. The CMO reads them; nothing here can change them. */
+  habits: HabitsView;
 }
 
 /** The worst status among the zones: Warning > Caution > Notice > Information > No findings > No data > Not monitored. */
@@ -135,5 +138,5 @@ export function buildCrewDetail(member: CrewMember, knowledge: Knowledge, tierLa
       trend: buildTrend(member.readings, i, member.evaluation.asOf),
     }))
     .filter((t) => t.trend.points.length > 0);
-  return { card, zones, cmoZones, trends };
+  return { card, zones, cmoZones, trends, habits: member.habits };
 }

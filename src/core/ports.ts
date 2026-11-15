@@ -1,3 +1,6 @@
+import type { FollowUpSuggestion } from './follow-up/blocks';
+import type { PartialFollowUp } from './follow-up/partial';
+import type { Habit, HabitBadge, HabitCompletion, HabitSnapshot } from './habits/model';
 import type { CrewProfile, PinRecord } from './profiles/model';
 import type {
   DeviceCredentials,
@@ -71,6 +74,70 @@ export interface SuggestionProvider {
   suggest(context: SuggestionContext, options?: { signal?: AbortSignal }): Promise<Suggestion[]>;
 }
 
+/**
+ * What a follow-up provider may use: the recommendation the astronaut just accepted, the finding(s) behind it
+ * and a few recent shareable readings. Tiers and explanation text only for findings; readings of `tierOnly`
+ * indicators (mood) are never included, so this can leave the device.
+ */
+export interface FollowUpContext {
+  accepted: { id: string; title: string; steps: readonly string[]; rationale: string };
+  zone: { id: ZoneId; label: string; status: ZoneStatus };
+  missionDay: MissionDay;
+  findings: ReadonlyArray<{ indicatorLabel: string; tier: Tier; whatChanged: string }>;
+  readings: ReadonlyArray<{
+    indicator: string;
+    unit: string;
+    value: number;
+    day: MissionDay;
+    context: 'rest' | 'exercise';
+  }>;
+}
+
+/**
+ * Proposes what to do next once a recommendation was accepted. The rules stay the source of truth: this only
+ * builds on an accepted recommendation and never changes a tier. It rejects with a `FollowUpError`; callers
+ * fall back to showing just the accepted recommendation.
+ */
+export interface FollowUpSuggestionProvider {
+  readonly id: string;
+  /** False until the user configured it (for an LLM adapter: a key and a model). */
+  isConfigured(): boolean;
+  /** Notifies when configuration changes. Returns the unsubscribe function. */
+  subscribe(listener: () => void): () => void;
+  /** `onPartial` receives the finished, valid parts while the answer is still streaming. */
+  suggest(
+    context: FollowUpContext,
+    options?: { signal?: AbortSignal; onPartial?: (partial: PartialFollowUp) => void },
+  ): Promise<FollowUpSuggestion>;
+}
+
+/** Lists the models a key can call, which doubles as a connection test. Rejects with a `FollowUpError`. */
+export interface AiModelCatalog {
+  listModels(settings: Pick<AiSettings, 'apiKey' | 'baseUrl'>, options?: { signal?: AbortSignal }): Promise<string[]>;
+  /** The model to prefer from a listing, or null when it is empty. */
+  pickDefault(models: readonly string[]): string | null;
+}
+
+/** The user's own model access (bring your own key). Kept on the device; never synced. */
+export interface AiSettings {
+  apiKey: string;
+  model: string;
+  /** OpenAI-compatible base URL, e.g. a hosted endpoint or a local server. */
+  baseUrl: string;
+  /** True when the key may be kept across browser sessions on this device. */
+  remember: boolean;
+}
+
+export interface AiSettingsStore {
+  readonly presets: { readonly models: readonly string[]; readonly defaultBaseUrl: string };
+  get(): AiSettings;
+  set(settings: AiSettings): void;
+  /** Forgets the key and every saved setting, in memory and in storage. */
+  clear(): void;
+  isConfigured(): boolean;
+  subscribe(listener: () => void): () => void;
+}
+
 /** Everything the record store holds. Synthetic history is never part of it. */
 export interface StoreSnapshot {
   manualReadings: Reading[];
@@ -105,6 +172,22 @@ export interface RecordStore {
    * taken by another id, are skipped. Idempotent. Returns how many rows were written.
    */
   applyRemote(changes: RecordChanges): Promise<number>;
+  /**
+   * Habits, check-offs and badges of the astronaut. They live in their own tables and are deliberately NOT part
+   * of `load`, `changedSince` or `applyRemote`: this data stays on the device and is never synced.
+   */
+  loadHabits(): Promise<HabitSnapshot>;
+  /** Stores the habit only when its `sourceKey` is unknown. Returns true when it was stored. */
+  putHabitIfAbsent(habit: Habit): Promise<boolean>;
+  /** Replaces an existing habit (archive and restore). No-op for an unknown id. */
+  updateHabit(habit: Habit): Promise<void>;
+  /** Removes the habit and every one of its check-offs. */
+  deleteHabit(id: string): Promise<void>;
+  /** Idempotent by (habit, day): the same pair stores one check-off. */
+  putCompletion(completion: HabitCompletion): Promise<void>;
+  removeCompletion(habitId: string, day: MissionDay): Promise<void>;
+  /** Stores the badge only when it is not earned yet. Returns true when it was stored. */
+  putBadgeIfAbsent(badge: HabitBadge): Promise<boolean>;
   /** Deletes every table. Only the DEMO reset use-case may call it. */
   clearAll(): Promise<void>;
 }

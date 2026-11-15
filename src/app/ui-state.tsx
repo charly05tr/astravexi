@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 import type { ReactNode } from 'react';
 import type { ZoneId } from '../core/health/model';
 
-export type View = 'dashboard' | 'comms' | 'sources' | 'profiles' | 'sync';
+export type View = 'dashboard' | 'habits' | 'comms' | 'sources' | 'profiles' | 'sync';
 
 export interface UiState {
   view: View;
@@ -18,6 +18,9 @@ export interface UiState {
   /** Whether the full check-in dialog is open. */
   checkInOpen: boolean;
   setCheckInOpen(open: boolean): void;
+  /** Whether the AI assistant settings dialog is open. */
+  aiSettingsOpen: boolean;
+  setAiSettingsOpen(open: boolean): void;
 }
 
 const UiContext = createContext<UiState | null>(null);
@@ -27,12 +30,13 @@ export function UiProvider({ children, initialView = 'dashboard' }: { children: 
   const [view, setView] = useState<View>(initialView);
   const [selectedZoneId, setSelected] = useState<ZoneId | null>(null);
   const [checkInOpen, setCheckInOpen] = useState(false);
+  const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
   const [crewMemberId, selectCrewMember] = useState<string | null>(null);
   const selectZone = useCallback((id: ZoneId) => setSelected(id), []);
   const clearZone = useCallback(() => setSelected(null), []);
   const value = useMemo<UiState>(
-    () => ({ view, setView, selectedZoneId, selectZone, clearZone, crewMemberId, selectCrewMember, checkInOpen, setCheckInOpen }),
-    [view, selectedZoneId, selectZone, clearZone, crewMemberId, checkInOpen],
+    () => ({ view, setView, selectedZoneId, selectZone, clearZone, crewMemberId, selectCrewMember, checkInOpen, setCheckInOpen, aiSettingsOpen, setAiSettingsOpen }),
+    [view, selectedZoneId, selectZone, clearZone, crewMemberId, checkInOpen, aiSettingsOpen],
   );
   return <UiContext.Provider value={value}>{children}</UiContext.Provider>;
 }

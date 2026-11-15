@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppRoot } from '../app/AppRoot';
+import type { AiModelCatalog, AiSettingsStore, FollowUpSuggestionProvider } from '../core/ports';
 import type { AppMode } from '../app/mode';
 import { ProfileProvider } from '../app/profile-context';
 import { SyncProvider } from '../app/sync/sync-context';
@@ -19,7 +20,15 @@ import { createTestWorld } from './compose';
  */
 export async function mountApp(
   mode: AppMode,
-  options: { brandConfig?: BrandConfig; configureLive?: boolean; role?: Role; sync?: SyncService | null } = {},
+  options: {
+    brandConfig?: BrandConfig;
+    configureLive?: boolean;
+    role?: Role;
+    sync?: SyncService | null;
+    followUps?: FollowUpSuggestionProvider;
+    aiSettings?: AiSettingsStore;
+    aiModels?: AiModelCatalog;
+  } = {},
 ) {
   const world = createTestWorld();
   const app = await world.app(mode, { role: options.role });
@@ -47,7 +56,13 @@ export async function mountApp(
             },
           }}
         >
-          <AppRoot store={app.store} autoStart={false} />
+          <AppRoot
+            store={app.store}
+            autoStart={false}
+            followUps={options.followUps}
+            aiSettings={options.aiSettings}
+            aiModels={options.aiModels}
+          />
         </ProfileProvider>
       </SyncProvider>
     </BrandProvider>,

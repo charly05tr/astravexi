@@ -1,10 +1,12 @@
 import type { CrewProfile, Role } from './model';
 
-export type Action = 'checkIn' | 'decideRecommendation' | 'acknowledgeAlert' | 'viewCrew' | 'manageProfiles';
+export type Action = 'checkIn' | 'decideRecommendation' | 'manageHabits' | 'acknowledgeAlert' | 'viewCrew' | 'manageProfiles';
 
 const GRANTS: Record<Exclude<Action, 'manageProfiles'>, readonly Role[]> = {
   checkIn: ['astronaut'],
   decideRecommendation: ['astronaut'],
+  // Saving, checking off, archiving and deleting habits. The CMO and flight surgeon only read them, via viewCrew.
+  manageHabits: ['astronaut'],
   acknowledgeAlert: ['cmo', 'flightSurgeon'],
   viewCrew: ['cmo', 'flightSurgeon'],
 };

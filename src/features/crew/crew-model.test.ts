@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Reading } from '../../core/health/model';
+import { deriveHabitsView } from '../../core/habits/gamification';
+import { emptyHabitSnapshot } from '../../core/habits/model';
 import { evaluate } from '../../core/health/rule-engine/evaluate';
 import type { CrewMember } from '../../core/use-cases/crew';
 import { DEMO_DAY, generate } from '../../adapters/seeded-history';
@@ -19,6 +21,7 @@ function member(name: string, readings: Reading[], day = DAY, role: CrewMember['
     acks: [],
     evaluation: evaluate({ readings, acks: [] }, knowledge, endOfDay(day)),
     lastReadingT: readings.length ? Math.max(...readings.map((r) => r.t)) : null,
+    habits: deriveHabitsView(emptyHabitSnapshot(), day),
   };
 }
 

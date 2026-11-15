@@ -5,7 +5,11 @@ import type { SuggestionContext } from '../../core/ports';
 import { can } from '../../core/profiles/policy';
 import { EmptyState } from '../../ui/Panel';
 import { CheckInContainer } from '../check-in/CheckInContainer';
+import { useUi } from '../../app/ui-state';
+import type { Suggestion } from '../../core/ports';
 import { SuggestionList } from '../suggestions/SuggestionList';
+import { buildFollowUpContext } from '../suggestions/follow-up-context';
+import { useStore } from 'zustand';
 import { useSuggestions } from '../suggestions/use-suggestions';
 import { ZonePanel } from './ZonePanel';
 import { useZones } from './use-zones';
@@ -46,6 +50,32 @@ export function ZonePanelContainer() {
     };
   }, [model, session]);
   const suggestions = useSuggestions(context);
+  const { followUpJobs, followUps: aiProvider } = useAppContext();
+  const jobs = useStore(followUpJobs, (s) => s.jobs);
+  const followUps = useMemo(
+    () => ({ jobs, dismiss: (id: string) => followUpJobs.getState().dismiss(id) }),
+    [jobs, followUpJobs],
+  );
+  const { setAiSettingsOpen } = useUi();
+
+  // The decision is logged first and always. The AI follow-up is a bonus on top of an accepted change.
+  const decide = async (s: Suggestion, decision: 'accepted' | 'dismissed') => {
+    await actions.decideRecommendation({ recommendationId: s.id, findingKey: s.findingKey, decision });
+    if (decision === 'accepted' && context && session) {
+      const followUpContext = buildFollowUpContext({
+        accepted: s,
+        context,
+        readings: [...session.synthetic, ...session.manual],
+        indicators: knowledge.indicators,
+      });
+      if (followUpContext) followUpJobs.getState().start(s.id, followUpContext);
+      else if (aiProvider.isConfigured()) {
+        followUpJobs
+          .getState()
+          .skip(s.id, 'This recommendation is based on private readings, so it is not sent to the AI.');
+      }
+    }
+  };
   // The detail view belongs to one zone: switching zones returns to that zone's summary.
   const [detailFor, setDetailFor] = useState<string | null>(null);
 
@@ -63,18 +93,18 @@ export function ZonePanelContainer() {
           variant="summary"
           state={suggestions}
           canDecide={canDecide}
-          onDecide={(s, decision) =>
-            actions.decideRecommendation({ recommendationId: s.id, findingKey: s.findingKey, decision })
-          }
+          onDecide={decide}
+          followUps={followUps}
+          onConfigureAi={() => setAiSettingsOpen(true)}
         />
       }
       suggestions={
         <SuggestionList
           state={suggestions}
           canDecide={canDecide}
-          onDecide={(s, decision) =>
-            actions.decideRecommendation({ recommendationId: s.id, findingKey: s.findingKey, decision })
-          }
+          onDecide={decide}
+          followUps={followUps}
+          onConfigureAi={() => setAiSettingsOpen(true)}
         />
       }
       update={

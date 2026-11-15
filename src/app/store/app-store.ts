@@ -7,6 +7,11 @@ import { acknowledge, advanceLink, decideRecommendation, sendNow } from '../../c
 import { bootstrap, reevaluate } from '../../core/use-cases/bootstrap';
 import { submitCheckIn } from '../../core/use-cases/check-in';
 import { acknowledgeForMember, loadCrew } from '../../core/use-cases/crew';
+import { deleteHabit, loadHabitData, saveHabits, setHabitArchived, toggleCompletion } from '../../core/use-cases/habits';
+import type { HabitEvent, SaveHabitsResult } from '../../core/use-cases/habits';
+import type { HabitBlock } from '../../core/habits/from-blocks';
+import { emptyHabitSnapshot } from '../../core/habits/model';
+import type { HabitSnapshot } from '../../core/habits/model';
 import type { CrewMember, CrewReview } from '../../core/use-cases/crew';
 import type { CheckInEntry, CheckInResult } from '../../core/use-cases/check-in';
 import type { Session } from '../../core/use-cases/session';
@@ -46,6 +51,8 @@ export interface AppState {
   /** Readings, acknowledgements, decisions, outbox and the evaluation. Null until hydrated. */
   session: Session | null;
   link: LinkState;
+  /** Habits, check-offs and badges of this device's astronaut. Never synced. Derive views with `deriveHabitsView`. */
+  habitData: HabitSnapshot;
 
   hydrate(): Promise<void>;
   /** Re-reads the stores into the session without the loading state: used after a sync pulled remote changes. */
@@ -63,6 +70,12 @@ export interface AppState {
     findingKey: string;
     decision: RecommendationDecision['decision'];
   }): Promise<void>;
+  /** Astronaut only. Saves suggestion blocks as habits; null when the app was reset meanwhile. */
+  saveHabits(input: { recommendationId: string; model: string; blocks: readonly HabitBlock[] }): Promise<SaveHabitsResult | null>;
+  /** Astronaut only. Checks a habit off for today, or undoes it. Returns what the astronaut should be told. */
+  toggleHabit(habitId: string): Promise<HabitEvent[]>;
+  setHabitArchived(habitId: string, archived: boolean): Promise<void>;
+  deleteHabit(habitId: string): Promise<void>;
   sendNow(messageId: string): Promise<void>;
   setDelay(minutes: number): Promise<void>;
   setBlackout(on: boolean): Promise<void>;
@@ -141,13 +154,15 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
       mission: missionInfo(adapters),
       session: null,
       link: { oneWayDelayMin: DEFAULT_DELAY_MIN, blackout: false },
+      habitData: emptyHabitSnapshot(),
 
       async hydrate() {
         set({ status: 'hydrating', error: null });
         await enqueue(async () => {
           try {
             const session = await bootstrap(adapters.deps, get().link);
-            set({ session, mission: missionInfo(adapters), status: 'ready' });
+            const habitData = await loadHabitData(adapters.deps);
+            set({ session, habitData, mission: missionInfo(adapters), status: 'ready' });
           } catch (error) {
             set({ status: 'error', error: error instanceof Error ? error.message : String(error) });
           }
@@ -158,6 +173,7 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
         await guarded(async () => {
           if (get().status !== 'ready') return;
           applySession(await bootstrap(adapters.deps, get().link));
+          set({ habitData: await loadHabitData(adapters.deps) });
         });
       },
 
@@ -192,6 +208,30 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
 
       async decideRecommendation(input) {
         await guarded(async () => applySession(await decideRecommendation(adapters.deps, requireSession(), input)));
+      },
+
+      async saveHabits(input) {
+        const result = await guarded(() => saveHabits(adapters.deps, get().habitData, input));
+        if (!result) return null;
+        set({ habitData: result.data });
+        return result;
+      },
+
+      async toggleHabit(habitId) {
+        const result = await guarded(() => toggleCompletion(adapters.deps, get().habitData, habitId));
+        if (!result) return [];
+        set({ habitData: result.data });
+        return result.events;
+      },
+
+      async setHabitArchived(habitId, archived) {
+        const data = await guarded(() => setHabitArchived(adapters.deps, get().habitData, habitId, archived));
+        if (data) set({ habitData: data });
+      },
+
+      async deleteHabit(habitId) {
+        const data = await guarded(() => deleteHabit(adapters.deps, get().habitData, habitId));
+        if (data) set({ habitData: data });
       },
 
       async sendNow(messageId) {
@@ -262,7 +302,7 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
           await demo.resetCrew();
           const session = await resetDemo(demo.deps, link);
           ticksSincePersist = 0;
-          set({ session, link, mission: missionInfo(adapters), status: 'ready', error: null });
+          set({ session, link, habitData: emptyHabitSnapshot(), mission: missionInfo(adapters), status: 'ready', error: null });
         });
         if (wasTicking) get().startTicker();
       },

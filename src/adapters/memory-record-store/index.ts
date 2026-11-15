@@ -1,4 +1,5 @@
 import type { OutboxMessage } from '../../core/health/model';
+import type { Habit, HabitBadge, HabitCompletion } from '../../core/habits/model';
 import type { RecordStore, StoreSnapshot } from '../../core/ports';
 import { emptyChanges } from '../../core/sync/model';
 import type { RecordChanges } from '../../core/sync/model';
@@ -13,6 +14,9 @@ export function createMemoryRecordStore(name = 'memory'): RecordStore {
   let acks = new Map<string, StoreSnapshot['acks'][number]>();
   let outbox = new Map<string, OutboxMessage>();
   let meta = new Map<string, { value: unknown; updatedAt: string }>();
+  let habits = new Map<string, Habit>();
+  let completions = new Map<string, HabitCompletion>();
+  let badges = new Map<string, HabitBadge>();
 
   return {
     name,
@@ -107,12 +111,45 @@ export function createMemoryRecordStore(name = 'memory'): RecordStore {
       }
       return written;
     },
+    async loadHabits() {
+      return {
+        habits: copy([...habits.values()]),
+        completions: copy([...completions.values()]),
+        badges: copy([...badges.values()]),
+      };
+    },
+    async putHabitIfAbsent(habit) {
+      for (const h of habits.values()) if (h.id === habit.id || h.sourceKey === habit.sourceKey) return false;
+      habits.set(habit.id, copy(habit));
+      return true;
+    },
+    async updateHabit(habit) {
+      if (habits.has(habit.id)) habits.set(habit.id, copy(habit));
+    },
+    async deleteHabit(id) {
+      habits.delete(id);
+      for (const [key, c] of completions) if (c.habitId === id) completions.delete(key);
+    },
+    async putCompletion(completion) {
+      completions.set(completion.id, copy(completion));
+    },
+    async removeCompletion(habitId, day) {
+      for (const [key, c] of completions) if (c.habitId === habitId && c.day === day) completions.delete(key);
+    },
+    async putBadgeIfAbsent(badge) {
+      if (badges.has(badge.id)) return false;
+      badges.set(badge.id, copy(badge));
+      return true;
+    },
     async clearAll() {
       readings = new Map();
       decisions = new Map();
       acks = new Map();
       outbox = new Map();
       meta = new Map();
+      habits = new Map();
+      completions = new Map();
+      badges = new Map();
     },
   };
 }
