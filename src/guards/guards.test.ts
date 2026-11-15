@@ -15,6 +15,22 @@ const inBrand = (p: string) => p.startsWith('../brand/');
 const isTiers = (p: string) => p === '../theme/tiers.ts';
 const HEX = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})\b/g;
 
+// Source text as Vite reads it: invalid UTF-8 bytes decode to U+FFFD here, while the production
+// bundler (rolldown) rejects the file outright. tsc and vitest tolerate them, so only this catches it.
+const sourceText = import.meta.glob('../**/*.{ts,tsx,css,json}', { query: '?raw', eager: true, import: 'default' }) as Record<
+  string,
+  string
+>;
+
+describe('guard: every source file is valid UTF-8', () => {
+  it('has no undecodable bytes (U+FFFD) in .ts, .tsx, .css or .json under src', () => {
+    const offenders = Object.entries(sourceText)
+      .filter(([, text]) => text.includes('�'))
+      .map(([path]) => path);
+    expect(offenders).toEqual([]);
+  });
+});
+
 describe('guard: brand values live in one place', () => {
   it('scans a realistic number of files', () => {
     expect(Object.keys(files).length).toBeGreaterThan(40);

@@ -37,7 +37,7 @@ export const withUnit = (value: number, unit: string, digits = 1): string =>
 
 const signed = (n: number, digits = 1): string => `${n > 0 ? '+' : n < 0 ? '-' : ''}${Math.abs(n).toFixed(digits)}`;
 
-/** A number for display with thousands separators and its unit: "3,947 ppm", "27 °C", "45%". */
+/** A number for display with thousands separators and its unit: "3,947 ppm", "27 Â°C", "45%". */
 export const formatValue = (value: number, unit: string, digits = 1): string =>
   `${value.toLocaleString('en-US', { maximumFractionDigits: digits })}${UNIT_SPACE(unit)}`;
 
