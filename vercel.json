@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/nasa-osdr/:path*",
+      "destination": "https://visualization.osdr.nasa.gov/:path*"
+    }
+  ]
+}

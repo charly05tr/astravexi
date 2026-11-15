@@ -56,6 +56,10 @@ export function createNasaOsdrEnvironment(options: OsdrOptions = {}): CabinRefer
         } catch {
           throw new Error(controller.signal.aborted ? 'NASA OSDR did not answer in time.' : 'NASA OSDR could not be reached.');
         }
+        if (response.status === 404 && baseUrl.startsWith('/')) {
+          // The dev server answers 404 for a JSON request it does not proxy: the /nasa-osdr rewrite is missing.
+          throw new Error('the /nasa-osdr proxy is not active; restart the dev server or configure the rewrite');
+        }
         if (!response.ok) throw new Error(`NASA OSDR answered with HTTP ${response.status}.`);
         try {
           body = await response.json();
