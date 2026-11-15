@@ -48,12 +48,23 @@ async function goSync(user: Awaited<ReturnType<typeof mountApp>>['user']) {
 }
 
 describe('sync UI', () => {
-  it('is entirely absent when no sync service exists (VITE_API_URL unset)', async () => {
+  it('shows an inert "not configured" entry to a CMO when no sync service exists (VITE_API_URL unset)', async () => {
     const m = await mountApp('live', { role: 'cmo', sync: null });
     const menu = await openMenu(m.user);
-    expect(menu.queryByRole('menuitem', { name: /mission control sync/i })).toBeNull();
+    const item = menu.getByRole('menuitem', { name: /mission control sync/i });
+    expect(item).toHaveAttribute('aria-disabled', 'true');
+    expect(item).toHaveTextContent(/not configured/i);
+    await m.user.click(item);
+    expect(screen.queryByRole('heading', { name: 'Mission control sync' })).toBeNull();
     expect(screen.queryByTestId('sync-status')).toBeNull();
     expect(trigger().querySelector('.sync-dot')).toBeNull();
+  });
+
+  it('explains that DEMO mode never syncs', async () => {
+    const m = await mountApp('demo', { role: 'cmo', sync: null });
+    const item = (await openMenu(m.user)).getByRole('menuitem', { name: /mission control sync/i });
+    expect(item).toHaveAttribute('aria-disabled', 'true');
+    expect(item).toHaveTextContent(/not available in demo/i);
   });
 
   it('is offered to a CMO only', async () => {

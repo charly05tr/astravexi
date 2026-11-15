@@ -178,11 +178,21 @@ export function UserMenu() {
             </div>
           ) : null}
 
-          {syncService && can(actor.role, 'manageProfiles') ? (
+          {can(actor.role, 'manageProfiles') ? (
             <div role="group" aria-label="Sync">
-              <button type="button" role="menuitem" className="user-menu__item" onClick={act(() => setView('sync'))}>
-                Mission control sync...
-              </button>
+              {syncService ? (
+                <button type="button" role="menuitem" className="user-menu__item" onClick={act(() => setView('sync'))}>
+                  Mission control sync...
+                </button>
+              ) : (
+                // Kept visible but inert so the CMO learns why sync is missing instead of wondering where it went.
+                <button type="button" role="menuitem" className="user-menu__item" aria-disabled="true">
+                  Mission control sync
+                  <span className="muted small">
+                    {mode === 'demo' ? 'Not available in DEMO mode' : 'Not configured on this build (VITE_API_URL)'}
+                  </span>
+                </button>
+              )}
             </div>
           ) : null}
 
