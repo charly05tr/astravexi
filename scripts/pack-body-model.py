@@ -2,9 +2,10 @@
 
 Fixes applied:
 - Organ meshes are Z-up inside Y-up parent nodes (the rip lost a -90 deg X rotation): restore it.
-- Each mesh carries a duplicated primitive: keep the first one only.
+- Each mesh is a triangle strip plus a list of leftover triangles over the same vertices: merge both into
+  one triangle list (keeping only the strip loses faces, e.g. the front of the eyes).
 - Material assignments are broken: rebuild one PBR material per organ from the texture file names
-  (albedo, DirectX normal flipped to OpenGL, roughness/metallic packed into G/B, eye opacity as alpha).
+  (albedo, DirectX normal flipped to OpenGL, roughness/metallic packed into G/B, eye opacity as an alpha mask).
   Textures are downscaled to max_side (default 1024).
 - Only accessors/bufferViews still referenced are written.
 """
@@ -107,7 +108,11 @@ def material_for(organ):
             return encode(im)
         pbr["baseColorTexture"] = {"index": texture(("albedo", key), build_albedo)}
         if opacity:
-            mat["alphaMode"] = "BLEND"
+            # MASK, not BLEND: three.js does not sort triangles within a mesh, so a blended eye lets the
+            # cornea and inner layers write depth before the iris/sclera behind them, punching holes.
+            # The eye mask is ~0.08 on the cornea and >= 0.45 elsewhere: cut only the cornea.
+            mat["alphaMode"] = "MASK"
+            mat["alphaCutoff"] = 0.25
     normal = find("N", key, ["Normal_DirectX", "normal", "Normal"])
     if normal:
         def build_normal():
@@ -131,8 +136,51 @@ def material_for(organ):
     return mat
 
 
+def read_indices(accessor_index):
+    acc = g["accessors"][accessor_index]
+    view = g["bufferViews"][acc["bufferView"]]
+    start = view.get("byteOffset", 0) + acc.get("byteOffset", 0)
+    fmt = {5121: "B", 5123: "H", 5125: "I"}[acc["componentType"]]
+    size = struct.calcsize(fmt)
+    return list(struct.unpack_from(f"<{acc['count']}{fmt}", raw_buffers[view["buffer"]], start)), size
+
+
+def as_triangles(prim):
+    """Index list of a primitive as plain triangles (mode 4), unrolling triangle strips (mode 5)."""
+    idx, _ = read_indices(prim["indices"])
+    if prim.get("mode", 4) == 4:
+        return idx
+    tris = []
+    for i in range(len(idx) - 2):
+        a, b, c = idx[i], idx[i + 1], idx[i + 2]
+        if a == b or b == c or a == c:
+            continue  # degenerate strip joint
+        tris.extend((a, b, c) if i % 2 == 0 else (b, a, c))
+    return tris
+
+
+def merge_primitives(prims):
+    """The rip split each mesh into a triangle strip plus a list of leftover faces over the SAME vertices
+    (verified byte-identical). Keeping only the strip drops faces (e.g. the front of the eye), so merge both
+    into one triangle list referencing the first primitive's attributes."""
+    prim = prims[0]
+    if len(prims) == 1 and prim.get("mode", 4) == 4:
+        return prim
+    tris = []
+    for p in prims:
+        tris.extend(as_triangles(p))
+    data = struct.pack(f"<{len(tris)}I", *tris)
+    raw_buffers.append(bytearray(data))
+    g["bufferViews"].append({"buffer": len(raw_buffers) - 1, "byteLength": len(data), "target": 34963})
+    g["accessors"].append({"bufferView": len(g["bufferViews"]) - 1, "componentType": 5125,
+                           "count": len(tris), "type": "SCALAR"})
+    prim["indices"] = len(g["accessors"]) - 1
+    prim["mode"] = 4
+    return prim
+
+
 for mi, mesh in enumerate(g["meshes"]):
-    prim = mesh["primitives"][0]
+    prim = merge_primitives(mesh["primitives"])
     name = mesh_organ.get(mi, f"mesh{mi}")
     materials.append(material_for(name))
     prim["material"] = len(materials) - 1
