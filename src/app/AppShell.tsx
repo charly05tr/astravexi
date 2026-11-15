@@ -36,8 +36,9 @@ function Header() {
     <header className="header">
       <div className="header__row">
         <div className="brand">
-          <img className="brand__mark" src={brand.logos.mark} alt="" width={28} height={28} />
-          <span className="brand__name">{brand.productName}</span>
+          {/* The full logo carries the wordmark; the name stays in the accessibility tree. */}
+          <img className="brand__logo" src={brand.logos.full} alt="" height={32} />
+          <span className="sr-only">{brand.productName}</span>
         </div>
         <nav className="nav" aria-label="Views">
           {VIEWS.map((v) => (

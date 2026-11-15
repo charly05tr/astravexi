@@ -39,7 +39,7 @@ export const brand: BrandConfig = {
     body: "'Space Grotesk', system-ui, sans-serif",
     mono: "'Space Grotesk', ui-monospace, monospace",
   },
-  logos: { full: '/brand/logo.svg', mark: '/brand/logo-mark.svg', favicon: '/brand/favicon.svg' },
+  logos: { full: '/brand/logo.svg', mark: '/brand/logo-mark.svg', favicon: '/brand/favicon-icon.svg' },
   roles: {
     surface: 'canvas',
     panel: 'white',

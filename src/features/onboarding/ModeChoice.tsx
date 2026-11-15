@@ -8,8 +8,9 @@ export function ModeChoice({ onChoose }: { onChoose(mode: AppMode): void }) {
   return (
     <main className="center-stage" id="main">
       <header className="stack" style={{ gap: 8 }}>
-        <img src={brand.logos.mark} alt="" width={48} height={48} />
-        <h1>{brand.productName}</h1>
+        <h1 className="onboarding__logo">
+          <img src={brand.logos.full} alt={brand.productName} height={56} />
+        </h1>
         <p>Early-warning support for crew health on long missions. Pick how you want to start.</p>
       </header>
       <div className="choice-grid">
