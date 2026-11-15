@@ -3,6 +3,9 @@ import type { Table } from 'dexie';
 import type { Acknowledgement, OutboxMessage, Reading, RecommendationDecision } from '../../core/health/model';
 import type { RecordStore } from '../../core/ports';
 import { LEGACY_PROFILE_ID } from '../../core/profiles/model';
+import { emptyChanges } from '../../core/sync/model';
+import type { RecordChanges } from '../../core/sync/model';
+import { isNewer, tsMs } from '../../core/sync/time';
 
 interface MetaRow {
   key: string;
@@ -137,6 +140,69 @@ export async function openDexieRecordStore(name: string, options: DexieStoreOpti
     },
     async setMeta<T>(key: string, value: T) {
       await db.meta.put({ key, value, updatedAt: nowIso() });
+    },
+    async changedSince(since) {
+      const due = (updatedAt: string | undefined) => since === null || tsMs(updatedAt) >= tsMs(since);
+      const changes: RecordChanges = emptyChanges();
+      await db.transaction('r', [db.manualReadings, db.decisions, db.acks, db.outbox, db.meta], async () => {
+        changes.manualReadings = await db.manualReadings.filter((r) => due(r.updatedAt)).toArray();
+        changes.decisions = await db.decisions.filter((r) => due(r.updatedAt)).toArray();
+        changes.acks = await db.acks.filter((r) => due(r.updatedAt)).toArray();
+        changes.outbox = await db.outbox.filter((r) => due(r.updatedAt)).toArray();
+        changes.meta = (await db.meta.filter((r) => due(r.updatedAt)).toArray()).map((r) => ({
+          key: r.key,
+          value: r.value,
+          updatedAt: r.updatedAt,
+        }));
+      });
+      return changes;
+    },
+    async applyRemote(changes) {
+      let written = 0;
+      await db.transaction('rw', [db.manualReadings, db.decisions, db.acks, db.outbox, db.meta], async () => {
+        for (const r of changes.manualReadings) {
+          const have = await db.manualReadings.get(r.id);
+          if (!have || isNewer(r.updatedAt, have.updatedAt)) {
+            await db.manualReadings.put(r);
+            written += 1;
+          }
+        }
+        for (const d of changes.decisions) {
+          const have = await db.decisions.get(d.id);
+          if (!have || isNewer(d.updatedAt, have.updatedAt)) {
+            await db.decisions.put(d);
+            written += 1;
+          }
+        }
+        for (const a of changes.acks) {
+          const have = await db.acks.get(a.id);
+          if (have) {
+            if (!isNewer(a.updatedAt, have.updatedAt)) continue;
+          } else if (await db.acks.where('[zoneId+groupId]').equals([a.zoneId, a.groupId]).first()) {
+            continue; // already acknowledged here under another id
+          }
+          await db.acks.put(a);
+          written += 1;
+        }
+        for (const m of changes.outbox) {
+          const have = await db.outbox.get(m.id);
+          if (have) {
+            if (!isNewer(m.updatedAt, have.updatedAt)) continue;
+          } else if (await db.outbox.where('dedupeKey').equals(m.dedupeKey).first()) {
+            continue; // same (zone, group) message already exists here under another id
+          }
+          await db.outbox.put(m);
+          written += 1;
+        }
+        for (const m of changes.meta) {
+          const have = await db.meta.get(m.key);
+          if (!have || isNewer(m.updatedAt, have.updatedAt)) {
+            await db.meta.put({ key: m.key, value: m.value, updatedAt: m.updatedAt });
+            written += 1;
+          }
+        }
+      });
+      return written;
     },
     async clearAll() {
       await db.transaction('rw', [db.manualReadings, db.decisions, db.acks, db.outbox, db.meta], async () => {

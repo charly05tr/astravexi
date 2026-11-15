@@ -2,6 +2,7 @@ import Dexie from 'dexie';
 import type { Table } from 'dexie';
 import type { ProfileStore } from '../../core/ports';
 import type { CrewProfile } from '../../core/profiles/model';
+import { isNewer } from '../../core/sync/time';
 
 class ProfilesDb extends Dexie {
   profiles!: Table<CrewProfile, string>;
@@ -35,5 +36,13 @@ export async function openDexieProfileStore(name: string): Promise<ProfileStore>
         if (row) await db.profiles.put({ ...row, deleted: true, updatedAt });
       });
     },
+    upsertIfNewer: (profile) =>
+      db.transaction('rw', db.profiles, async () => {
+        const have = await db.profiles.get(profile.id);
+        if (have && !isNewer(profile.updatedAt, have.updatedAt)) return false;
+        const pin = profile.pin ?? have?.pin;
+        await db.profiles.put({ ...profile, ...(pin ? { pin } : {}) });
+        return true;
+      }),
   };
 }

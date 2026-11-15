@@ -2,6 +2,7 @@ import { Users } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import { useAppState } from '../../app/app-context';
 import { useProfileContext } from '../../app/profile-context';
+import { useSyncService } from '../../app/sync/sync-context';
 import { ROLES, toActor } from '../../core/profiles/model';
 import type { Actor, CrewProfile, Role } from '../../core/profiles/model';
 import { can, policyContextOf } from '../../core/profiles/policy';
@@ -89,6 +90,7 @@ function ProfileRow({
 /** Profile management for a CMO: list, create, rename, change role, set or remove a PIN, soft delete. */
 export function ProfilesView() {
   const ctx = useProfileContext();
+  const sync = useSyncService();
   const actor = useAppState((s) => s.actor);
   const [profiles, setProfiles] = useState<CrewProfile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -124,6 +126,7 @@ export function ProfilesView() {
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
+    sync?.notifyLocalChange(); // a profile may have changed: push it soon
     await reload();
   };
   const as: Actor = toActor(active);
@@ -167,7 +170,10 @@ export function ProfilesView() {
         onSubmit={async (values) => {
           try {
             const result = await services.create(as, { name: values.name, role: values.role, pin: values.pin });
-            if (result.ok) await reload();
+            if (result.ok) {
+              sync?.notifyLocalChange();
+              await reload();
+            }
             return result.ok ? null : result.error;
           } catch (e) {
             return e instanceof Error ? e.message : String(e);

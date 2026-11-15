@@ -1,14 +1,22 @@
 import type { CrewProfile } from '../core/profiles/model';
-import { composeAdapters, composeProfileServices, createBrowserModePreference } from './composition-root';
+import {
+  composeAdapters,
+  composeProfileServices,
+  composeSyncService,
+  createBrowserModePreference,
+} from './composition-root';
 import type { ComposeOptions, ProfileServices } from './composition-root';
 import { resolveMode } from './mode';
 import type { AppMode } from './mode';
 import { createAppStore } from './store/app-store';
 import type { AppStore } from './store/app-store';
+import type { SyncService } from './sync/sync-service';
 
 /** Profiles of the resolved mode, plus the way into the app once a profile is picked. */
 export interface ProfileSession {
   services: ProfileServices;
+  /** The device sync service; null in DEMO and whenever `VITE_API_URL` is not set. */
+  sync: SyncService | null;
   /** Builds the adapters and the app store for `profile`. LIVE opens that profile's own database. */
   enter(profile: CrewProfile): Promise<AppStore>;
 }
@@ -20,6 +28,7 @@ export async function createProfileSession(mode: AppMode, options: ComposeOption
   const services = await composeProfileServices(mode, options);
   return {
     services,
+    sync: await composeSyncService(services, options),
     async enter(profile) {
       await services.adoptLegacyIfPending(profile);
       return createAppStore(await composeAdapters(mode, profile, options));

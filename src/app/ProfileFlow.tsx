@@ -5,6 +5,8 @@ import { ProfileGate } from '../features/profiles/ProfileGate';
 import { AppRoot } from './AppRoot';
 import type { ProfileSession } from './boot';
 import { ProfileProvider } from './profile-context';
+import { SyncBridge } from './sync/SyncBridge';
+import { SyncProvider } from './sync/sync-context';
 import type { AppStore } from './store/app-store';
 
 type Phase = { kind: 'resolving' } | { kind: 'gate'; preselect: string | null } | { kind: 'in'; profile: CrewProfile; store: AppStore };
@@ -23,7 +25,7 @@ export function ProfileFlow({
   /** Called after the active profile is cleared; the real app reloads the page. */
   reload?: () => void;
 }) {
-  const { services } = session;
+  const { services, sync } = session;
   const [phase, setPhase] = useState<Phase>({ kind: 'resolving' });
 
   const enter = useCallback(
@@ -49,6 +51,12 @@ export function ProfileFlow({
     };
   }, [services, enter]);
 
+  // Device sync is device-wide: it starts with the app and keeps running across profile changes.
+  useEffect(() => {
+    void sync?.start();
+    return () => sync?.stop();
+  }, [sync]);
+
   if (phase.kind === 'resolving') {
     return (
       <main className="center-stage" id="main" aria-busy="true">
@@ -63,23 +71,27 @@ export function ProfileFlow({
   }
 
   const { profile, store } = phase;
+  const onActiveChanged = (next: CrewProfile) => {
+    store.getState().setActor(toActor(next));
+    setPhase({ kind: 'in', profile: next, store });
+  };
   return (
-    <ProfileProvider
-      value={{
-        services,
-        active: profile,
-        onActiveChanged(next) {
-          store.getState().setActor(toActor(next));
-          setPhase({ kind: 'in', profile: next, store });
-        },
-        switchProfile(profileId) {
-          if (profileId) services.activeProfile.set(profileId);
-          else services.activeProfile.clear();
-          reload();
-        },
-      }}
-    >
-      <AppRoot store={store} />
-    </ProfileProvider>
+    <SyncProvider service={sync}>
+      <ProfileProvider
+        value={{
+          services,
+          active: profile,
+          onActiveChanged,
+          switchProfile(profileId) {
+            if (profileId) services.activeProfile.set(profileId);
+            else services.activeProfile.clear();
+            reload();
+          },
+        }}
+      >
+        <SyncBridge store={store} onActiveChanged={onActiveChanged} />
+        <AppRoot store={store} />
+      </ProfileProvider>
+    </SyncProvider>
   );
 }

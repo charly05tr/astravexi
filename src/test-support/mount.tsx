@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { AppRoot } from '../app/AppRoot';
 import type { AppMode } from '../app/mode';
 import { ProfileProvider } from '../app/profile-context';
+import { SyncProvider } from '../app/sync/sync-context';
+import type { SyncService } from '../app/sync/sync-service';
 import { BrandProvider } from '../brand/brand-context';
 import { brand } from '../brand/brand.config';
 import type { BrandConfig } from '../brand/brand.types';
@@ -17,7 +19,7 @@ import { createTestWorld } from './compose';
  */
 export async function mountApp(
   mode: AppMode,
-  options: { brandConfig?: BrandConfig; configureLive?: boolean; role?: Role } = {},
+  options: { brandConfig?: BrandConfig; configureLive?: boolean; role?: Role; sync?: SyncService | null } = {},
 ) {
   const world = createTestWorld();
   const app = await world.app(mode, { role: options.role });
@@ -31,21 +33,23 @@ export async function mountApp(
   const user = userEvent.setup();
   const view = render(
     <BrandProvider value={options.brandConfig ?? brand}>
-      <ProfileProvider
-        value={{
-          services: session.services,
-          active,
-          onActiveChanged(next) {
-            active = next;
-            app.store.getState().setActor(toActor(next));
-          },
-          switchProfile() {
-            switches.count += 1;
-          },
-        }}
-      >
-        <AppRoot store={app.store} autoStart={false} />
-      </ProfileProvider>
+      <SyncProvider service={options.sync ?? null}>
+        <ProfileProvider
+          value={{
+            services: session.services,
+            active,
+            onActiveChanged(next) {
+              active = next;
+              app.store.getState().setActor(toActor(next));
+            },
+            switchProfile() {
+              switches.count += 1;
+            },
+          }}
+        >
+          <AppRoot store={app.store} autoStart={false} />
+        </ProfileProvider>
+      </SyncProvider>
     </BrandProvider>,
   );
   /** Signs the store in as another role without remounting (the UI follows `actor`). */

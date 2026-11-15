@@ -55,5 +55,45 @@ export function profileStoreContract(label: string, create: () => Promise<Profil
       await store.softDelete('ghost', '2026-06-02T00:00:00.000Z');
       expect(await store.list({ includeDeleted: true })).toEqual([]);
     });
+
+    describe('upsertIfNewer', () => {
+      it('inserts a profile that is absent', async () => {
+        const store = await create();
+        expect(await store.upsertIfNewer(profile('new'))).toBe(true);
+        expect(await store.get('new')).toEqual(profile('new'));
+      });
+
+      it('replaces only with a strictly newer updatedAt, never with an older or equal one', async () => {
+        const store = await create();
+        await store.upsert(profile('a', { name: 'Local', updatedAt: '2026-06-02T00:00:00.000Z' }));
+        expect(await store.upsertIfNewer(profile('a', { name: 'Older', updatedAt: '2026-06-01T00:00:00.000Z' }))).toBe(false);
+        expect(await store.upsertIfNewer(profile('a', { name: 'Equal', updatedAt: '2026-06-02T00:00:00.000Z' }))).toBe(false);
+        expect((await store.get('a'))?.name).toBe('Local');
+        expect(await store.upsertIfNewer(profile('a', { name: 'Newer', updatedAt: '2026-06-03T00:00:00.000Z' }))).toBe(true);
+        expect((await store.get('a'))?.name).toBe('Newer');
+      });
+
+      it('compares instants, not strings', async () => {
+        const store = await create();
+        await store.upsert(profile('a', { name: 'Local', updatedAt: '2026-06-02T00:00:00.123Z' }));
+        expect(await store.upsertIfNewer(profile('a', { name: 'Same', updatedAt: '2026-06-02T00:00:00.123000Z' }))).toBe(false);
+      });
+
+      it('keeps the local PIN when the incoming profile (from the server) has none', async () => {
+        const store = await create();
+        const pin = { hash: 'h', salt: 's', iterations: 10 };
+        await store.upsert(profile('a', { pin }));
+        await store.upsertIfNewer(profile('a', { name: 'Renamed', updatedAt: '2026-06-09T00:00:00.000Z' }));
+        expect(await store.get('a')).toMatchObject({ name: 'Renamed', pin });
+      });
+
+      it('brings a tombstone in as a soft delete', async () => {
+        const store = await create();
+        await store.upsert(profile('a'));
+        await store.upsertIfNewer(profile('a', { deleted: true, updatedAt: '2026-06-09T00:00:00.000Z' }));
+        expect(await store.list()).toEqual([]);
+        expect((await store.get('a'))?.deleted).toBe(true);
+      });
+    });
   });
 }

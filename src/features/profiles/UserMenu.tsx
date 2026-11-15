@@ -2,11 +2,14 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useAppActions, useAppState } from '../../app/app-context';
 import { useProfileContext } from '../../app/profile-context';
+import { useSyncService, useSyncStatus } from '../../app/sync/sync-context';
 import { useUi } from '../../app/ui-state';
 import type { CrewProfile } from '../../core/profiles/model';
 import { can, policyContextOf } from '../../core/profiles/policy';
 import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
+import { summarize } from '../sync/sync-summary';
+import { useNow } from '../sync/use-now';
 import { ROLE_LABEL } from './role-labels';
 
 const ITEM = '[role="menuitem"]:not([disabled])';
@@ -28,6 +31,8 @@ export function UserMenu() {
   const mode = useAppState((s) => s.mode);
   const actions = useAppActions();
   const { setView } = useUi();
+  const syncService = useSyncService();
+  const syncSummary = summarize(useSyncStatus(), useNow());
   const menuId = useId();
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -133,6 +138,7 @@ export function UserMenu() {
           {initials(actor.name)}
         </span>
         <span className="user-menu__name">{actor.name}</span>
+        {syncSummary ? <span className={`sync-dot sync-dot--${syncSummary.tone}`} aria-hidden="true" title={syncSummary.label} /> : null}
       </button>
 
       {open ? (
@@ -140,6 +146,11 @@ export function UserMenu() {
           <div className="user-menu__head">
             <span className="user-menu__head-name">{actor.name}</span>
             <span className="muted small">{roleLabel}</span>
+            {syncSummary ? (
+              <span className="muted small" data-testid="sync-status">
+                {syncSummary.label}
+              </span>
+            ) : null}
           </div>
 
           {ctx ? (
@@ -164,6 +175,14 @@ export function UserMenu() {
                   Manage profiles...
                 </button>
               ) : null}
+            </div>
+          ) : null}
+
+          {syncService && can(actor.role, 'manageProfiles') ? (
+            <div role="group" aria-label="Sync">
+              <button type="button" role="menuitem" className="user-menu__item" onClick={act(() => setView('sync'))}>
+                Mission control sync...
+              </button>
             </div>
           ) : null}
 

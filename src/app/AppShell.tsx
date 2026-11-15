@@ -11,6 +11,7 @@ import { useZones } from '../features/insights/use-zones';
 import { OutboxContainer } from '../features/outbox/OutboxContainer';
 import { UserMenu } from '../features/profiles/UserMenu';
 import { ProfilesView } from '../features/profiles/ProfilesView';
+import { SyncView } from '../features/sync/SyncView';
 import { can } from '../core/profiles/policy';
 import { Badge } from '../ui/Badge';
 import { Dialog } from '../ui/Dialog';
@@ -180,6 +181,8 @@ export function AppShell() {
           <Comms />
         ) : view === 'profiles' ? (
           <ProfilesView />
+        ) : view === 'sync' ? (
+          <SyncView />
         ) : (
           <SourcesView />
         )}

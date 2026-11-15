@@ -1,4 +1,6 @@
 import { createActiveProfile } from '../adapters/active-profile';
+import { openDexieDeviceCredentials } from '../adapters/dexie-device-credentials';
+import { createHttpSyncGateway } from '../adapters/http-sync-gateway';
 import { DemoClock } from '../adapters/demo-clock';
 import type { DemoClockPosition } from '../adapters/demo-clock';
 import { openDexieProfileStore } from '../adapters/dexie-profile-store';
@@ -13,7 +15,15 @@ import { WallClock, defaultMissionConfig } from '../adapters/wall-clock';
 import { brand } from '../brand/brand.config';
 import type { BrandConfig } from '../brand/brand.types';
 import type { MissionConfig } from '../adapters/wall-clock';
-import type { ActiveProfile, ModePreference, PinHasher, ProfileStore, RecordStore } from '../core/ports';
+import type {
+  ActiveProfile,
+  DeviceCredentialStore,
+  ModePreference,
+  PinHasher,
+  ProfileStore,
+  RecordStore,
+  SyncGateway,
+} from '../core/ports';
 import { toActor } from '../core/profiles/model';
 import type { Actor, CrewProfile, Role } from '../core/profiles/model';
 import { createProfile } from '../core/use-cases/profiles';
@@ -21,6 +31,8 @@ import type { ProfileDeps, ProfileResult } from '../core/use-cases/profiles';
 import { knowledge } from '../knowledge';
 import { MISSION_META_KEY } from './adapters';
 import type { Adapters } from './adapters';
+import { createSyncService } from './sync/sync-service';
+import type { SyncService } from './sync/sync-service';
 import { DEMO_ASTRONAUT_ID, DEMO_SUBJECT_NAME, demoProfiles } from './demo/demo-profiles';
 import { CLOCK_META_KEY } from './demo/demo-use-cases';
 import { copyLegacyLiveData } from './legacy-live';
@@ -82,6 +94,12 @@ export interface ComposeOptions {
   activeProfile?: ActiveProfile;
   /** Injected in tests; defaults to a Dexie existence check on the legacy LIVE database. */
   legacyLiveExists?: () => Promise<boolean>;
+  /** Injected in tests; defaults to `VITE_API_URL`. Null or empty disables sync entirely. */
+  apiUrl?: string | null;
+  /** Injected in tests; defaults to the HTTP adapter on `apiUrl`. */
+  syncGateway?: SyncGateway;
+  /** Injected in tests; defaults to the device Dexie database. */
+  deviceCredentials?: DeviceCredentialStore;
 }
 
 /**
@@ -197,6 +215,38 @@ export async function composeProfileServices(mode: AppMode, options: ComposeOpti
       if (oldest?.id === profile.id) await adoptLegacyLive(profile, options);
     },
   };
+}
+
+/** The backend base URL from the build, or null when sync is not configured. */
+export function configuredApiUrl(): string | null {
+  const raw = import.meta.env.VITE_API_URL as string | undefined;
+  const url = raw?.trim().replace(/\/+$/, '');
+  return url ? url : null;
+}
+
+/**
+ * Builds the sync service of the LIVE mode, or null when sync is off: DEMO never syncs, no `VITE_API_URL` means
+ * the feature is absent, and without persistent storage there is nowhere to keep the device token or the data.
+ */
+export async function composeSyncService(services: ProfileServices, options: ComposeOptions = {}): Promise<SyncService | null> {
+  if (services.mode !== 'live' || !services.storageAvailable) return null;
+  const apiUrl = options.apiUrl === undefined ? configuredApiUrl() : options.apiUrl;
+  if (!apiUrl && !options.syncGateway) return null;
+  const credentials = options.deviceCredentials ?? (await openDexieDeviceCredentials().catch(() => null));
+  if (!credentials) return null;
+  const nowMs = options.nowMs ?? Date.now;
+  const open = options.open ?? openStore;
+  return createSyncService({
+    gateway: options.syncGateway ?? createHttpSyncGateway({ baseUrl: apiUrl! }),
+    credentials,
+    profiles: services.profiles,
+    async openRecords(profileId) {
+      const { store, storageAvailable } = await open(liveDbName(profileId), false);
+      if (!storageAvailable) throw new Error('Local storage is unavailable.');
+      return store;
+    },
+    nowIso: () => new Date(nowMs()).toISOString(),
+  });
 }
 
 /** Moves the pre-profile LIVE database into `profile`'s database. Never throws: a failure must not block sign-up. */

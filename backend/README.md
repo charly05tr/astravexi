@@ -204,3 +204,27 @@ the same request are applied first. A lost first-insert race is retried once as 
 `GET /api/profiles/` lists the device's profiles. `POST /api/profiles/` upserts one profile:
 `200 {"status": "applied"|"stale", "profile": {...}}`, `403 {"status": "forbidden"}`,
 `400 {"status": "rejected_future"}`.
+
+## Frontend sync
+
+The app syncs only in LIVE mode and only when it was built with `VITE_API_URL` (unset: the feature is hidden and the
+app is fully offline). A CMO enrolls the device from the user menu -> "Mission control sync" with a single-use code
+and a device name; the token is kept in the device-wide IndexedDB `astravexi-live-device` (never per profile, never
+in DEMO) and sent only in `Authorization: Device <token>`. Disconnect forgets it; a `401` means the device was
+revoked, which clears it and asks for a new code.
+
+A sync is **push, then pull**, run on start, ~5 s after a local write, every 60 s and on the `online` event, never
+two at once, with exponential backoff (jittered, capped at ~5 min) after a failure.
+
+- **Push**: the device's profiles, then, per profile, every row of its LIVE database (readings, decisions, acks,
+  outbox, meta keyed by key) whose `updatedAt` is at or after that profile's watermark (the newest `updatedAt` of the
+  last fully accepted batch; the boundary row is re-sent, the server answers `stale`). Batches of at most 200. A
+  watermark does not move while the server answers `rejected_future` (device clock ahead: the rows are retried and the
+  UI says so); `forbidden` items are recorded in the sync state and not retried; `stale` needs nothing.
+- **Pull**: pages with `cursor` while `has_more`, upserts by id last-write-wins on `updatedAt` (a newer local row is
+  never overwritten; redelivery from the 120 s overlap is harmless), creates profiles missing locally (without a PIN:
+  the server never has one; a local PIN is kept), and stores `next_since` only after the last page.
+- Tombstones and `routine`/`routineProgress` records are not applied on the device yet.
+
+Opt-in end-to-end smoke against a running backend (two fresh codes from `create_enrollment_code`; see the header of
+the file): `E2E_API_URL=http://127.0.0.1:8000 E2E_CODE_A=... E2E_CODE_B=... npx vitest run --config scripts/vitest.e2e.config.ts`.

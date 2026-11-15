@@ -46,6 +46,8 @@ export interface AppState {
   link: LinkState;
 
   hydrate(): Promise<void>;
+  /** Re-reads the stores into the session without the loading state: used after a sync pulled remote changes. */
+  refresh(): Promise<void>;
   /** The signed-in profile was renamed or changed role: later actions run as the new actor. */
   setActor(actor: Actor): void;
   submitCheckIn(entry: CheckInEntry): Promise<CheckInResult>;
@@ -143,6 +145,13 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
           } catch (error) {
             set({ status: 'error', error: error instanceof Error ? error.message : String(error) });
           }
+        });
+      },
+
+      async refresh() {
+        await guarded(async () => {
+          if (get().status !== 'ready') return;
+          applySession(await bootstrap(adapters.deps, get().link));
         });
       },
 

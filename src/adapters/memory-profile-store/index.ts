@@ -1,5 +1,6 @@
 import type { ProfileStore } from '../../core/ports';
 import type { CrewProfile } from '../../core/profiles/model';
+import { isNewer } from '../../core/sync/time';
 
 const copy = <T>(value: T): T => structuredClone(value);
 
@@ -26,6 +27,13 @@ export function createMemoryProfileStore(name = 'memory-profiles'): ProfileStore
     async softDelete(id, updatedAt) {
       const row = rows.get(id);
       if (row) rows.set(id, { ...row, deleted: true, updatedAt });
+    },
+    async upsertIfNewer(profile) {
+      const have = rows.get(profile.id);
+      if (have && !isNewer(profile.updatedAt, have.updatedAt)) return false;
+      const pin = profile.pin ?? have?.pin;
+      rows.set(profile.id, copy({ ...profile, ...(pin ? { pin } : {}) }));
+      return true;
     },
   };
 }
