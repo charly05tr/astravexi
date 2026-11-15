@@ -10,10 +10,12 @@ import type {
   Risk,
   Rule,
   SourceRef,
+  ZoneId,
 } from '../core/health/model';
 import { toStored } from '../core/health/rounding';
 import attributionsJson from './attributions.json';
 import indicatorsJson from './indicators.json';
+import nasaDatasetsJson from './nasa-datasets.json';
 import recommendationsJson from './recommendations.json';
 import risksJson from './risks.json';
 import rulesJson from './rules.json';
@@ -127,4 +129,16 @@ export function loadContent(): Content {
   };
 }
 
+export interface NasaDatasetRef {
+  readonly id: string;
+  readonly code: string;
+  readonly title: string;
+  readonly zoneIds: readonly ZoneId[];
+  readonly metric: string;
+  readonly benchmarkNote: string;
+  readonly source: SourceRef;
+  readonly needsVerification: boolean;
+}
+
+export const nasaDatasets = nasaDatasetsJson as unknown as readonly NasaDatasetRef[];
 export const content: Content = loadContent();

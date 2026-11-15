@@ -2017,3 +2017,106 @@ details > summary {
   font-size: 0.8rem;
   opacity: 0.85;
 }
+
+/* ---------- Module 2: Habitat telemetry bar & attribution ---------- */
+.stage__habitat {
+  position: fixed;
+  bottom: calc(var(--space-lg) + 32px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--on-raised) 22%, transparent);
+  background: rgba(20, 35, 43, 0.8);
+  color: var(--on-raised);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.stage__habitat:hover {
+  background: rgba(20, 35, 43, 0.94);
+  border-color: color-mix(in srgb, var(--on-raised) 45%, transparent);
+}
+
+.env-presets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 540px) {
+  .env-presets {
+    grid-template-columns: 1fr;
+  }
+}
+
+.env-attribution {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+
+.env-attribution__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.env-attribution__btn {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.env-attribution__badge--active {
+  font-weight: 700;
+}
+
+.env-attribution__text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.env-spe-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.env-spe-toggle input {
+  margin-top: 3px;
+}
+
+.env-benchmark {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+
+.env-benchmark__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+

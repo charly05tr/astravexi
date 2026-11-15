@@ -28,6 +28,10 @@ export interface ZonePanelProps {
   update?: ReactNode;
   /** Clean trigger for localized anatomical symptom intake (slot). */
   symptomAction?: ReactNode;
+  /** Compact Environment vs. Individual context card (slot). */
+  envContext?: ReactNode;
+  /** NASA OSDR/RadLab benchmark details shown in the full Zone detail modal (slot). */
+  envBenchmark?: ReactNode;
 }
 
 function VerifyMark() {
@@ -188,7 +192,7 @@ export function summaryIndicator(model: ZonePanelModel): IndicatorView | null {
  * Presentational zone panel: no store access. Everything it shows comes in through `model` and the slots.
  * Two levels: a summary (status, one chart, one recommendation) and the full detail on demand.
  */
-export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSuggestion, update, symptomAction, detail, onDetail }: ZonePanelProps) {
+export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSuggestion, update, symptomAction, envContext, envBenchmark, detail, onDetail }: ZonePanelProps) {
   const hasFindings = model.findings.length > 0 || model.corroboration !== null;
   const primary = summaryIndicator(model);
   const emptyText =
@@ -220,6 +224,7 @@ export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSugg
           <EmptyState>
             Not monitored in this prototype. No indicator feeds this zone, so it shows no alert, trend or score.
           </EmptyState>
+          {envContext}
           {symptomAction}
           {detail ? null : topSuggestion}
         </>
@@ -231,6 +236,7 @@ export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSugg
             </ul>
           ) : null}
           {!hasFindings && model.status === 'noData' ? <EmptyState>{emptyText}</EmptyState> : null}
+          {envContext}
           {symptomAction}
           {detail ? null : topSuggestion}
           <div className="zone-panel__actions">
@@ -261,6 +267,7 @@ export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSugg
                 ))}
               </ul>
             </section>
+            {envBenchmark}
             {suggestions}
             <section className="zone-section" aria-labelledby="zone-why">
               <h3 id="zone-why">Why this status</h3>

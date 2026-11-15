@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useBrand } from '../brand/brand-context';
 import { BodyMapContainer } from '../features/body-map/BodyMapContainer';
+import { StageHabitatBar } from '../features/environment/EnvironmentDialog';
 import { CmoContainer } from '../features/cmo/CmoContainer';
 import { SourcesView } from '../features/disclosures/SourcesView';
 import { AlertRailContainer } from '../features/insights/AlertRailContainer';
@@ -116,6 +117,7 @@ function Dashboard() {
           Body
         </h2>
         <BodyMapContainer />
+        <StageHabitatBar />
         <p className="stage__hint" aria-hidden="true">
           {focusZoneId ? 'Esc or Full body to go back' : 'Drag to rotate · Scroll to zoom · Click an organ'}
         </p>

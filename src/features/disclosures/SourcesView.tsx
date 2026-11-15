@@ -4,7 +4,7 @@ import { useBrand } from '../../brand/brand-context';
 import { Badge } from '../../ui/Badge';
 import { Panel } from '../../ui/Panel';
 import { TierChip } from '../../ui/TierChip';
-import { risks } from '../../knowledge';
+import { nasaDatasets, risks } from '../../knowledge';
 
 function Link({ url, children }: { url: string; children: string }) {
   if (!url.startsWith('http')) return <span>{children}</span>;
@@ -82,6 +82,41 @@ export function SourcesView() {
                     ) : (
                       <span className="muted">Verified against its source</span>
                     )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+
+      <Panel id="nasa-datasets" title="NASA OSDR, RadLab & habitability benchmarks" hint="Reference telemetry bounds and spaceflight cohorts used to distinguish habitat factors from intrinsic signals.">
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th scope="col">Study / Standard</th>
+                <th scope="col">Zones</th>
+                <th scope="col">Reference Metric</th>
+                <th scope="col">Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {nasaDatasets.map((d) => (
+                <tr key={d.id} data-dataset-id={d.id}>
+                  <td>
+                    <span className="mono">{d.code}</span>
+                    <br />
+                    <span className="muted">{d.title}</span>
+                  </td>
+                  <td>{d.zoneIds.join(', ')}</td>
+                  <td>
+                    <span>{d.metric}</span>
+                    <br />
+                    <span className="muted">{d.benchmarkNote}</span>
+                  </td>
+                  <td>
+                    <Link url={d.source.url}>{d.source.label}</Link>
                   </td>
                 </tr>
               ))}

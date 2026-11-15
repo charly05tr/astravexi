@@ -1,0 +1,58 @@
+[
+  {
+    "id": "osdr-569",
+    "code": "OSD-569",
+    "title": "Inspiration4 Hematology & Immune Blood Reference",
+    "zoneIds": ["immune", "heart"],
+    "metric": "CBC & post-flight inflammatory/leukocyte recovery curve",
+    "benchmarkNote": "Transient leukocyte and cytokine shifts observed in short-duration orbital flight return toward personal baseline after mission adaptation.",
+    "source": {
+      "label": "NASA OSDR OSD-569 (Inspiration4 Hematology)",
+      "url": "https://osdr.nasa.gov/bio/repo/data/studies/OSD-569",
+      "kind": "primary"
+    },
+    "needsVerification": false
+  },
+  {
+    "id": "osdr-575",
+    "code": "OSD-575",
+    "title": "Inspiration4 Comprehensive Metabolic Profile",
+    "zoneIds": ["metabolism"],
+    "metric": "Fasting plasma glucose & hepatic/renal metabolic panel",
+    "benchmarkNote": "Microgravity fluid redistribution and altered circadian feeding patterns can shift fasting glucose relative to pre-flight baselines.",
+    "source": {
+      "label": "NASA OSDR OSD-575 (Inspiration4 Metabolic)",
+      "url": "https://osdr.nasa.gov/bio/repo/data/studies/OSD-575",
+      "kind": "primary"
+    },
+    "needsVerification": false
+  },
+  {
+    "id": "radlab-msl",
+    "code": "RadLab / MSL-RAD",
+    "title": "Space Radiation Dosimetry & SPE Excursions",
+    "zoneIds": ["immune", "brain"],
+    "metric": "GCR ~0.52 mSv/day (LEO) vs ~1.84 mSv/day (deep-space transit)",
+    "benchmarkNote": "Deep-space transit exposes crew to roughly 3.5x LEO GCR dose rates; Solar Particle Events require immediate storm-shelter shielding.",
+    "source": {
+      "label": "NASA RadLab Open Science Radiation Portal",
+      "url": "https://radlab.nasa.gov/",
+      "kind": "primary"
+    },
+    "needsVerification": false
+  },
+  {
+    "id": "ochmo-tb-004",
+    "code": "OCHMO-TB-004 / STD-3001",
+    "title": "Cabin ppCO2 & Acoustic Habitability Limits",
+    "zoneIds": ["brain", "eyes", "heart", "bone"],
+    "metric": "ppCO2 attention >= 3.0 mmHg (~3950 ppm); Acoustic sleep limit >= 65 dBA",
+    "benchmarkNote": "Elevated cabin ppCO2 (>= 3.0 mmHg) can trigger headache, cognitive slowing, and cerebral vasodilation compounding SANS risk.",
+    "source": {
+      "label": "NASA OCHMO-TB-004 Carbon Dioxide Exposure Limits",
+      "url": "https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-004-carbon-dioxide.pdf",
+      "kind": "primary"
+    },
+    "needsVerification": false
+  }
+]

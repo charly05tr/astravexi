@@ -3,6 +3,11 @@ import type { ReactNode } from 'react';
 import type { ZoneId } from '../core/health/model';
 import { createInitialSymptomReports } from '../features/body-map/symptom-model';
 import type { ZoneSymptomReport } from '../features/body-map/symptom-model';
+import {
+  createDefaultEnvironmentConfig,
+  sanitizeEnvironmentConfig,
+} from '../features/environment/environment-model';
+import type { EnvironmentConfig, HabitatPresetId } from '../features/environment/environment-model';
 
 export type View = 'dashboard' | 'comms' | 'sources';
 
@@ -19,6 +24,11 @@ export interface UiState {
   toggleSymptomTag(zoneId: ZoneId, tagId: string): void;
   setZoneDiscomfort(zoneId: ZoneId, level: number): void;
   clearZoneSymptoms(zoneId: ZoneId): void;
+  /** Active habitat context and configurable ambient parameters (Module 2). */
+  environment: EnvironmentConfig;
+  setHabitatPreset(presetId: HabitatPresetId): void;
+  updateEnvironment(patch: Partial<EnvironmentConfig>): void;
+  resetEnvironment(): void;
 }
 
 const UiContext = createContext<UiState | null>(null);
@@ -30,9 +40,22 @@ export function UiProvider({ children, initialView = 'dashboard' }: { children: 
   const [symptomReports, setSymptomReports] = useState<Record<ZoneId, ZoneSymptomReport>>(() =>
     createInitialSymptomReports(),
   );
+  const [environment, setEnvironment] = useState<EnvironmentConfig>(() => createDefaultEnvironmentConfig('transit'));
 
   const selectZone = useCallback((id: ZoneId) => setSelected(id), []);
   const clearZone = useCallback(() => setSelected(null), []);
+
+  const setHabitatPreset = useCallback((presetId: HabitatPresetId) => {
+    setEnvironment(createDefaultEnvironmentConfig(presetId));
+  }, []);
+
+  const updateEnvironment = useCallback((patch: Partial<EnvironmentConfig>) => {
+    setEnvironment((prev) => sanitizeEnvironmentConfig({ ...prev, ...patch }));
+  }, []);
+
+  const resetEnvironment = useCallback(() => {
+    setEnvironment(createDefaultEnvironmentConfig('transit'));
+  }, []);
 
   const toggleSymptomTag = useCallback((zoneId: ZoneId, tagId: string) => {
     setSymptomReports((prev) => {
@@ -72,6 +95,10 @@ export function UiProvider({ children, initialView = 'dashboard' }: { children: 
       toggleSymptomTag,
       setZoneDiscomfort,
       clearZoneSymptoms,
+      environment,
+      setHabitatPreset,
+      updateEnvironment,
+      resetEnvironment,
     }),
     [
       view,
@@ -82,6 +109,10 @@ export function UiProvider({ children, initialView = 'dashboard' }: { children: 
       toggleSymptomTag,
       setZoneDiscomfort,
       clearZoneSymptoms,
+      environment,
+      setHabitatPreset,
+      updateEnvironment,
+      resetEnvironment,
     ],
   );
   return <UiContext.Provider value={value}>{children}</UiContext.Provider>;

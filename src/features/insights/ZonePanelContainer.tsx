@@ -6,7 +6,10 @@ import type { SuggestionContext } from '../../core/ports';
 import { EmptyState } from '../../ui/Panel';
 import { CheckInContainer } from '../check-in/CheckInContainer';
 import { buildSymptomLlmSuggestions } from '../body-map/symptom-advisor';
+import { hasZoneSymptoms } from '../body-map/symptom-model';
 import { SymptomReportAction } from '../body-map/SymptomReportDialog';
+import { ZoneBenchmarkSection, ZoneEnvironmentCard } from '../environment/EnvironmentDialog';
+import { evaluateZoneEnvironment } from '../environment/environment-model';
 import { SuggestionList } from '../suggestions/SuggestionList';
 import { useSuggestions } from '../suggestions/use-suggestions';
 import type { SuggestionsState } from '../suggestions/use-suggestions';
@@ -16,7 +19,7 @@ import { buildZonePanelModel } from './zone-panel-model';
 
 export function ZonePanelContainer() {
   const { knowledge, content } = useAppContext();
-  const { symptomReports } = useUi();
+  const { symptomReports, environment } = useUi();
   const session = useAppState((s) => s.session);
   const mode = useAppState((s) => s.mode);
   const actions = useAppActions();
@@ -49,6 +52,18 @@ export function ZonePanelContainer() {
   const suggestions = useSuggestions(context);
 
   const symptomReport = model ? symptomReports[model.zoneId] : undefined;
+  const envAssessment = useMemo(() => {
+    if (!model || !session) return null;
+    return evaluateZoneEnvironment({
+      zoneId: model.zoneId,
+      zoneStatus: model.status,
+      findingsCount: model.findings.length,
+      hasSymptoms: symptomReport ? hasZoneSymptoms(symptomReport) : false,
+      missionDay: session.evaluation.asOf.day,
+      config: environment,
+    });
+  }, [model, session, symptomReport, environment]);
+
   const llmSymptomSuggestions = useMemo(() => {
     if (!model || !session || !symptomReport) return [];
     return buildSymptomLlmSuggestions({
@@ -56,8 +71,9 @@ export function ZonePanelContainer() {
       symptomReport,
       missionDay: session.evaluation.asOf.day,
       decisions: session.decisions,
+      environment,
     });
-  }, [model, session, symptomReport]);
+  }, [model, session, symptomReport, environment]);
 
   const effectiveSuggestions = useMemo<SuggestionsState>(() => {
     if (llmSymptomSuggestions.length === 0) return suggestions;
@@ -100,6 +116,8 @@ export function ZonePanelContainer() {
         <ZoneUpdate key={model.zoneId} label={model.label} indicatorIds={zone.indicatorIds} />
       }
       symptomAction={<SymptomReportAction zoneId={model.zoneId} zoneLabel={model.label} />}
+      envContext={envAssessment ? <ZoneEnvironmentCard assessment={envAssessment} /> : null}
+      envBenchmark={envAssessment ? <ZoneBenchmarkSection assessment={envAssessment} /> : null}
     />
   );
 }

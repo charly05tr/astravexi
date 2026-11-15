@@ -1,5 +1,12 @@
 import type { IndicatorId, RecommendationDecision, ZoneId, ZoneStatus } from '../../core/health/model';
 import type { Suggestion } from '../../core/ports';
+import {
+  HABITAT_PRESETS,
+  co2PpmFromMmHg,
+  createDefaultEnvironmentConfig,
+  evaluateZoneEnvironment,
+} from '../environment/environment-model';
+import type { EnvironmentConfig } from '../environment/environment-model';
 import type { IndicatorView, ZonePanelModel } from '../insights/zone-panel-model';
 import { ZONE_SYMPTOMS, hasZoneSymptoms } from './symptom-model';
 import type { ZoneSymptomReport } from './symptom-model';
@@ -247,16 +254,19 @@ export interface SymptomLlmInput {
   symptomReport: ZoneSymptomReport;
   missionDay: number;
   decisions: readonly RecommendationDecision[];
+  environment?: EnvironmentConfig;
 }
 
 /**
  * Generates an LLM-simulated routine change suggestion whenever an astronaut logs localized symptoms,
- * synthesizing: (1) Astronaut symptom, (2) Statistical indicator/baseline context, and (3) Cabin environment.
+ * synthesizing: (1) Astronaut symptom, (2) Statistical indicator/baseline context, and
+ * (3) Configurable cabin environment + NASA habitability attribution.
  */
 export function buildSymptomLlmSuggestions(input: SymptomLlmInput): Suggestion[] {
-  const { model, symptomReport, missionDay, decisions } = input;
+  const { model, symptomReport, missionDay, decisions, environment } = input;
   if (!hasZoneSymptoms(symptomReport)) return [];
 
+  const envConfig = environment ?? createDefaultEnvironmentConfig('transit');
   const zoneOptions = ZONE_SYMPTOMS[model.zoneId];
   const matchedLabels = symptomReport.tags
     .map((id) => zoneOptions.find((o) => o.id === id)?.label)
@@ -270,7 +280,17 @@ export function buildSymptomLlmSuggestions(input: SymptomLlmInput): Suggestion[]
   const matchingDecisions = decisions.filter((d) => d.recommendationId === id && d.findingKey === findingKey);
   if (matchingDecisions.some((d) => d.decision === 'dismissed')) return [];
 
-  const env = getCabinEnvironmentContext(missionDay);
+  const envAssessment = evaluateZoneEnvironment({
+    zoneId: model.zoneId,
+    zoneStatus: model.status,
+    findingsCount: model.findings.length,
+    hasSymptoms: true,
+    missionDay,
+    config: envConfig,
+  });
+  const preset = HABITAT_PRESETS[envConfig.habitat];
+  const co2Ppm = co2PpmFromMmHg(envConfig.ppCo2MmHg);
+
   const symptomSummaryText = [
     matchedLabels.length > 0 ? matchedLabels.join(', ') : `${model.label} discomfort`,
     symptomReport.discomfort > 0 ? `discomfort ${symptomReport.discomfort}/10` : null,
@@ -279,12 +299,15 @@ export function buildSymptomLlmSuggestions(input: SymptomLlmInput): Suggestion[]
     .join(' · ');
 
   const statsSummary = summarizeStatisticalContext(model.status, model.indicators, model.findings.length);
-  const envSummary = `Cabin environment: CO2 ${env.co2Ppm} ppm · Humidity ${env.humidityPct}% · Temp ${env.temperatureC} C · Radiation ${env.radiationMsvDay} mSv/day (Day ${env.missionDay}).`;
+  const envSummary = `Cabin environment: ${preset.label} (Day ${missionDay}) · CO2 ${co2Ppm} ppm (${envConfig.ppCo2MmHg.toFixed(1)} mmHg) · Noise ${envConfig.noiseDba} dBA · Radiation ${envConfig.radiationMsvDay.toFixed(2)} mSv/day${envConfig.speActive ? ' · SPE active' : ''} → ${envAssessment.badgeLabel}.`;
 
-  const steps =
-    symptomReport.discomfort >= 6
-      ? [...playbook.steps, 'High discomfort (>=6/10): avoid solo heavy tasks and alert Crew Medical Officer if symptoms persist.']
-      : playbook.steps;
+  const steps = [...playbook.steps];
+  if (envAssessment.drivers.length > 0) {
+    steps.unshift(`Mitigate active habitat factor (${envAssessment.drivers.join('; ')}) before re-evaluating symptoms.`);
+  }
+  if (symptomReport.discomfort >= 6) {
+    steps.push('High discomfort (>=6/10): avoid solo heavy tasks and alert Crew Medical Officer if symptoms persist.');
+  }
 
   return [
     {
@@ -299,8 +322,8 @@ export function buildSymptomLlmSuggestions(input: SymptomLlmInput): Suggestion[]
         envSummary,
       ],
       evidence: {
-        label: 'Simulated LLM triage (environment + statistical baseline + symptom)',
-        url: '',
+        label: 'Simulated LLM triage (habitat context + NASA bounds + statistical baseline + symptom)',
+        url: envAssessment.benchmark?.url ?? '',
         kind: 'design-inference',
       },
       needsVerification: true,
