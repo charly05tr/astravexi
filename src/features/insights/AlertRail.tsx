@@ -221,6 +221,23 @@ function ZoneWheel({
     return () => ul.removeEventListener('wheel', onWheel);
   }, [turnTo, snapSoon]);
 
+  // Arrow keys on the page itself (nothing focused) turn the wheel one card. Any focused control, open
+  // dialog or earlier handler keeps the key.
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+      const active = document.activeElement;
+      if (active && active !== document.body && active !== document.documentElement) return;
+      if (document.querySelector('[aria-modal="true"]')) return;
+      e.preventDefault();
+      const step = e.key === 'ArrowDown' ? 1 : -1;
+      turnTo(Math.round(motion.current.target) + step, { snap: true });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [turnTo]);
+
   // Selecting a zone (a tap on its card, or an organ in the 3D body) turns the wheel to bring it to the
   // centre. Only a real change of selection counts: rows are rebuilt on every session update, which must
   // not turn the wheel.
