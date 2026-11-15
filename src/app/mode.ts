@@ -22,6 +22,12 @@ export const PROFILES_DB_NAME: Record<AppMode, string> = {
   demo: 'astravexi-demo-profiles',
 };
 
+/** The medical kit and records of a mode, shared by every profile of that mode. */
+export const MEDICAL_DB_NAME: Record<AppMode, string> = {
+  live: 'astravexi-live-medical',
+  demo: 'astravexi-demo-medical',
+};
+
 export const activeProfileKey = (mode: AppMode) => `astravexi.profile.${mode}`;
 
 export function isAppMode(value: unknown): value is AppMode {

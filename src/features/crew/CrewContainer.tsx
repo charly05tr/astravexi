@@ -4,6 +4,9 @@ import { useUi } from '../../app/ui-state';
 import type { Tier, ZoneId } from '../../core/health/model';
 import type { CrewMember, CrewReview } from '../../core/use-cases/crew';
 import { tierTheme } from '../../theme/tiers';
+import { CabinCo2Container } from '../environment/CabinCo2Container';
+import { MedicalRecordContainer } from '../medical/MedicalRecordContainer';
+import { MedicationStockContainer } from '../medical/MedicationStockContainer';
 import { CrewMemberDetail } from './CrewMemberDetail';
 import { CrewOverview } from './CrewOverview';
 import { buildCrewDetail, buildCrewOverview } from './crew-model';
@@ -71,10 +74,18 @@ export function CrewContainer() {
   }
   if (detail) {
     return (
-      <CrewMemberDetail detail={detail} onBack={() => selectCrewMember(null)} onAcknowledge={(z, g) => void acknowledge(z, g)} />
+      <CrewMemberDetail
+        detail={detail}
+        onBack={() => selectCrewMember(null)}
+        onAcknowledge={(z, g) => void acknowledge(z, g)}
+        medical={<MedicalRecordContainer profileId={detail.card.profileId} />}
+      />
     );
   }
   return (
-    <CrewOverview cards={cards} unavailable={load.review.unavailable.map((u) => u.name)} onOpen={selectCrewMember} />
+    <CrewOverview cards={cards} unavailable={load.review.unavailable.map((u) => u.name)} onOpen={selectCrewMember}>
+      <CabinCo2Container />
+      <MedicationStockContainer />
+    </CrewOverview>
   );
 }

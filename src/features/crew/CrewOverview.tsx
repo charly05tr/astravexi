@@ -1,4 +1,5 @@
 import { Users } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { EmptyState } from '../../ui/Panel';
 import { TierChip, tierStyle } from '../../ui/TierChip';
 import { ROLE_LABEL } from '../profiles/role-labels';
@@ -9,10 +10,13 @@ export function CrewOverview({
   cards,
   unavailable,
   onOpen,
+  children,
 }: {
   cards: readonly CrewCardView[];
   unavailable: readonly string[];
   onOpen(profileId: string): void;
+  /** Rendered below the crew list, e.g. the medication stock. */
+  children?: ReactNode;
 }) {
   return (
     <section className="crew" aria-labelledby="crew-title">
@@ -71,6 +75,7 @@ export function CrewOverview({
           ))}
         </ul>
       )}
+      {children}
       <p className="muted small">Local data on this device. Decision support, not medical advice.</p>
     </section>
   );

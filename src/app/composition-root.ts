@@ -3,9 +3,14 @@ import { openDexieDeviceCredentials } from '../adapters/dexie-device-credentials
 import { createHttpSyncGateway } from '../adapters/http-sync-gateway';
 import { DemoClock } from '../adapters/demo-clock';
 import type { DemoClockPosition } from '../adapters/demo-clock';
+import { openDexieMedicationStore } from '../adapters/dexie-medication-store';
 import { openDexieProfileStore } from '../adapters/dexie-profile-store';
 import { dexieDatabaseExists, openDexieRecordStore } from '../adapters/dexie-record-store';
 import { emptyHistory } from '../adapters/empty-history';
+import { createNasaOsdrEnvironment } from '../adapters/nasa-osdr-environment';
+import { openEnvironmentCache } from '../adapters/nasa-osdr-environment/dexie-cache';
+import { createSimulatedCabinCo2 } from '../adapters/seeded-history/cabin-co2';
+import { createMemoryMedicationStore } from '../adapters/memory-medication-store';
 import { createMemoryProfileStore } from '../adapters/memory-profile-store';
 import { createMemoryRecordStore } from '../adapters/memory-record-store';
 import { createModePreference } from '../adapters/mode-preference';
@@ -17,7 +22,10 @@ import type { BrandConfig } from '../brand/brand.types';
 import type { MissionConfig } from '../adapters/wall-clock';
 import type {
   ActiveProfile,
+  CabinReferenceCache,
+  CabinReferenceSource,
   DeviceCredentialStore,
+  MedicationStore,
   ModePreference,
   PinHasher,
   ProfileStore,
@@ -35,11 +43,13 @@ import type { Adapters } from './adapters';
 import { createSyncService } from './sync/sync-service';
 import type { SyncService } from './sync/sync-service';
 import { DEMO_ASTRONAUT_ID, DEMO_CREW_EXTRAS, DEMO_SUBJECT_NAME, RETIRED_DEMO_CREW_IDS, demoProfiles } from './demo/demo-profiles';
+import { seedDemoMedical } from './demo/demo-medical';
 import { CLOCK_META_KEY } from './demo/demo-use-cases';
 import { copyLegacyLiveData } from './legacy-live';
 import {
   DB_NAME,
   LEGACY_LIVE_DB,
+  MEDICAL_DB_NAME,
   MODE_STORAGE_KEY,
   PROFILES_DB_NAME,
   activeProfileKey,
@@ -82,6 +92,15 @@ export async function openProfileStore(name: string): Promise<ProfileStoreOpenRe
   }
 }
 
+/** Opens the medical database for `name`, or falls back to memory (entries will not be kept). */
+export async function openMedicalStore(name: string): Promise<MedicationStore> {
+  try {
+    return await openDexieMedicationStore(name);
+  } catch {
+    return createMemoryMedicationStore(name);
+  }
+}
+
 export interface ComposeOptions {
   nowMs?: () => number;
   /** Injected in tests; defaults to Dexie with memory fallback. */
@@ -90,6 +109,12 @@ export interface ComposeOptions {
   profiles?: ProfileStore;
   /** Injected in tests; defaults to Dexie with memory fallback. */
   openProfiles?: (name: string) => Promise<ProfileStoreOpenResult>;
+  /** Injected in tests; defaults to Dexie with memory fallback. */
+  openMedical?: (name: string) => Promise<MedicationStore>;
+  /** Injected in tests; defaults to NASA OSDR through the configured base URL. */
+  cabinReference?: CabinReferenceSource;
+  /** Injected in tests; defaults to a Dexie database of its own with memory fallback. */
+  cabinCache?: CabinReferenceCache;
   /** Injected in tests; defaults to the platform's `crypto.randomUUID`. */
   newId?: () => string;
   /** Injected in tests; defaults to PBKDF2-SHA256 with 600k iterations. */
@@ -124,7 +149,15 @@ export async function composeAdapters(
   const profiles =
     options.profiles ?? (await (options.openProfiles ?? openProfileStore)(PROFILES_DB_NAME[mode])).store;
 
+  const medical = await (options.openMedical ?? openMedicalStore)(MEDICAL_DB_NAME[mode]);
+  const environment = {
+    reference: options.cabinReference ?? createNasaOsdrEnvironment(osdrConfig()),
+    cache: options.cabinCache ?? (await openEnvironmentCache()),
+    simulated: mode === 'demo' ? createSimulatedCabinCo2(DEMO_SEED) : null,
+  };
+
   if (mode === 'demo') {
+    await seedDemoMedical(medical, nowIso());
     const { store, storageAvailable } = await open(DB_NAME.demo, true);
     const saved = await store.getMeta<DemoClockPosition>(CLOCK_META_KEY);
     const extraStores = new Map<string, Promise<RecordStore>>();
@@ -139,6 +172,8 @@ export async function composeAdapters(
     return {
       mode,
       storageAvailable,
+      medical,
+      environment,
       crew: {
         profiles,
         async open(p): Promise<CrewMemberData> {
@@ -176,6 +211,8 @@ export async function composeAdapters(
     mode,
     storageAvailable,
     hasMissionConfig: saved !== undefined,
+    medical,
+    environment,
     crew: {
       profiles,
       // LIVE: each profile owns its database, so a member's records are exactly that database.
@@ -260,6 +297,13 @@ export async function composeProfileServices(mode: AppMode, options: ComposeOpti
       if (oldest?.id === profile.id) await adoptLegacyLive(profile, options);
     },
   };
+}
+
+/** NASA OSDR base URL and mission from the build; both optional (see the OSDR adapter for the defaults). */
+function osdrConfig(): { baseUrl?: string; mission?: string } {
+  const baseUrl = (import.meta.env.VITE_NASA_OSDR_BASE_URL as string | undefined)?.trim();
+  const mission = (import.meta.env.VITE_NASA_OSDR_MISSION as string | undefined)?.trim();
+  return { baseUrl: baseUrl || undefined, mission: mission || undefined };
 }
 
 /** The backend base URL from the build, or null when sync is not configured. */

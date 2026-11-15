@@ -1,5 +1,7 @@
 import type { FollowUpSuggestion } from './follow-up/blocks';
 import type { PartialFollowUp } from './follow-up/partial';
+import type { Co2Reading, Co2Reference } from './environment/co2';
+import type { Allergy, Medication, MedicationAdministration } from './medical/model';
 import type { Habit, HabitBadge, HabitCompletion, HabitSnapshot } from './habits/model';
 import type { CrewProfile, PinRecord } from './profiles/model';
 import type {
@@ -261,4 +263,48 @@ export interface DeviceCredentialStore {
   clear(): Promise<void>;
   getState(): Promise<SyncState>;
   setState(state: SyncState): Promise<void>;
+}
+
+/**
+ * The medical kit and the medication and allergy records of the crew. One store per mode, shared by every
+ * profile of that mode and never synced. Access control lives in the use-cases, not here.
+ */
+export interface MedicationStore {
+  readonly name: string;
+  /** False when this is the in-memory fallback: entries will not survive a reload. */
+  readonly persistent: boolean;
+  listMedications(): Promise<Medication[]>;
+  /** Inserts or replaces by id. */
+  putMedication(medication: Medication): Promise<void>;
+  /** No-op for an unknown id. */
+  deleteMedication(id: string): Promise<void>;
+  /** Newest first. */
+  listAdministrations(profileId: string): Promise<MedicationAdministration[]>;
+  putAdministration(administration: MedicationAdministration): Promise<void>;
+  /** Most severe first, then by substance. */
+  listAllergies(profileId: string): Promise<Allergy[]>;
+  putAllergy(allergy: Allergy): Promise<void>;
+  /** How many rows each table holds; seeding uses it to fill only what is empty. */
+  counts(): Promise<{ medications: number; administrations: number; allergies: number }>;
+}
+
+/**
+ * Real ISS cabin CO2 telemetry from NASA OSDR's Environmental Data Application. Returns the summary of one
+ * historical mission (the ISS does not publish live cabin CO2). Rejects when the service is unreachable, answers
+ * with an error, or has no usable samples; the caller then falls back to the cache and never to made-up data.
+ */
+export interface CabinReferenceSource {
+  fetchReference(): Promise<Co2Reference>;
+}
+
+/** The last successful NASA reference, kept on the device so the panel works offline. */
+export interface CabinReferenceCache {
+  load(): Promise<{ reference: Co2Reference; fetchedAt: string } | null>;
+  save(reference: Co2Reference, fetchedAt: string): Promise<void>;
+}
+
+/** Simulated cabin CO2 of OUR ship. DEMO only: LIVE has no such source (there is no cabin sensor to read). */
+export interface SimulatedCabinSource {
+  /** Samples up to and including `nowIso`, oldest first. Deterministic for a given seed and instant. */
+  recent(nowIso: string): Co2Reading[];
 }

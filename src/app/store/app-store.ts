@@ -7,6 +7,11 @@ import { acknowledge, advanceLink, decideRecommendation, sendNow } from '../../c
 import { bootstrap, reevaluate } from '../../core/use-cases/bootstrap';
 import { submitCheckIn } from '../../core/use-cases/check-in';
 import { acknowledgeForMember, loadCrew } from '../../core/use-cases/crew';
+import { deleteMedication, loadMedicalRecord, loadMedicalStock, saveMedication } from '../../core/use-cases/medical';
+import type { MedicalRecordView, MedicalStockView, SaveMedicationResult } from '../../core/use-cases/medical';
+import { loadCabinEnvironment } from '../../core/use-cases/environment';
+import type { CabinEnvironmentView, LoadCabinOptions } from '../../core/use-cases/environment';
+import type { MedicationInput } from '../../core/medical/model';
 import { deleteHabit, loadHabitData, saveHabits, setHabitArchived, toggleCompletion } from '../../core/use-cases/habits';
 import type { HabitEvent, SaveHabitsResult } from '../../core/use-cases/habits';
 import type { HabitBlock } from '../../core/habits/from-blocks';
@@ -65,6 +70,16 @@ export interface AppState {
   loadCrew(): Promise<CrewReview>;
   /** Acknowledges a latched warning of one crew member (not of the signed-in profile). Null: no such member. */
   acknowledgeCrewMember(profileId: string, zoneId: ZoneId, groupId: string): Promise<CrewMember | null>;
+  /** CMO only: the medical kit with its summary. Rejects with a `PermissionError` for any other role. */
+  loadMedicalStock(): Promise<MedicalStockView>;
+  /** CMO only. Adds a medication, or replaces the one with `id`. Invalid input comes back as field errors. */
+  saveMedication(input: MedicationInput, id?: string): Promise<SaveMedicationResult>;
+  /** CMO only. */
+  deleteMedication(id: string): Promise<void>;
+  /** CMO only: the medications administered to one astronaut and their allergies. */
+  loadMedicalRecord(profileId: string): Promise<MedicalRecordView>;
+  /** CMO only: the simulated cabin CO2 against the NASA ISS reference threshold. */
+  loadCabinEnvironment(options?: LoadCabinOptions): Promise<CabinEnvironmentView>;
   decideRecommendation(input: {
     recommendationId: string;
     findingKey: string;
@@ -141,6 +156,8 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
       if (!session) throw new Error('Store is not hydrated.');
       return session;
     };
+    // Read the actor at call time: `setActor` replaces it when the signed-in profile changes role.
+    const medicalDeps = () => ({ ...adapters.deps, medical: adapters.medical });
     const applySession = (session: Session) => set({ session, mission: missionInfo(adapters) });
 
     return {
@@ -204,6 +221,27 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
       async acknowledgeCrewMember(profileId, zoneId, groupId) {
         const member = await guarded(() => acknowledgeForMember(adapters.deps, adapters.crew, profileId, { zoneId, groupId }));
         return member ?? null;
+      },
+
+      loadMedicalStock() {
+        return enqueue(() => loadMedicalStock(medicalDeps()));
+      },
+
+      saveMedication(input, id) {
+        return enqueue(() => saveMedication(medicalDeps(), input, id));
+      },
+
+      deleteMedication(id) {
+        return enqueue(() => deleteMedication(medicalDeps(), id));
+      },
+
+      loadMedicalRecord(profileId) {
+        return enqueue(() => loadMedicalRecord(medicalDeps(), profileId));
+      },
+
+      loadCabinEnvironment(options) {
+        // Not queued: it reads its own databases and a slow NASA download must not block the serial queue.
+        return loadCabinEnvironment({ ...adapters.deps, ...adapters.environment }, options);
       },
 
       async decideRecommendation(input) {
