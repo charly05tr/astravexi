@@ -42,6 +42,8 @@ export function ZonePanelContainer() {
     };
   }, [model, session]);
   const suggestions = useSuggestions(context);
+  // The detail view belongs to one zone: switching zones returns to that zone's summary.
+  const [detailFor, setDetailFor] = useState<string | null>(null);
 
   if (!model || !zone) return <EmptyState>Select a zone to see what changed, why it matters and what to do.</EmptyState>;
   return (
@@ -50,11 +52,22 @@ export function ZonePanelContainer() {
       isLive={mode === 'live'}
       focused={focusZoneId !== null}
       onBack={clearZone}
+      detail={detailFor === model.zoneId}
+      onDetail={(open) => setDetailFor(open ? model.zoneId : null)}
+      topSuggestion={
+        <SuggestionList
+          variant="summary"
+          state={suggestions}
+          onDecide={(s, decision) =>
+            actions.decideRecommendation({ recommendationId: s.id, findingKey: s.findingKey, decision })
+          }
+        />
+      }
       suggestions={
         <SuggestionList
           state={suggestions}
           onDecide={(s, decision) =>
-            void actions.decideRecommendation({ recommendationId: s.id, findingKey: s.findingKey, decision })
+            actions.decideRecommendation({ recommendationId: s.id, findingKey: s.findingKey, decision })
           }
         />
       }

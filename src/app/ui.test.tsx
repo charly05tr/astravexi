@@ -33,6 +33,11 @@ async function save(m: Mounted) {
   const form = await openCheckIn(m);
   await m.user.click(form.getByRole('button', { name: /save check-in/i }));
 }
+/** Opens the zone panel's full detail (the panel starts on its summary). */
+async function openDetails(m: Mounted) {
+  const more = screen.queryByRole('button', { name: /view details/i });
+  if (more) await m.user.click(more);
+}
 async function phq(m: Mounted, name: RegExp) {
   const form = await openCheckIn(m);
   await m.user.click(form.getByRole('radio', { name }));
@@ -192,8 +197,9 @@ describe('alert rail and zone selection', () => {
 
 describe('zone panel content', () => {
   it('shows what changed, why it matters, what to do, rule id, citation and the verify mark for brain', async () => {
-    await mountApp('demo');
-    const panel = screen.getByRole('heading', { level: 2, name: 'Brain' }).closest('section')!;
+    const m = await mountApp('demo');
+    await openDetails(m);
+    const panel = screen.getByRole('dialog', { name: /brain details/i });
     expect(within(panel).getAllByText('What changed').length).toBeGreaterThan(0);
     expect(within(panel).getAllByText('Why it matters').length).toBeGreaterThan(0);
     expect(within(panel).getAllByText('What to do').length).toBeGreaterThan(0);
@@ -214,11 +220,13 @@ describe('zone panel content', () => {
     await fill(m, /^resting heart rate/i, '62');
     await save(m);
     await waitFor(() => expect(screen.getAllByText(/baseline building, 0 of 7 in the baseline window/i).length).toBeGreaterThan(0));
+    await openDetails(m);
     expect(screen.getAllByText(/no readings yet/i).length).toBeGreaterThan(0); // blood pressure has none
   });
 
   it('logs a Dismiss, removes the suggestion and leaves the tier alone', async () => {
     const m = await mountApp('demo');
+    await openDetails(m);
     const before = (await screen.findAllByRole('button', { name: 'Dismiss' })).length;
     expect(before).toBeGreaterThan(0);
     const status = m.state().session!.evaluation.zones.brain.status;
@@ -230,6 +238,7 @@ describe('zone panel content', () => {
 
   it('logs an Accept and shows it as accepted', async () => {
     const m = await mountApp('demo');
+    await openDetails(m);
     await m.user.click((await screen.findAllByRole('button', { name: 'Accept' }))[0]!);
     await waitFor(() => expect(screen.getAllByText('Accepted').length).toBeGreaterThan(0));
     expect(m.state().session!.decisions.at(-1)?.decision).toBe('accepted');
@@ -324,6 +333,7 @@ describe('golden flows through the UI', () => {
     await waitFor(() => expect(railRow('immune')).toHaveTextContent(/information/i));
     expect(railRow('immune')).not.toHaveTextContent(/caution|warning|notice/i);
     await m.user.click(railRow('immune'));
+    await openDetails(m);
     expect(screen.getByText(/rises by about 1 C/i)).toBeInTheDocument();
     await goTo(m, 'Comms');
     expect(outboxCards()).toHaveLength(0);
@@ -335,6 +345,7 @@ describe('golden flows through the UI', () => {
     await waitFor(() => expect(railRow('heart')).toHaveTextContent(/warning/i));
     m.world.wait(120);
     await enterBp(m, '130', '80');
+    await openDetails(m);
     await waitFor(() => expect(screen.getAllByText(/latest re-measure/i).length).toBeGreaterThan(0));
     expect(railRow('heart')).toHaveTextContent(/warning/i);
     await goTo(m, 'Comms');
@@ -459,18 +470,57 @@ describe('sources view', () => {
 describe('focus and suggestions', () => {
   it('shows suggestions only for a zone with findings, and none for a zone without', async () => {
     const m = await mountApp('demo');
-    expect(await screen.findByRole('heading', { name: /what you can change in your routine/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /recommended change/i })).toBeInTheDocument();
     await m.user.click(railRow('eyes'));
-    expect(screen.queryByRole('heading', { name: /what you can change in your routine/i })).toBeNull();
+    expect(screen.queryByRole('heading', { name: /recommended change/i })).toBeNull();
   });
 
-  it('marks a picked zone as focused and Full body returns to the highest-priority zone', async () => {
+  it('starts on a summary (one chart, one recommendation) and opens the full detail in a dialog', async () => {
     const m = await mountApp('demo');
-    expect(screen.getByText(/highest priority now/i)).toBeInTheDocument();
+    const panel = () => screen.getByRole('heading', { level: 2, name: 'Brain' }).closest('section')!;
+    await screen.findByRole('heading', { name: /recommended change/i });
+    expect(within(panel()).getAllByRole('img', { name: /last \d+ days/i })).toHaveLength(1);
+    expect(within(panel()).getAllByRole('button', { name: 'Accept' })).toHaveLength(1);
+    expect(screen.queryByText('What changed')).toBeNull();
+    await m.user.click(screen.getByRole('button', { name: /view details/i }));
+    const dialog = screen.getByRole('dialog', { name: /brain details/i });
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    expect(within(dialog).getAllByText('What changed').length).toBeGreaterThan(0);
+    expect(within(dialog).getAllByRole('img', { name: /last \d+ days/i }).length).toBeGreaterThan(1);
+    await m.user.click(within(dialog).getByRole('button', { name: /close details/i }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByText('What changed')).toBeNull();
+  });
+
+  it('shows each recommendation once in the detail, and one Accept records it for every finding it answers', async () => {
+    const m = await mountApp('demo');
+    await openDetails(m);
+    const dialog = screen.getByRole('dialog', { name: /brain details/i });
+    await within(dialog).findAllByRole('button', { name: 'Accept' });
+    const titles = [...dialog.querySelectorAll('.proposal__title')].map((el) => el.textContent);
+    expect(titles.length).toBeGreaterThan(0);
+    expect(new Set(titles).size).toBe(titles.length); // no duplicates
+    const grouped = within(dialog).queryAllByRole('list', { name: 'Why' })[0];
+    if (grouped) {
+      const card = grouped.closest('li')!;
+      const reasons = within(grouped).getAllByRole('listitem').length;
+      const before = m.state().session!.decisions.length;
+      await m.user.click(within(card).getByRole('button', { name: 'Accept' }));
+      await waitFor(() => expect(m.state().session!.decisions.length).toBe(before + reasons));
+      expect(new Set(m.state().session!.decisions.map((d) => d.id)).size).toBe(m.state().session!.decisions.length);
+    }
+  });
+
+  it('Esc closes the detail dialog without leaving the focused zone, and focus returns to the opener', async () => {
+    const m = await mountApp('demo');
     await m.user.click(railRow('heart'));
+    const opener = screen.getByRole('button', { name: /view details/i });
+    await m.user.click(opener);
+    expect(screen.getByRole('dialog', { name: /heart details/i })).toBeInTheDocument();
+    await m.user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByText(/focused zone/i)).toBeInTheDocument();
-    await m.user.click(screen.getByRole('button', { name: /full body/i }));
-    expect(screen.getByRole('heading', { level: 2, name: 'Brain' })).toBeInTheDocument();
+    expect(opener).toHaveFocus();
   });
 
   it('Esc closes the check-in first, then leaves the focused zone', async () => {
@@ -487,6 +537,7 @@ describe('focus and suggestions', () => {
   it('saves a reading from the zone-scoped form, which shows only that zone\'s fields', async () => {
     const m = await mountApp('demo');
     await m.user.click(railRow('immune'));
+    await openDetails(m);
     await m.user.click(screen.getByText(/update immune readings/i));
     const form = within(screen.getByRole('form', { name: /update immune readings/i }));
     expect(form.queryByLabelText(/fasting glucose/i)).toBeNull();

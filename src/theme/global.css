@@ -490,7 +490,7 @@ kbd {
 /* ---------- Dashboard: rail | space stage | focus panel ---------- */
 .dashboard {
   display: grid;
-  grid-template-columns: minmax(260px, 300px) 1fr minmax(340px, 400px);
+  grid-template-columns: minmax(260px, 300px) 1fr minmax(400px, 480px);
   gap: var(--space-lg);
   align-items: start;
   position: relative;
@@ -926,6 +926,10 @@ kbd {
   gap: 8px 12px;
 }
 
+.zone-panel__more {
+  align-self: stretch;
+}
+
 .zone-panel__summary {
   color: var(--text-muted);
 }
@@ -1038,18 +1042,45 @@ kbd {
 }
 
 .proposal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space);
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-md);
-  padding: 12px var(--space);
+  padding: var(--space) var(--space-lg) var(--space-lg);
   background: var(--panel);
 }
 
-.proposal__title {
+.proposal__head {
   display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.proposal__head .eyebrow {
+  display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+.proposal__title {
   font-size: 16px;
   font-weight: 600;
+  line-height: 1.35;
+}
+
+.proposal__block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.proposal__label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 .proposal__why {
@@ -1057,13 +1088,38 @@ kbd {
   font-size: 12px;
   font-weight: 300;
   font-style: italic;
+  line-height: 1.5;
   color: var(--text-muted);
-  margin-top: 2px;
 }
 
-.proposal ul {
-  margin: 8px 0;
+.proposal__why-list {
+  margin: 0;
+  padding-left: var(--space);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.proposal__steps {
+  margin: 0;
   padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 1.45;
+}
+
+.proposal__steps li::marker {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.proposal__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: var(--space);
+  border-top: 1px solid var(--line-soft);
 }
 
 .proposal__actions {
@@ -1514,6 +1570,87 @@ details > summary {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* ---------- Dialog ---------- */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--space-lg);
+  background: color-mix(in srgb, var(--text) 45%, transparent);
+}
+
+.dialog {
+  width: min(1200px, 92vw);
+  max-height: calc(100dvh - 2 * var(--space-lg));
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.dialog:focus {
+  outline: none;
+}
+
+.dialog__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space);
+  padding: var(--space-lg) var(--space-lg) var(--space);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.dialog__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dialog__body {
+  overflow: auto;
+  padding: var(--space-lg);
+  scrollbar-width: thin;
+}
+
+.zone-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.zone-detail > .zone-section:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* Cards flow into as many columns as the width allows, so no column is left empty. */
+.card-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .dialog-backdrop {
+    padding: 0;
+    place-items: end stretch;
+  }
+  .dialog {
+    width: 100%;
+    max-height: 92dvh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
 }
 
 /* ---------- Motion ---------- */

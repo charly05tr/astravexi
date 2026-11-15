@@ -1,7 +1,9 @@
-import { ArrowLeft, ExternalLink, Flag } from 'lucide-react';
+import { ArrowLeft, ChevronRight, ExternalLink, Flag } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import type { ReactNode } from 'react';
+import { tierRank } from '../../core/health/tiers';
 import { SourceBadge } from '../../ui/Badge';
+import { Dialog } from '../../ui/Dialog';
 import { EmptyState } from '../../ui/Panel';
 import { TierChip, tierStyle } from '../../ui/TierChip';
 import type { CorroborationView, FindingView, IndicatorView, ZonePanelModel } from './zone-panel-model';
@@ -15,8 +17,13 @@ export interface ZonePanelProps {
   /** True when the user picked this zone; false when the panel follows the highest-priority zone. */
   focused: boolean;
   onBack(): void;
-  /** Routine-change suggestions for this zone (slot: the provider is async). */
+  /** All routine-change suggestions for this zone (slot: the provider is async). Detail view. */
   suggestions?: ReactNode;
+  /** The single top suggestion. Summary view. */
+  topSuggestion?: ReactNode;
+  /** True when the full detail is open; false shows the summary (one chart, one recommendation). */
+  detail: boolean;
+  onDetail(open: boolean): void;
   /** The zone-scoped reading form (slot). */
   update?: ReactNode;
 }
@@ -161,9 +168,33 @@ function IndicatorRow({ ind }: { ind: IndicatorView }) {
   );
 }
 
-/** Presentational zone panel: no store access. Everything it shows comes in through `model` and the slots. */
-export function ZonePanel({ model, isLive, focused, onBack, suggestions, update }: ZonePanelProps) {
+/**
+ * The indicator the summary charts: the one behind the most severe finding, or the zone's first indicator
+ * when nothing is active.
+ */
+export function summaryIndicator(model: ZonePanelModel): IndicatorView | null {
+  let best: { id: string; rank: number } | null = null;
+  for (const f of model.suggestionFindings) {
+    if (!f.indicatorId) continue;
+    const rank = tierRank(f.tier);
+    if (!best || rank > best.rank) best = { id: f.indicatorId, rank };
+  }
+  return model.indicators.find((i) => i.id === best?.id) ?? model.indicators[0] ?? null;
+}
+
+/**
+ * Presentational zone panel: no store access. Everything it shows comes in through `model` and the slots.
+ * Two levels: a summary (status, one chart, one recommendation) and the full detail on demand.
+ */
+export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSuggestion, update, detail, onDetail }: ZonePanelProps) {
   const hasFindings = model.findings.length > 0 || model.corroboration !== null;
+  const primary = summaryIndicator(model);
+  const emptyText =
+    model.status === 'noData'
+      ? isLive
+        ? 'No readings yet. Add your first check-in.'
+        : 'No recent reading. Add a check-in.'
+      : 'No active findings in this zone.';
   return (
     <section className="zone-panel" aria-labelledby="zone-panel-title" data-zone-id={model.zoneId} style={tierStyle(model.status)}>
       <div className="zone-panel__head">
@@ -188,40 +219,57 @@ export function ZonePanel({ model, isLive, focused, onBack, suggestions, update 
         </EmptyState>
       ) : (
         <>
-          <section className="zone-section" aria-labelledby="zone-indicators">
-            <h3 id="zone-indicators">Indicators</h3>
-            <ul className="indicator-list">
-              {model.indicators.map((i) => (
-                <IndicatorRow key={i.id} ind={i} />
-              ))}
+          {primary ? (
+            <ul className="indicator-list" aria-label="Key indicator">
+              <IndicatorRow ind={primary} />
             </ul>
-          </section>
-
-          {suggestions}
-
-          <section className="zone-section" aria-labelledby="zone-why">
-            <h3 id="zone-why">Why this status</h3>
-            {!hasFindings ? (
-              <EmptyState>
-                {model.status === 'noData'
-                  ? isLive
-                    ? 'No readings yet. Add your first check-in.'
-                    : 'No recent reading. Add a check-in.'
-                  : 'No active findings in this zone.'}
-              </EmptyState>
-            ) : (
-              <div className="stack">
-                {model.corroboration ? <Corroboration c={model.corroboration} /> : null}
-                {model.findings.map((f) => (
-                  <Finding key={f.key} f={f} />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {update}
+          ) : null}
+          {!hasFindings && model.status === 'noData' ? <EmptyState>{emptyText}</EmptyState> : null}
+          {detail ? null : topSuggestion}
+          <button type="button" className="button zone-panel__more" aria-haspopup="dialog" onClick={() => onDetail(true)}>
+            View details
+            <ChevronRight size={16} aria-hidden="true" />
+          </button>
         </>
       )}
+
+      {detail && model.monitored ? (
+        <Dialog
+          title={`${model.label} details`}
+          eyebrow="Zone detail"
+          aside={<TierChip status={model.status} />}
+          closeLabel="Close details"
+          onClose={() => onDetail(false)}
+          style={tierStyle(model.status)}
+        >
+          <div className="zone-detail" data-zone-id={model.zoneId}>
+            <p className="zone-panel__summary">{model.functionSummary}</p>
+            <section className="zone-section" aria-labelledby="zone-indicators">
+              <h3 id="zone-indicators">Indicators</h3>
+              <ul className="indicator-list card-grid">
+                {model.indicators.map((i) => (
+                  <IndicatorRow key={i.id} ind={i} />
+                ))}
+              </ul>
+            </section>
+            {suggestions}
+            <section className="zone-section" aria-labelledby="zone-why">
+              <h3 id="zone-why">Why this status</h3>
+              {!hasFindings ? (
+                <EmptyState>{emptyText}</EmptyState>
+              ) : (
+                <div className="card-grid">
+                  {model.corroboration ? <Corroboration c={model.corroboration} /> : null}
+                  {model.findings.map((f) => (
+                    <Finding key={f.key} f={f} />
+                  ))}
+                </div>
+              )}
+            </section>
+            {update}
+          </div>
+        </Dialog>
+      ) : null}
     </section>
   );
 }
