@@ -327,7 +327,13 @@ function ZoneWheel({
           ref={(el) => {
             slots.current[i] = el;
           }}
-          onFocus={() => turnTo(i, { snap: true })}
+          onFocus={() => {
+            // A pointer press focuses the card on pointerdown. Turning now would slide it out from under the
+            // pointer, so the click would land elsewhere and never select it. Let the click select instead;
+            // the selection effect turns the wheel.
+            if (motion.current.pointerId !== null) return;
+            turnTo(i, { snap: true });
+          }}
         >
           <span className={`rail__dot${ALERTING.has(row.status) ? ' rail__dot--alert' : ''}`} aria-hidden="true" />
           <ZoneCard row={row} selected={row.id === selectedZoneId} onSelect={onSelect} />
