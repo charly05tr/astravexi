@@ -3,6 +3,8 @@ import type { MedicationStore } from '../core/ports';
 import type { EnvironmentDeps } from '../core/use-cases/environment';
 import type { CrewSource } from '../core/use-cases/crew';
 import type { Deps } from '../core/use-cases/session';
+import type { DemoScenarioInfo } from './demo/demo-scenario';
+import type { PlaybackController } from './playback/playback-controller';
 import type { DemoDeps } from './demo/demo-use-cases';
 
 /** Meta key of the LIVE mission config in the LIVE database. */
@@ -29,6 +31,10 @@ export interface LiveAdapters {
 export interface DemoAdapters {
   mode: 'demo';
   deps: DemoDeps;
+  /** The evaluation scenario loaded with `?scenario=<id>`, or null for the default demo. */
+  scenario: DemoScenarioInfo | null;
+  /** Play, pause, step and seek of the loaded scenario; null for the default demo (which has no playback). */
+  playback: PlaybackController | null;
   /** Where the crew review reads every local profile's records. */
   crew: CrewSource;
   /** The medical kit and the crew's medication and allergy records, seeded with demo data. */

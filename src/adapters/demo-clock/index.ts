@@ -23,14 +23,25 @@ export const DEMO_CLOCK_START: DemoClockPosition = { day: DEMO_DAY, minute: dayS
  * pass while the tab is closed.
  */
 export class DemoClock implements MissionClock {
-  readonly scaleLabel = '1 s = 1 min';
+  readonly scaleLabel: string;
+  private readonly msPerMinute: number;
   private day: MissionDay;
   private anchorMinute: MissionMinute;
   private anchorRealMs: number;
   private readonly nowMs: () => number;
+  private readonly resetPosition: DemoClockPosition;
 
-  constructor(position: DemoClockPosition = DEMO_CLOCK_START, nowMs: () => number = Date.now) {
+  /** `resetPosition` is where `reset` returns to: day 150, 08:00 unless a scenario starts the demo elsewhere. */
+  constructor(
+    position: DemoClockPosition = DEMO_CLOCK_START,
+    nowMs: () => number = Date.now,
+    resetPosition: DemoClockPosition = DEMO_CLOCK_START,
+    secondsPerMinute = 1,
+  ) {
+    this.msPerMinute = secondsPerMinute * 1000;
+    this.scaleLabel = secondsPerMinute === 1 ? '1 s = 1 min' : `${secondsPerMinute} s = 1 min`;
     this.nowMs = nowMs;
+    this.resetPosition = resetPosition;
     this.day = position.day;
     this.anchorMinute = position.minute;
     this.anchorRealMs = nowMs();
@@ -41,7 +52,7 @@ export class DemoClock implements MissionClock {
   }
 
   now(): MissionMinute {
-    return this.anchorMinute + Math.max(0, Math.floor((this.nowMs() - this.anchorRealMs) / 1000));
+    return this.anchorMinute + Math.max(0, Math.floor((this.nowMs() - this.anchorRealMs) / this.msPerMinute));
   }
 
   /** What to persist: the frozen day and the current link minute. */
@@ -57,10 +68,10 @@ export class DemoClock implements MissionClock {
     this.anchorRealMs = this.nowMs();
   }
 
-  /** Back to day 150, 08:00. */
+  /** Back to the start position: day 150, 08:00 by default. */
   reset(): void {
-    this.day = DEMO_CLOCK_START.day;
-    this.anchorMinute = DEMO_CLOCK_START.minute;
+    this.day = this.resetPosition.day;
+    this.anchorMinute = this.resetPosition.minute;
     this.anchorRealMs = this.nowMs();
   }
 }

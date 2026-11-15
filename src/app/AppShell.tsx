@@ -12,6 +12,9 @@ import { AlertRailContainer } from '../features/insights/AlertRailContainer';
 import { ZonePanelContainer } from '../features/insights/ZonePanelContainer';
 import { useZones } from '../features/insights/use-zones';
 import { OutboxContainer } from '../features/outbox/OutboxContainer';
+import { PlaybackBar } from '../features/playback/PlaybackBar';
+import { EXITED_FLAG } from '../features/playback/exit-playback';
+import { usePlayerHidden } from '../features/playback/player-visibility';
 import { UserMenu } from '../features/profiles/UserMenu';
 import { ProfilesView } from '../features/profiles/ProfilesView';
 import { SyncView } from '../features/sync/SyncView';
@@ -185,10 +188,23 @@ function Comms() {
 export function AppShell() {
   const { view } = useUi();
   const storageAvailable = useAppState((s) => s.storageAvailable);
+  const hasPlayback = useAppState((s) => s.playback !== null);
+  const playerHidden = usePlayerHidden();
+  const playing = hasPlayback && !playerHidden;
+  // After "Exit playback" the page reloads into the default demo: put focus on the content, not nowhere.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(EXITED_FLAG) === null) return;
+      sessionStorage.removeItem(EXITED_FLAG);
+      document.getElementById('main')?.focus();
+    } catch {
+      // Storage blocked: focus stays where the browser puts it.
+    }
+  }, []);
   return (
-    <div className={`app app--${view}`}>
+    <div className={`app app--${view}${playing ? ' app--playback' : ''}`}>
       <Header />
-      <main className="main" id="main">
+      <main className="main" id="main" tabIndex={-1}>
         {!storageAvailable ? (
           <p className="banner" role="alert">
             Storage is unavailable in this browser. Entries will not be kept.
@@ -213,6 +229,7 @@ export function AppShell() {
         )}
       </main>
       {view !== 'dashboard' ? <Footer /> : null}
+      <PlaybackBar />
     </div>
   );
 }

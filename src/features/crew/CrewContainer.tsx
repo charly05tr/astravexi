@@ -1,16 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useAppContext, useAppState } from '../../app/app-context';
 import { useUi } from '../../app/ui-state';
 import type { Tier, ZoneId } from '../../core/health/model';
 import type { CrewMember, CrewReview } from '../../core/use-cases/crew';
 import { tierTheme } from '../../theme/tiers';
+import { useCoalescedLoad } from '../shared/use-coalesced-load';
 import { MedicalRecordContainer } from '../medical/MedicalRecordContainer';
 import { MedicationStockContainer } from '../medical/MedicationStockContainer';
 import { CrewMemberDetail } from './CrewMemberDetail';
 import { CrewOverview } from './CrewOverview';
 import { buildCrewDetail, buildCrewOverview } from './crew-model';
-
-type Load = { status: 'loading' } | { status: 'error' } | { status: 'ready'; review: CrewReview };
 
 const tierLabel = (t: Tier) => tierTheme(t).label;
 
@@ -24,24 +23,9 @@ export function CrewContainer() {
   // A new session (sync pull, day rollover, check-in) means the crew's records may have changed too.
   const session = useAppState((s) => s.session);
   const { crewMemberId, selectCrewMember } = useUi();
-  const [load, setLoad] = useState<Load>({ status: 'loading' });
-
-  useEffect(() => {
-    let cancelled = false;
-    store
-      .getState()
-      .loadCrew()
-      .then((review) => {
-        if (!cancelled) setLoad({ status: 'ready', review });
-      })
-      .catch(() => {
-        if (!cancelled) setLoad({ status: 'error' });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [store, session]);
-
+  const [loaded, setLoaded] = useCoalescedLoad(() => store.getState().loadCrew(), session);
+  const load: { status: 'loading' } | { status: 'error' } | { status: 'ready'; review: CrewReview } =
+    loaded.status === 'ready' ? { status: 'ready', review: loaded.value } : loaded;
   const review = load.status === 'ready' ? load.review : null;
   const cards = useMemo(() => (review ? buildCrewOverview(review.members, knowledge, tierLabel) : []), [review, knowledge]);
   const member = review?.members.find((m) => m.profileId === crewMemberId) ?? null;
@@ -52,9 +36,9 @@ export function CrewContainer() {
       if (!crewMemberId) return;
       const updated = await store.getState().acknowledgeCrewMember(crewMemberId, zoneId, groupId);
       if (!updated) return;
-      setLoad((prev) => (prev.status === 'ready' ? { status: 'ready', review: replaceMember(prev.review, updated) } : prev));
+      setLoaded((prev) => (prev.status === 'ready' ? { status: 'ready', value: replaceMember(prev.value, updated) } : prev));
     },
-    [store, crewMemberId],
+    [store, crewMemberId, setLoaded],
   );
 
   if (load.status === 'loading') {

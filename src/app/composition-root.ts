@@ -2,6 +2,9 @@ import { createActiveProfile } from '../adapters/active-profile';
 import { openDexieDeviceCredentials } from '../adapters/dexie-device-credentials';
 import { createHttpSyncGateway } from '../adapters/http-sync-gateway';
 import { DemoClock } from '../adapters/demo-clock';
+import { createVisibleRecordStore } from '../adapters/visible-record-store';
+import { playbackFor } from './playback/playback-controller';
+import type { PlaybackOptions } from './playback/playback-controller';
 import type { DemoClockPosition } from '../adapters/demo-clock';
 import { openDexieMedicationStore } from '../adapters/dexie-medication-store';
 import { openDexieProfileStore } from '../adapters/dexie-profile-store';
@@ -10,6 +13,8 @@ import { emptyHistory } from '../adapters/empty-history';
 import { createNasaOsdrEnvironment } from '../adapters/nasa-osdr-environment';
 import { openEnvironmentCache } from '../adapters/nasa-osdr-environment/dexie-cache';
 import { createSimulatedCabinTimeline, withScenarioEpisodes } from '../adapters/seeded-history/cabin-timeline';
+import { crewIndexOf } from './demo/demo-scenario';
+import type { DemoScenario } from './demo/demo-scenario';
 import { createMemoryMedicationStore } from '../adapters/memory-medication-store';
 import { createMemoryProfileStore } from '../adapters/memory-profile-store';
 import { createMemoryRecordStore } from '../adapters/memory-record-store';
@@ -107,6 +112,10 @@ export async function openMedicalStore(name: string): Promise<MedicationStore> {
 
 export interface ComposeOptions {
   nowMs?: () => number;
+  /** DEMO only: an evaluation scenario (`?scenario=<id>`) replaces the demo crew history, the cabin and the clock. Ignored in LIVE. */
+  scenario?: DemoScenario | null;
+  /** Tests inject a scheduler here to drive scenario playback without real time. */
+  playback?: PlaybackOptions;
   /** Injected in tests; defaults to Dexie with memory fallback. */
   open?: (name: string, wipeOnSchemaError: boolean) => Promise<StoreOpenResult>;
   /** The profile store the app already opened; the crew review reads the profile list from it. */
@@ -146,7 +155,19 @@ export async function composeAdapters(
   options: ComposeOptions = {},
 ): Promise<Adapters> {
   const nowMs = options.nowMs ?? Date.now;
-  const open = options.open ?? openStore;
+  const scenario = mode === 'demo' ? (options.scenario ?? null) : null;
+  // A scenario never touches the persisted DEMO data: everything it writes lives in memory for this page load.
+  const playback = scenario ? playbackFor(scenario, options.playback) : null;
+  const baseOpen =
+    options.open ??
+    (scenario ? async (name: string) => ({ store: createMemoryRecordStore(name), storageAvailable: true }) : openStore);
+  // Under playback every store only shows what exists at the playback minute (check-ins, acks, messages stamped later are hidden).
+  const open = playback
+    ? async (name: string, wipe: boolean): Promise<StoreOpenResult> => {
+        const opened = await baseOpen(name, wipe);
+        return { ...opened, store: createVisibleRecordStore(opened.store, () => playback.clock.now()) };
+      }
+    : baseOpen;
   const newId = options.newId ?? (() => crypto.randomUUID());
   const nowIso = () => new Date(nowMs()).toISOString();
   const actor = toActor(profile);
@@ -157,7 +178,7 @@ export async function composeAdapters(
   const environment = {
     reference: options.cabinReference ?? createNasaOsdrEnvironment(osdrConfig()),
     cache: options.cabinCache ?? (await openEnvironmentCache()),
-    timeline: mode === 'demo' ? createSimulatedCabinTimeline(DEMO_SEED) : null,
+    timeline: mode === 'demo' ? (scenario ? scenario.timeline : createSimulatedCabinTimeline(DEMO_SEED)) : null,
   };
 
   if (mode === 'demo') {
@@ -176,11 +197,18 @@ export async function composeAdapters(
     return {
       mode,
       storageAvailable,
+      scenario: scenario ? { id: scenario.id, name: scenario.name, description: scenario.description, seed: scenario.seed } : null,
+      playback,
       medical,
       environment,
       crew: {
         profiles,
         async open(p): Promise<CrewMemberData> {
+          if (scenario) {
+            const index = crewIndexOf(p.id);
+            const own = p.id === DEMO_ASTRONAUT_ID ? store : await extraStore(p.id);
+            return { store: own, history: index >= 0 ? scenario.historyFor(index, () => playback!.clock.now()) : emptyHistory, seed: 0 };
+          }
           // The demo astronaut owns the DEMO database; the other demo profiles have no records of their own.
           if (p.id === DEMO_ASTRONAUT_ID) return { store, history: demoHistory, seed: DEMO_SEED };
           const extra = DEMO_CREW_EXTRAS.find((c) => c.id === p.id);
@@ -196,10 +224,11 @@ export async function composeAdapters(
       },
       deps: {
         store,
-        clock: new DemoClock(saved, nowMs), // re-anchors: no time passes while the tab was closed
-        history: demoHistory,
+        // Re-anchors: no time passes while the tab was closed. A scenario starts (and resets) at its own position.
+        clock: playback ? playback.clock : new DemoClock(saved, nowMs),
+        history: scenario ? scenario.historyFor(0, () => playback!.clock.now()) : demoHistory,
         knowledge,
-        seed: DEMO_SEED,
+        seed: scenario ? 0 : DEMO_SEED,
         actor,
         // Both demo profiles look at the same synthetic crew member's data.
         subject: { profileId: DEMO_ASTRONAUT_ID, name: DEMO_SUBJECT_NAME },

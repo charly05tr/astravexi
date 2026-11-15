@@ -6,6 +6,7 @@ import {
   createBrowserModePreference,
 } from './composition-root';
 import type { ComposeOptions, ProfileServices } from './composition-root';
+import { scenarioFromSearch } from './demo/demo-scenario';
 import { resolveMode } from './mode';
 import type { AppMode } from './mode';
 import { createAppStore } from './store/app-store';
@@ -53,5 +54,7 @@ export async function boot(search: string): Promise<BootResult> {
       },
     };
   }
-  return { kind: 'ready', session: await createProfileSession(mode) };
+  // `?scenario=<id>` loads an evaluation scenario into DEMO; LIVE never reads it.
+  const scenario = mode === 'demo' ? scenarioFromSearch(search) : null;
+  return { kind: 'ready', session: await createProfileSession(mode, { scenario }) };
 }

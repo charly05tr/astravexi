@@ -25,6 +25,8 @@ import type { Session } from '../../core/use-cases/session';
 import { cabinCalibration, cabinForecastModel, cabinKnowledge } from '../../knowledge';
 import { MISSION_META_KEY } from '../adapters';
 import type { Adapters } from '../adapters';
+import type { DemoScenarioInfo } from '../demo/demo-scenario';
+import type { PlaybackController } from '../playback/playback-controller';
 import { advanceDemoDay, persistDemoClock, resetDemo } from '../demo/demo-use-cases';
 import type { AppMode } from '../mode';
 
@@ -46,6 +48,10 @@ export interface MissionInfo {
 
 export interface AppState {
   mode: AppMode;
+  /** DEMO only: the evaluation scenario that is loaded, or null (always null in LIVE). */
+  scenario: DemoScenarioInfo | null;
+  /** DEMO scenarios only: the playback of the scenario (the playback bar drives it). Null in LIVE and in the default demo. */
+  playback: PlaybackController | null;
   /** Who is acting. Role-gated actions reject any other role, and the UI hides what the role cannot do. */
   actor: Actor;
   status: 'idle' | 'hydrating' | 'ready' | 'error';
@@ -167,6 +173,8 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
 
     return {
       mode: adapters.mode,
+      scenario: adapters.mode === 'demo' ? adapters.scenario : null,
+      playback: adapters.mode === 'demo' ? adapters.playback : null,
       actor: adapters.deps.actor,
       status: 'idle',
       error: null,
@@ -368,6 +376,9 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
       },
     };
   });
+
+  // Playback moves the clock; this brings the session back in line with it (hydrates from the stores, so seeking back drops the future).
+  if (adapters.mode === 'demo') adapters.playback?.bind(() => store.getState().refresh());
 
   return store;
 }

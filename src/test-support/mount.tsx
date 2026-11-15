@@ -1,6 +1,8 @@
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppRoot } from '../app/AppRoot';
+import type { DemoScenario } from '../app/demo/demo-scenario';
+import type { PlaybackOptions } from '../app/playback/playback-controller';
 import type { AiModelCatalog, AiSettingsStore, CabinReferenceSource, FollowUpSuggestionProvider } from '../core/ports';
 import type { AppMode } from '../app/mode';
 import { ProfileProvider } from '../app/profile-context';
@@ -30,11 +32,14 @@ export async function mountApp(
     aiModels?: AiModelCatalog;
     /** The NASA OSDR reference. Defaults to a source that fails: tests never reach the network. */
     cabinSource?: CabinReferenceSource;
+    /** DEMO only: a scenario to run under playback. */
+    scenario?: DemoScenario | null;
+    playback?: PlaybackOptions;
   } = {},
 ) {
   const world = createTestWorld();
   if (options.cabinSource) world.cabin.source = options.cabinSource;
-  const app = await world.app(mode, { role: options.role });
+  const app = await world.app(mode, { role: options.role, scenario: options.scenario, playback: options.playback });
   if (mode === 'live' && options.configureLive !== false) {
     await app.state().saveMissionConfig({ launchDate: '2026-06-15', transitDays: 210, destination: 'Mars' });
   }

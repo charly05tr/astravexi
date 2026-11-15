@@ -3301,3 +3301,227 @@ details > summary {
     text-align: left;
   }
 }
+
+/* ---------- Mission playback bar (DEMO scenarios) ----------
+ * Fixed at the bottom of every view. The bar publishes its height as --playback-h and the shell reserves it, so it never
+ * covers content. No animation: the position is user driven, and nothing here moves on its own.
+ */
+.app--playback {
+  padding-bottom: var(--playback-h, 128px);
+}
+
+.playback {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px var(--space-xl) 10px;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+}
+
+.playback__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px var(--space-lg);
+}
+
+.playback__group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.playback__play {
+  background: var(--surface-raised);
+  border-color: var(--surface-raised);
+  color: var(--on-raised);
+}
+
+.playback__play[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.playback__time {
+  min-width: 11ch;
+  font-size: 16px;
+}
+
+.playback__speed {
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.playback__speed[aria-pressed='true'] {
+  background: var(--surface-raised);
+  border-color: var(--surface-raised);
+  color: var(--on-raised);
+}
+
+.playback__script {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.playback__scrub {
+  position: relative;
+  padding-bottom: 14px;
+}
+
+.playback__track {
+  position: relative;
+  height: 28px;
+  cursor: pointer;
+  touch-action: none;
+  border-radius: var(--radius-sm);
+}
+
+.playback__rail,
+.playback__played {
+  position: absolute;
+  left: 0;
+  top: 12px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.playback__rail {
+  right: 0;
+  background: var(--line-soft);
+}
+
+.playback__played {
+  background: var(--accent);
+}
+
+.playback__tick {
+  position: absolute;
+  top: 8px;
+  width: 1px;
+  height: 12px;
+  background: var(--line);
+}
+
+.playback__thumb {
+  position: absolute;
+  top: 4px;
+  width: 4px;
+  height: 20px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: var(--text);
+}
+
+.playback__events {
+  position: absolute;
+  inset: 0 0 14px 0;
+  height: 28px;
+  pointer-events: none;
+}
+
+.playback__event {
+  position: absolute;
+  top: 0;
+  min-width: 8px;
+  height: 10px;
+  padding: 0;
+  border: 1px solid var(--text);
+  border-radius: 3px;
+  background: var(--surface-raised);
+  opacity: 0.85;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.playback__event[data-class='environmental'] {
+  background: var(--accent);
+}
+
+.playback__event[data-class='shared'] {
+  background: repeating-linear-gradient(45deg, var(--surface-raised) 0 3px, var(--panel) 3px 6px);
+}
+
+.playback__event:hover,
+.playback__event:focus-visible {
+  opacity: 1;
+}
+
+.playback__days {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 14px;
+  color: var(--text-muted);
+  font-style: normal;
+  line-height: 14px;
+}
+
+.playback__days span {
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.playback__caption {
+  color: var(--text-muted);
+  min-height: 18px;
+}
+
+@media (max-width: 720px) {
+  .playback {
+    padding: 8px var(--space) 10px;
+  }
+  .playback__script {
+    margin-left: 0;
+  }
+}
+
+/* The hidden player: a small pill at the bottom right. It takes no room in the layout. */
+.playback-pill {
+  position: fixed;
+  right: var(--space);
+  bottom: var(--space);
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--text) 18%, transparent);
+  font-size: 13px;
+}
+
+.playback-pill .button {
+  min-height: 28px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+@media (max-width: 720px) {
+  .playback-pill {
+    right: 8px;
+    bottom: 8px;
+  }
+}
+
+.main:focus {
+  outline: none;
+}

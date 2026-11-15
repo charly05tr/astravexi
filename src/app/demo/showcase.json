@@ -1,0 +1,51 @@
+{
+  "id": "showcase",
+  "name": "Showcase: three weeks of mission",
+  "description": "A film-like run for presentations: 21 mission days after a 28-day warm-up, with four scripted events separated by normal days (cabin heat for the whole crew, one person's fever, CO2 above the limit with sleep loss in 2 crew, shared sleep loss with a nominal cabin). The injected effects are 5 SD, deliberately larger than the 2-6 SD of the evaluation scenarios so they are easy to see: this scenario is for demonstration and is NOT part of the engine evaluation.",
+  "seed": 1001,
+  "firstDay": 121,
+  "warmupDays": 28,
+  "judgedDays": 21,
+  "initialHour": 8,
+  "events": [
+    {
+      "id": "cabin-heat",
+      "name": "Cabin heat, whole crew",
+      "class": "environmental",
+      "fromDay": 152,
+      "toDay": 153,
+      "cabin": { "variable": "cabinTemperature", "delta": 7, "fromHourPreviousDay": 22, "toHourLastDay": 7.5 },
+      "anomalies": [
+        { "indicatorId": "heartRate", "people": [0, 1, 2], "direction": "up", "magnitudeSd": 5 },
+        { "indicatorId": "temperature", "people": [0, 1, 2], "direction": "up", "magnitudeSd": 5 }
+      ]
+    },
+    {
+      "id": "fever",
+      "name": "Fever, one crew member",
+      "class": "individual",
+      "fromDay": 157,
+      "toDay": 158,
+      "cabin": null,
+      "anomalies": [{ "indicatorId": "temperature", "people": [1], "direction": "up", "magnitudeSd": 5 }]
+    },
+    {
+      "id": "co2-sleep",
+      "name": "CO2 above limit, sleep loss in 2 crew",
+      "class": "environmental",
+      "fromDay": 162,
+      "toDay": 163,
+      "cabin": { "variable": "co2", "delta": 2200, "fromHourPreviousDay": 22, "toHourLastDay": 7.5 },
+      "anomalies": [{ "indicatorId": "sleepHours", "people": [0, 2], "direction": "down", "magnitudeSd": 5 }]
+    },
+    {
+      "id": "shared-sleep",
+      "name": "Shared sleep loss, cabin nominal",
+      "class": "shared",
+      "fromDay": 167,
+      "toDay": 168,
+      "cabin": null,
+      "anomalies": [{ "indicatorId": "sleepHours", "people": [0, 1, 2], "direction": "down", "magnitudeSd": 5 }]
+    }
+  ]
+}

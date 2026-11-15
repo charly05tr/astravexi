@@ -12,6 +12,8 @@ import { createProfileSession } from '../app/boot';
 import type { AppMode } from '../app/mode';
 import { DB_NAME, activeProfileKey, liveDbName } from '../app/mode';
 import { createAppStore } from '../app/store/app-store';
+import type { DemoScenario } from '../app/demo/demo-scenario';
+import type { PlaybackOptions } from '../app/playback/playback-controller';
 
 const T0 = '2026-06-01T00:00:00.000Z';
 
@@ -87,9 +89,9 @@ export function createTestWorld(startMs = new Date(2026, 5, 15, 9, 0, 0).getTime
   const dbName = (mode: AppMode, role: Role = 'astronaut') =>
     mode === 'demo' ? DB_NAME.demo : liveDbName(testProfile(role).id);
 
-  async function app(mode: AppMode, opts: { role?: Role; profile?: CrewProfile } = {}) {
+  async function app(mode: AppMode, opts: { role?: Role; profile?: CrewProfile; scenario?: DemoScenario | null; playback?: PlaybackOptions } = {}) {
     const profile = opts.profile ?? testProfile(opts.role ?? 'astronaut');
-    const adapters = await composeAdapters(mode, profile, options);
+    const adapters = await composeAdapters(mode, profile, { ...options, scenario: opts.scenario ?? null, playback: opts.playback });
     const store = createAppStore(adapters);
     await store.getState().hydrate();
     return { adapters, store, profile, state: () => store.getState() };

@@ -10,6 +10,7 @@ import { Button } from '../../ui/Button';
 import { Dialog } from '../../ui/Dialog';
 import { summarize } from '../sync/sync-summary';
 import { useNow } from '../sync/use-now';
+import { DEMO_PICKER_LIST } from '../../app/demo/demo-scenario';
 import { ROLE_LABEL } from './role-labels';
 
 const ITEM = '[role="menuitem"]:not([disabled])';
@@ -29,6 +30,7 @@ export function UserMenu() {
   const ctx = useProfileContext();
   const actor = useAppState((s) => s.actor);
   const mode = useAppState((s) => s.mode);
+  const scenario = useAppState((s) => s.scenario);
   const actions = useAppActions();
   const { setView, setAiSettingsOpen } = useUi();
   const syncService = useSyncService();
@@ -39,6 +41,7 @@ export function UserMenu() {
   const menu = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [pickingScenario, setPickingScenario] = useState(false);
   const [profiles, setProfiles] = useState<CrewProfile[] | null>(null);
 
   const services = ctx?.services;
@@ -215,6 +218,10 @@ export function UserMenu() {
               <button type="button" role="menuitem" className="user-menu__item" onClick={act(() => setConfirming(true))}>
                 Reset demo
               </button>
+              <button type="button" role="menuitem" className="user-menu__item" onClick={act(() => setPickingScenario(true))}>
+                Load scenario...
+                {scenario ? <span className="muted small">{scenario.name}</span> : null}
+              </button>
             </div>
           ) : null}
 
@@ -224,6 +231,36 @@ export function UserMenu() {
             </a>
           </div>
         </div>
+      ) : null}
+
+      {pickingScenario ? (
+        <Dialog
+          title="Load scenario"
+          closeLabel="Close scenario list"
+          onClose={() => setPickingScenario(false)}
+          style={{ width: 'min(560px, 92vw)' }}
+        >
+          <div className="stack">
+            <p className="muted small">
+              Loads one simulated scenario (fixed seed, synthetic data) into the demo and shows the playback bar: play it like a film,
+              pause, step or jump to any time. The showcase is a presentation run; the others are scenarios of the engine evaluation. Sign
+              in as the Demo CMO and open Cabin &amp; crew to see it. Nothing is saved: the default demo data stays untouched.
+            </p>
+            <ul className="stack" aria-label="Scenarios">
+              {DEMO_PICKER_LIST.map((x) => (
+                <li key={x.id}>
+                  <a href={`?mode=demo&scenario=${encodeURIComponent(x.id)}`} aria-current={scenario?.id === x.id ? 'true' : undefined}>
+                    {x.name}
+                  </a>
+                  <span className="muted small"> {x.description}</span>
+                </li>
+              ))}
+            </ul>
+            <p>
+              <a href="?mode=demo">Back to the default demo</a>
+            </p>
+          </div>
+        </Dialog>
       ) : null}
 
       {confirming ? (
