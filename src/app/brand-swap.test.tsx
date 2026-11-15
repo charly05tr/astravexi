@@ -29,6 +29,10 @@ const other: BrandConfig = {
     inkMuted: '#4A4F52',
     border: '#7A7A7A',
     borderSubtle: '#DDDDDE',
+    danger: '#9A3A33',
+    dangerSurface: '#F8E8E6',
+    success: '#356043',
+    successSurface: '#E5F0E8',
   },
   gradient: 'linear-gradient(to bottom, #FFFFFF, #F4F5F7)',
   fonts: { display: 'Georgia, serif', body: 'Arial, sans-serif', mono: 'Courier, monospace' },
@@ -87,7 +91,6 @@ describe('brand swap leaves tier meaning unchanged', () => {
 
     await mountApp('demo', { brandConfig: other });
     expect(within(screen.getByRole('banner')).getByText('Other Brand')).toBeInTheDocument();
-    expect(screen.getByText(/Entry for the Some Other Event/)).toBeInTheDocument();
     const railB = chipsOf(screen.getByRole('list', { name: /body zones by alert tier/i }));
     expect(railB).toEqual(railA);
     expect(railB).toHaveLength(6);

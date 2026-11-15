@@ -23,6 +23,10 @@ const colors = {
   inkMuted: '#53595C',
   border: '#8E8E8E',
   borderSubtle: '#E4E4E5',
+  danger: '#A3433C',
+  dangerSurface: '#FBECEA',
+  success: '#3F6B4D',
+  successSurface: '#EAF3EC',
 } as const;
 
 export const brand: BrandConfig = {
@@ -48,6 +52,10 @@ export const brand: BrandConfig = {
     accent: 'peach',
     focus: 'steel',
     chartSeries: 'deepTeal',
+    danger: 'danger',
+    dangerSurface: 'dangerSurface',
+    success: 'success',
+    successSurface: 'successSurface',
   },
   textPairs: [
     ['ink', 'white'],
@@ -56,6 +64,10 @@ export const brand: BrandConfig = {
     ['inkMuted', 'canvas'],
     ['white', 'deepTeal'],
     ['deepTeal', 'white'],
+    ['danger', 'white'],
+    ['danger', 'dangerSurface'],
+    ['success', 'white'],
+    ['success', 'successSurface'],
   ],
   scene: { background: 'night', keyLight: 'white', rimLight: 'sky', starTint: 'white' },
 };

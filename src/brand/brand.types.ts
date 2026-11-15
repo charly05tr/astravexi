@@ -13,7 +13,11 @@ export type BrandColorName =
   | 'ink'
   | 'inkMuted'
   | 'border'
-  | 'borderSubtle';
+  | 'borderSubtle'
+  | 'danger'
+  | 'dangerSurface'
+  | 'success'
+  | 'successSurface';
 
 export interface BrandRoles {
   /** Page background. */
@@ -36,6 +40,12 @@ export interface BrandRoles {
   focus: BrandColorName;
   /** Chart series 1 (single-series line charts). */
   chartSeries: BrandColorName;
+  /** Form errors and failed actions: text/icon color and soft surface. */
+  danger: BrandColorName;
+  dangerSurface: BrandColorName;
+  /** Confirmations (saved, accepted): text/icon color and soft surface. */
+  success: BrandColorName;
+  successSurface: BrandColorName;
 }
 
 export interface BrandConfig {

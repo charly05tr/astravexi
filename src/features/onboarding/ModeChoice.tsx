@@ -1,4 +1,4 @@
-import { Flask } from '@phosphor-icons/react';
+import { FlaskConical } from 'lucide-react';
 import { useBrand } from '../../brand/brand-context';
 import type { AppMode } from '../../app/mode';
 
@@ -19,7 +19,7 @@ export function ModeChoice({ onChoose }: { onChoose(mode: AppMode): void }) {
         </button>
         <button type="button" className="choice" onClick={() => onChoose('demo')}>
           <span className="choice__title">
-            <Flask size={20} aria-hidden="true" /> Explore the demo with simulated data
+            <FlaskConical size={20} aria-hidden="true" /> Explore the demo with simulated data
           </span>
           <span className="muted">A synthetic crew member on day 150 of a 210-day transit. Everything is labeled SYNTHETIC.</span>
         </button>

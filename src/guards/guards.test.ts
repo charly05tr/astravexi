@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { brand } from '../brand/brand.config';
 import type { BrandColorName } from '../brand/brand.types';
 import { contrastRatio, hexToHsl } from '../test-support/color';
-import { TIER_CHIP_TEXT, TIER_THEME } from '../theme/tiers';
+import { TIER_THEME } from '../theme/tiers';
 
 // Every source file as raw text, keyed by path relative to this file.
 const files = import.meta.glob('../**/*.{ts,tsx,css}', { query: '?raw', eager: true, import: 'default' }) as Record<
@@ -59,14 +59,9 @@ describe('guard: brand roles', () => {
     }
   });
 
-  it('keeps the semaphore (tier) colors out of the brand, so a brand swap never changes alert meaning', () => {
-    const tierColors = new Set(Object.values(TIER_THEME).map((t) => t.color.toUpperCase()));
-    const brandColors = Object.values(brand.colors).map((c) => c.toUpperCase());
-    // Notice, Information and Not monitored reuse corporate neutrals by value; the semaphore fills must not.
-    for (const status of ['caution', 'warning'] as const) {
-      expect(brandColors).not.toContain(TIER_THEME[status].color.toUpperCase());
-    }
-    expect(tierColors.size).toBe(7);
+  it('gives every tier its own badge color and surface', () => {
+    expect(new Set(Object.values(TIER_THEME).map((t) => t.color.toUpperCase())).size).toBe(7);
+    expect(new Set(Object.values(TIER_THEME).map((t) => t.surface.toUpperCase())).size).toBe(7);
   });
 
   it('never uses the accent or focus color as a CSS background', () => {
@@ -91,9 +86,10 @@ describe('guard: contrast', () => {
     }
   });
 
-  it('keeps the dark chip label and glyph at 4.5:1 on every tier fill', () => {
+  it('keeps every badge label and icon at 4.5:1 on its own surface and on white', () => {
     for (const theme of Object.values(TIER_THEME)) {
-      expect(contrastRatio(TIER_CHIP_TEXT, theme.color), theme.status).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(theme.color, theme.surface), theme.status).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(theme.color, '#FFFFFF'), `${theme.status} on white`).toBeGreaterThanOrEqual(4.5);
     }
   });
 

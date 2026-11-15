@@ -1,4 +1,4 @@
-import { Flag, Sparkle } from '@phosphor-icons/react';
+import { CircleCheck, Flag, Sparkles } from 'lucide-react';
 import type { Suggestion } from '../../core/ports';
 import { Button } from '../../ui/Button';
 import type { SuggestionsState } from './use-suggestions';
@@ -12,7 +12,7 @@ function SuggestionCard({ s, onDecide }: { s: Suggestion; onDecide: SuggestionLi
   return (
     <li className="proposal" data-origin={s.origin}>
       <p className="proposal__title">
-        {s.origin === 'llm' ? <Sparkle size={14} weight="bold" aria-label="Generated" /> : null}
+        {s.origin === 'llm' ? <Sparkles size={14} aria-label="Generated" /> : null}
         Proposed routine change: {s.title}
       </p>
       <p className="proposal__why">{s.rationale}</p>
@@ -26,14 +26,17 @@ function SuggestionCard({ s, onDecide }: { s: Suggestion; onDecide: SuggestionLi
           {s.evidence ? <span>Evidence: {s.evidence.label}</span> : null}
           {s.needsVerification ? (
             <span className="verify-mark">
-              <Flag size={14} weight="bold" aria-hidden="true" />
+              <Flag size={14} aria-hidden="true" />
               Needs verification
             </span>
           ) : null}
         </p>
       ) : null}
       {s.decision === 'accepted' ? (
-        <p className="status-line">Accepted</p>
+        <p className="status-line">
+          <CircleCheck size={14} aria-hidden="true" />
+          Accepted
+        </p>
       ) : (
         <div className="proposal__actions">
           <Button size="small" variant="primary" onClick={() => onDecide(s, 'accepted')}>

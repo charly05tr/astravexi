@@ -1,4 +1,4 @@
-import { FirstAid } from '@phosphor-icons/react';
+import { Stethoscope } from 'lucide-react';
 import type { ZoneId } from '../../core/health/model';
 import { SourceBadge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
@@ -18,7 +18,7 @@ export function CmoPanel({
     <Panel
       id="cmo"
       title="Crew Medical Officer"
-      icon={<FirstAid size={20} aria-hidden="true" />}
+      icon={<Stethoscope size={20} aria-hidden="true" />}
       hint="On board. Caution and Warning items only. Mood shows as a tier, never as a score."
     >
       {zones.length === 0 ? (

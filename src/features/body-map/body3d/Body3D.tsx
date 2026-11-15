@@ -9,13 +9,68 @@ import type { ZoneId, ZoneStatus } from '../../../core/health/model';
 import { tierTheme } from '../../../theme/tiers';
 import { tierStyle } from '../../../ui/TierChip';
 import type { BodyModelProps, ZoneView } from '../body-model';
-import { ORGAN_ZONE, ZONE_FOCUS, ZONE_PIN, meshesOfZone, pickZone } from './organ-map';
+import { EXPLODABLE, EXPLODE_TARGET, ORGAN_ZONE, ZONE_FOCUS, ZONE_PIN, explodingOrgans, meshesOfZone, pickZone } from './organ-map';
 
 export const BODY_MODEL_URL = '/models/body.glb';
 /** The model is authored in centimetres; the scene works in metres. */
 const MODEL_SCALE = 0.01;
 const ALERTING: ReadonlySet<ZoneStatus> = new Set(['notice', 'caution', 'warning']);
 const FADED_OPACITY = 0.12;
+/** How fast an organ slides out of / back into the body (per second, exponential approach). */
+const EXPLODE_RATE = 4;
+
+/**
+ * World-space box of a mesh with its exploded-view morph fully applied (weight 1). Box3.setFromObject
+ * ignores morph targets, so the camera and the pin would aim at the organ's resting place instead.
+ */
+function explodedBox(mesh: Mesh): Box3 {
+  const position = mesh.geometry.getAttribute('position');
+  const delta = mesh.geometry.morphAttributes.position?.[EXPLODE_TARGET[mesh.userData.organ as string] ?? 0];
+  const relative = mesh.geometry.morphTargetsRelative;
+  mesh.updateWorldMatrix(true, false);
+  const box = new Box3();
+  const v = new Vector3();
+  for (let i = 0; i < position.count; i += 1) {
+    v.fromBufferAttribute(position, i);
+    if (delta) {
+      if (relative) v.set(v.x + delta.getX(i), v.y + delta.getY(i), v.z + delta.getZ(i));
+      else v.fromBufferAttribute(delta, i);
+    }
+    box.expandByPoint(v);
+  }
+  return box.applyMatrix4(mesh.matrixWorld);
+}
+
+/** Box of the zone's exploding organs once pulled out, or null when the zone has none. */
+function explodedBoxOf(meshes: ReadonlyMap<string, Mesh>, zone: ZoneId | null): Box3 | null {
+  const names = explodingOrgans(zone);
+  if (names.size === 0) return null;
+  const box = new Box3();
+  for (const name of names) {
+    const mesh = meshes.get(name);
+    if (mesh) box.union(explodedBox(mesh));
+  }
+  return box.isEmpty() ? null : box;
+}
+
+/**
+ * Moves each explodable organ toward its target: 1 when its zone is focused (out of the body), 0 otherwise
+ * (back in place). The animation mixer rewrites every morph weight each frame, so the explode amount lives
+ * in `state` and is written after the mixer, on that organ's explode target only.
+ */
+function stepExplode(organs: readonly Mesh[], out: ReadonlySet<string>, state: Map<string, number>, k: number) {
+  for (const mesh of organs) {
+    const organ = mesh.userData.organ as string;
+    const index = EXPLODE_TARGET[organ];
+    const influences = mesh.morphTargetInfluences;
+    if (index === undefined || !influences || index >= influences.length) continue;
+    const target = out.has(organ) ? 1 : 0;
+    const current = state.get(organ) ?? 0;
+    const next = Math.abs(target - current) < 0.001 ? target : current + (target - current) * k;
+    state.set(organ, next);
+    influences[index] = next;
+  }
+}
 
 interface OrganMaterial {
   material: MeshStandardMaterial;
@@ -39,12 +94,14 @@ function Pins({
   meshes,
   zones,
   hidden,
+  focusZoneId,
   selectedZoneId,
   onSelect,
 }: {
   meshes: ReadonlyMap<string, Mesh>;
   zones: readonly ZoneView[];
   hidden: (id: ZoneId) => boolean;
+  focusZoneId: ZoneId | null;
   selectedZoneId: ZoneId | null;
   onSelect(id: ZoneId): void;
 }) {
@@ -52,7 +109,10 @@ function Pins({
     const out = new Map<ZoneId, Vector3>();
     for (const zone of zones) {
       const pin = ZONE_PIN[zone.id];
-      if (typeof pin === 'string') {
+      const pulledOut = zone.id === focusZoneId ? explodedBoxOf(meshes, zone.id) : null;
+      if (pulledOut) {
+        out.set(zone.id, pulledOut.getCenter(new Vector3()));
+      } else if (typeof pin === 'string') {
         const mesh = meshes.get(pin);
         if (mesh) {
           // Parents' world matrices may be stale before the first frame: refresh the whole chain first.
@@ -64,7 +124,7 @@ function Pins({
       }
     }
     return out;
-  }, [meshes, zones]);
+  }, [meshes, zones, focusZoneId]);
 
   return (
     <>
@@ -89,7 +149,7 @@ function Pins({
               onClick={() => onSelect(zone.id)}
             >
               <span className="organ-pin__dot" aria-hidden="true">
-                <Icon size={12} weight="bold" />
+                <Icon size={12} />
               </span>
               <span className="organ-pin__label">{zone.label}</span>
             </button>
@@ -115,7 +175,7 @@ function applyGlow(
     const isHover = entry.zone !== null && entry.zone === hovered;
     const isSelected = entry.zone !== null && entry.zone === focused;
     if (alerting) {
-      entry.material.emissive.copy(tint.set(tierTheme(zoneStatus).color));
+      entry.material.emissive.copy(tint.set(tierTheme(zoneStatus).accent));
       entry.material.emissiveIntensity = (isSelected ? 0.5 : 0.35) * pulse + (isHover ? 0.15 : 0);
     } else if (isHover) {
       entry.material.emissive.setScalar(1);
@@ -165,6 +225,7 @@ function BodyModel({
     });
     return { meshes, materials };
   }, [scene]);
+  const explodable = useMemo(() => [...meshes.values()].filter((m) => EXPLODABLE.has(m.userData.organ as string)), [meshes]);
 
   useEffect(() => {
     if (group.current) onReady(group.current, meshes);
@@ -196,12 +257,15 @@ function BodyModel({
 
   // Status glow: alerting zones glow in their tier color; hover lifts any selectable zone slightly.
   // Three.js objects are mutated every frame, so the render loop reads them through a ref.
-  const live = useRef({ materials, tint: new Color() });
+  const live = useRef({ materials, explodable, tint: new Color(), explode: new Map<string, number>() });
   useEffect(() => {
     live.current.materials = materials;
-  }, [materials]);
-  useFrame(({ clock }) => {
-    const { materials: entries, tint } = live.current;
+    live.current.explodable = explodable;
+  }, [materials, explodable]);
+  const pulledOut = useMemo(() => explodingOrgans(focusZoneId), [focusZoneId]);
+  useFrame(({ clock }, delta) => {
+    const { materials: entries, explodable: organs, tint, explode } = live.current;
+    stepExplode(organs, pulledOut, explode, reducedMotion ? 1 : Math.min(1, delta * EXPLODE_RATE));
     const pulse = reducedMotion ? 0.6 : 0.45 + 0.35 * Math.sin(clock.elapsedTime * 2.4);
     applyGlow(entries, tint, status, pulse, hovered, focusZoneId !== null ? selectedZoneId : null);
   });
@@ -245,12 +309,14 @@ function useCameraFocus(
   useEffect(() => {
     const cc = controls.current;
     if (!cc || !model) return;
-    const box = new Box3();
     const focus = focusZoneId ? ZONE_FOCUS[focusZoneId] : 'all';
-    if (focus === 'all') box.setFromObject(model.root);
-    else for (const name of focus) {
-      const mesh = model.meshes.get(name);
-      if (mesh) box.expandByObject(mesh);
+    const box = explodedBoxOf(model.meshes, focusZoneId) ?? new Box3();
+    if (box.isEmpty()) {
+      if (focus === 'all') box.setFromObject(model.root);
+      else for (const name of focus) {
+        const mesh = model.meshes.get(name);
+        if (mesh) box.expandByObject(mesh);
+      }
     }
     if (box.isEmpty()) return;
     const whole = focus === 'all';
@@ -292,6 +358,7 @@ function Scene(props: BodyModelProps) {
           <Pins
             meshes={model.meshes}
             zones={zones}
+            focusZoneId={focusZoneId}
             selectedZoneId={selectedZoneId}
             onSelect={onSelectZone}
             hidden={(id) => focusZoneId !== null && id !== focusZoneId}

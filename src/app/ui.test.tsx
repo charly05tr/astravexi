@@ -45,24 +45,25 @@ async function enterBp(m: Mounted, sys: string, dia: string) {
 
 describe('app shell: disclaimer and mode badge on both views, both modes', () => {
   for (const mode of ['demo', 'live'] as const) {
-    it(`shows the header badge, mission day and footer disclaimer in ${mode.toUpperCase()}, on Dashboard and Sources`, async () => {
+    it(`shows the header badge and mission day in ${mode.toUpperCase()} on both views, and the disclaimer footer off the dashboard`, async () => {
       const m = await mountApp(mode);
       const header = () => screen.getByRole('banner');
-      const footer = () => screen.getByRole('contentinfo');
       const check = () => {
         expect(within(header()).getByText(mode === 'demo' ? 'DEMO' : 'LIVE')).toBeInTheDocument();
         expect(within(header()).getByText(/Day \d+ of 210/)).toBeInTheDocument();
-        expect(within(footer()).getByText(/decision support, not medical advice/i)).toBeInTheDocument();
         const synthetic = within(header()).queryByText('SYNTHETIC');
         if (mode === 'demo') expect(synthetic).toBeInTheDocument();
         else expect(synthetic).toBeNull();
       };
       check();
       expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
+      // The dashboard has no footer: the body model uses the full height.
+      expect(screen.queryByRole('contentinfo')).toBeNull();
       await goTo(m, 'Sources');
       expect(screen.getByRole('heading', { name: /sources and disclosures/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Sources' })).toHaveAttribute('aria-current', 'page');
       check();
+      expect(within(screen.getByRole('contentinfo')).getByText(/decision support, not medical advice/i)).toBeInTheDocument();
     });
   }
 

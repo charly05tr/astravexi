@@ -37,6 +37,34 @@ export const ZONE_FOCUS: Readonly<Record<ZoneId, readonly string[] | 'all'>> = {
   immune: 'all',
 };
 
+/**
+ * The morph target that pulls each organ out of the body ("exploded view": weight 0 = in place, 1 = out).
+ * Measured from the model: it is the rigid-translation target. Keep in sync with scripts/pack-body-model.py.
+ */
+export const EXPLODE_TARGET: Readonly<Record<string, number>> = {
+  Brain: 0,
+  Eye: 0,
+  Gallbladder: 0,
+  Liver: 0,
+  Urinary_System: 0,
+  Heart: 2,
+  HumanLungs: 1,
+  Diafragma: 1,
+  DigestiveSystem: 2,
+};
+
+export const EXPLODABLE: ReadonlySet<string> = new Set(Object.keys(EXPLODE_TARGET));
+
+/**
+ * The organs pulled out of the body when a zone is focused: the zone's framed organs that can explode.
+ * Zones without such an organ (heart, bone, immune) only zoom.
+ */
+export function explodingOrgans(zone: ZoneId | null): ReadonlySet<string> {
+  if (!zone) return new Set();
+  const focus = ZONE_FOCUS[zone];
+  return new Set(focus === 'all' ? [] : focus.filter((name) => EXPLODABLE.has(name)));
+}
+
 /** Where a zone's pin sits, as a mesh name, or a fixed point (model units, cm) for systemic zones. */
 export const ZONE_PIN: Readonly<Record<ZoneId, string | readonly [number, number, number]>> = {
   brain: 'Brain',

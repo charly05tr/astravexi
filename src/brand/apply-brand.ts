@@ -22,6 +22,10 @@ export function brandVariables(config: BrandConfig): Record<string, string> {
   vars['--chart-axis'] = color(config.roles.border);
   vars['--chart-muted'] = color(config.roles.textMuted);
   vars['--scene-background'] = color(config.scene.background);
+  vars['--danger'] = color(config.roles.danger);
+  vars['--danger-surface'] = color(config.roles.dangerSurface);
+  vars['--success'] = color(config.roles.success);
+  vars['--success-surface'] = color(config.roles.successSurface);
   vars['--brand-gradient'] = config.gradient;
   vars['--font-display'] = config.fonts.display;
   vars['--font-body'] = config.fonts.body;

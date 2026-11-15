@@ -1,52 +1,26 @@
 import type { CSSProperties } from 'react';
 import type { ZoneStatus } from '../core/health/model';
-import { TIER_CHIP_TEXT, tierTheme } from '../theme/tiers';
-import type { TierShape } from '../theme/tiers';
+import { tierTheme } from '../theme/tiers';
 
-const SHAPE_PATHS: Record<TierShape, string> = {
-  circle: 'M12 2.5a9.5 9.5 0 1 0 0 19a9.5 9.5 0 0 0 0-19z',
-  ring: 'M12 2.5a9.5 9.5 0 1 0 0 19a9.5 9.5 0 0 0 0-19z',
-  dashed: 'M12 2.5a9.5 9.5 0 1 0 0 19a9.5 9.5 0 0 0 0-19z',
-  diamond: 'M12 1.5L22.5 12L12 22.5L1.5 12Z',
-  triangle: 'M12 2.5L22.5 21.5H1.5Z',
-  octagon: 'M8 2H16L22 8V16L16 22H8L2 16V8Z',
-  square: 'M3.5 3.5H20.5V20.5H3.5Z',
-};
-
-/** Style variables of a status, for elements that want the tier color on a border (never on text). */
+/** Style variables of a status: `--tier-color` (text and icon) and `--tier-surface` (soft background). */
 export function tierStyle(status: ZoneStatus): CSSProperties {
-  return { ['--tier-color' as string]: tierTheme(status).color } as CSSProperties;
-}
-
-export function TierShapeGlyph({ status, size = 26 }: { status: ZoneStatus; size?: number }) {
   const theme = tierTheme(status);
-  const Icon = theme.icon;
-  const outline = theme.shape === 'ring' || theme.shape === 'dashed';
-  return (
-    <span className="tier-chip__glyph" style={{ width: size, height: size, ...tierStyle(status) }} aria-hidden="true">
-      <svg
-        className={`tier-chip__shape${outline ? ' tier-chip__shape--outline' : ''}`}
-        viewBox="0 0 24 24"
-        data-shape={theme.shape}
-        strokeDasharray={theme.shape === 'dashed' ? '3 2.5' : undefined}
-      >
-        <path d={SHAPE_PATHS[theme.shape]} />
-      </svg>
-      <Icon className="tier-chip__icon" size={Math.round(size * 0.55)} weight="bold" />
-    </span>
-  );
+  return { ['--tier-color' as string]: theme.color, ['--tier-surface' as string]: theme.surface } as CSSProperties;
 }
 
-/** Color, icon, shape and text label together: a semaphore-colored pill with dark text, independent of the brand. */
+/** Icon, color and text label together, on a soft surface. Independent of the brand. */
 export function TierChip({ status }: { status: ZoneStatus }) {
   const theme = tierTheme(status);
-  const style = {
-    ...tierStyle(status),
-    ['--chip-text' as string]: TIER_CHIP_TEXT,
-  } as CSSProperties;
+  const Icon = theme.icon;
   return (
-    <span className="tier-chip" style={style} data-status={status} data-tier-color={theme.color}>
-      <TierShapeGlyph status={status} />
+    <span
+      className={`tier-chip${theme.shape === 'dashed' ? ' tier-chip--dashed' : ''}`}
+      style={tierStyle(status)}
+      data-status={status}
+      data-shape={theme.shape}
+      data-tier-color={theme.color}
+    >
+      <Icon className="tier-chip__icon" size={14} strokeWidth={2.25} aria-hidden="true" />
       <span>{theme.label}</span>
     </span>
   );

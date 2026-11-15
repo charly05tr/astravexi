@@ -1,4 +1,4 @@
-import { ArrowSquareOut, Flag } from '@phosphor-icons/react';
+import { ExternalLink, Flag } from 'lucide-react';
 import { useAppContext, useAppState } from '../../app/app-context';
 import { useBrand } from '../../brand/brand-context';
 import { Badge } from '../../ui/Badge';
@@ -10,7 +10,7 @@ function Link({ url, children }: { url: string; children: string }) {
   if (!url.startsWith('http')) return <span>{children}</span>;
   return (
     <a href={url} target="_blank" rel="noreferrer">
-      {children} <ArrowSquareOut size={12} aria-hidden="true" />
+      {children} <ExternalLink size={12} aria-hidden="true" />
     </a>
   );
 }
@@ -76,7 +76,7 @@ export function SourcesView() {
                   <td>
                     {r.needsVerification ? (
                       <span className="verify-mark">
-                        <Flag size={14} weight="bold" aria-hidden="true" />
+                        <Flag size={14} aria-hidden="true" />
                         Needs verification
                       </span>
                     ) : (

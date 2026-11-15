@@ -1,7 +1,7 @@
 [
   { "id": "inter", "name": "Inter (via @fontsource/inter)", "license": "SIL Open Font License 1.1", "url": "https://fontsource.org/fonts/inter", "use": "Headings and details" },
   { "id": "space-grotesk", "name": "Space Grotesk (via @fontsource/space-grotesk)", "license": "SIL Open Font License 1.1", "url": "https://fontsource.org/fonts/space-grotesk", "use": "Body text and figures" },
-  { "id": "phosphor", "name": "Phosphor Icons", "license": "MIT", "url": "https://phosphoricons.com/", "use": "Icons" },
+  { "id": "lucide", "name": "Lucide Icons (via lucide-react)", "license": "ISC", "url": "https://lucide.dev/", "use": "Icons" },
   { "id": "recharts", "name": "Recharts", "license": "MIT", "url": "https://recharts.org/", "use": "Trend charts" },
   { "id": "react", "name": "React", "license": "MIT", "url": "https://react.dev/", "use": "User interface" },
   { "id": "zustand", "name": "Zustand", "license": "MIT", "url": "https://zustand.docs.pmnd.rs/", "use": "State" },

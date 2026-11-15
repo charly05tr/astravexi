@@ -24,7 +24,7 @@ max_side = int(sys.argv[3]) if len(sys.argv) > 3 else 1024
 g = json.loads(src.read_text(encoding="utf-8"))
 base = src.parent
 
-raw_buffers = [base64.b64decode(b["uri"].split(",", 1)[1]) for b in g["buffers"]]
+raw_buffers = [bytearray(base64.b64decode(b["uri"].split(",", 1)[1])) for b in g["buffers"]]
 
 # Organ name per mesh: the parent node's name (e.g. "Brain" holds the node that holds mesh "0").
 parent_of = {}
@@ -139,16 +139,44 @@ for mi, mesh in enumerate(g["meshes"]):
     mesh["primitives"] = [prim]
     mesh["name"] = name
 
-# Keep only the physiological loops (heartbeat, breathing, peristalsis, pulse). The single slow 0->1->0
-# morph on these organs is an "exploded view" that throws them out of the body.
-EXPLODE = {"Brain", "Eye", "Gallbladder", "Liver", "Urinary_System"}
+# The animation mixes physiological loops (heartbeat, breathing, peristalsis, pulse) with an "exploded view"
+# that throws organs out of the body. The explode morph of each organ is a rigid translation (mean and max
+# displacement equal, about 1-5x the organ size); the physiological ones are tiny deformations. Measured per
+# target with scripts/pack-body-model.py's inputs; keep this map in sync with EXPLODE_TARGET in
+# src/features/body-map/body3d/organ-map.ts.
+EXPLODE_TARGET = {
+    "Brain": 0, "Eye": 0, "Gallbladder": 0, "Liver": 0, "Urinary_System": 0,
+    "Heart": 2, "HumanLungs": 1, "Diafragma": 1, "DigestiveSystem": 2,
+}
+
+
+def zero_target(accessor_index, n_targets, target):
+    """Sets one target's weight to 0 in every keyframe of a weights sampler output (float32, interleaved)."""
+    acc = g["accessors"][accessor_index]
+    view = g["bufferViews"][acc["bufferView"]]
+    buf = raw_buffers[view["buffer"]]
+    base = view.get("byteOffset", 0) + acc.get("byteOffset", 0)
+    for k in range(acc["count"] // n_targets):
+        off = base + 4 * (k * n_targets + target)
+        buf[off:off + 4] = struct.pack("<f", 0.0)
+
+
 for anim in g.get("animations", []):
     keep = []
     for ch in anim["channels"]:
         node = g["nodes"][ch["target"]["node"]]
-        organ = mesh_organ.get(node["mesh"]) if "mesh" in node else None
-        if ch["target"]["path"] == "weights" and organ in EXPLODE:
-            continue
+        path = ch["target"]["path"]
+        if "mesh" in node:
+            organ = mesh_organ.get(node["mesh"])
+            n_targets = len(g["meshes"][node["mesh"]]["primitives"][0].get("targets", []))
+        else:
+            organ, n_targets = node.get("name"), 0
+        if path in ("translation", "scale", "rotation") and organ in EXPLODE_TARGET:
+            continue  # node-level moves are part of the explode, not of breathing
+        if path == "weights" and organ in EXPLODE_TARGET:
+            if n_targets <= 1:
+                continue  # the only target is the explode: nothing physiological to keep
+            zero_target(anim["samplers"][ch["sampler"]]["output"], n_targets, EXPLODE_TARGET[organ])
         keep.append(ch)
     used_samplers = sorted({ch["sampler"] for ch in keep})
     remap_s = {old: new for new, old in enumerate(used_samplers)}
@@ -156,12 +184,12 @@ for anim in g.get("animations", []):
     for ch in keep:
         ch["sampler"] = remap_s[ch["sampler"]]
     anim["channels"] = keep
-# Exploded-view morphs rest at weight 0: drop their targets entirely.
-for mi, mesh in enumerate(g["meshes"]):
-    if mesh_organ.get(mi) in EXPLODE:
-        mesh["primitives"][0].pop("targets", None)
-        mesh.pop("weights", None)
-        mesh.pop("extras", None)
+
+# Every morph rests at weight 0 (organ in place). The app drives only the focused organ's explode target to 1.
+for mesh in g["meshes"]:
+    targets = mesh["primitives"][0].get("targets", [])
+    if targets:
+        mesh["weights"] = [0.0] * len(targets)
 
 # Collect referenced accessors.
 used = []

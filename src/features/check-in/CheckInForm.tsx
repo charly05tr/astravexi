@@ -1,4 +1,4 @@
-import { WarningCircle } from '@phosphor-icons/react';
+import { CircleCheck, CircleX } from 'lucide-react';
 import { useId } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import type { Indicator, IndicatorId, ReadingContext } from '../../core/health/model';
@@ -29,7 +29,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
   return (
     <p className="field__error" id={id} role="alert">
-      <WarningCircle size={16} weight="bold" aria-hidden="true" />
+      <CircleX size={14} aria-hidden="true" />
       {message}
     </p>
   );
@@ -211,6 +211,7 @@ export function CheckInForm(props: CheckInFormProps) {
         {props.submitLabel ?? 'Save check-in'}
       </Button>
       <p className="status-line" role="status">
+        {message ? <CircleCheck size={14} aria-hidden="true" /> : null}
         {message}
       </p>
     </form>

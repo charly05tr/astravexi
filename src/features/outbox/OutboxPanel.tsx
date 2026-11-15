@@ -1,4 +1,4 @@
-import { PaperPlaneTilt } from '@phosphor-icons/react';
+import { Send } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { EmptyState, Panel } from '../../ui/Panel';
 import type { OutboxCardView } from './outbox-model';
@@ -39,7 +39,7 @@ export function OutboxPanel(props: OutboxPanelProps) {
     <Panel
       id="outbox"
       title="Earth outbox"
-      icon={<PaperPlaneTilt size={20} aria-hidden="true" />}
+      icon={<Send size={20} aria-hidden="true" />}
       hint="Warnings wait here until you send them. Only tiers and the listed triggers leave; mood is sent as a tier, never a score."
     >
       <p className="sim-label">{link}</p>

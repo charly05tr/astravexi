@@ -315,6 +315,23 @@ kbd {
 
 .app--dashboard .main {
   max-width: none;
+  background: transparent;
+}
+
+.app--dashboard .header {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.app--dashboard .footer {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 1;
 }
 
 .footer {
@@ -339,10 +356,10 @@ kbd {
   align-items: center;
   gap: 8px;
   padding: 8px var(--space);
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--accent);
+  border: 1px solid var(--danger-surface);
   border-radius: var(--radius-md);
-  background: var(--panel);
+  background: var(--danger-surface);
+  color: var(--danger);
   margin-bottom: var(--space);
 }
 
@@ -473,38 +490,52 @@ kbd {
 /* ---------- Dashboard: rail | space stage | focus panel ---------- */
 .dashboard {
   display: grid;
-  grid-template-columns: minmax(260px, 300px) minmax(0, 1fr) minmax(340px, 400px);
+  grid-template-columns: minmax(260px, 300px) 1fr minmax(340px, 400px);
   gap: var(--space-lg);
   align-items: start;
   position: relative;
+  z-index: 1;
 }
 
 .dashboard__rail,
 .dashboard__panel,
 .drawer {
-  background: var(--panel);
-  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: var(--radius-lg);
   padding: var(--space);
-  max-height: calc(100dvh - var(--header-h) - var(--footer-h) - 2 * var(--space-xl));
+  max-height: calc(100dvh - var(--header-h) - 2 * var(--space-xl));
   overflow: auto;
   scrollbar-width: thin;
+  position: relative;
+  z-index: 1;
 }
 
 .dashboard__rail {
+  grid-column: 1;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
+.dashboard__panel {
+  grid-column: 3;
+}
+
 .dashboard__stage {
-  position: relative;
-  height: calc(100dvh - var(--header-h) - var(--footer-h) - 2 * var(--space-xl));
-  min-height: 420px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: unset;
+  border: none;
+  border-radius: 0;
   background: var(--scene-background);
   overflow: hidden;
+  z-index: 0;
 }
 
 .dashboard__stage .body-map {
@@ -514,9 +545,6 @@ kbd {
   transform: translate(-50%, -50%);
   max-height: 85%;
   width: auto;
-  background: var(--panel);
-  border-radius: var(--radius-md);
-  padding: var(--space);
 }
 
 .drawer {
@@ -538,27 +566,24 @@ kbd {
 }
 
 .stage__hint {
-  position: absolute;
-  bottom: var(--space);
+  position: fixed;
+  bottom: var(--space-lg);
   left: 50%;
   transform: translateX(-50%);
   margin: 0;
   padding: 4px 12px;
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--scene-background) 70%, transparent);
+  background: rgba(20, 35, 43, 0.65);
   font-size: 12px;
   color: var(--on-raised);
   pointer-events: none;
   white-space: nowrap;
+  z-index: 2;
 }
 
 @media (max-width: 1100px) {
   .dashboard {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .dashboard__stage {
-    grid-row: 1;
-    height: 60dvh;
   }
   .dashboard__rail,
   .dashboard__panel {
@@ -590,47 +615,28 @@ kbd {
   align-items: start;
 }
 
-/* ---------- Tier chip: semaphore fill, dark label ---------- */
+/* ---------- Tier chip: soft surface, colored text and icon ---------- */
 .tier-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 10px 2px 4px;
-  border-radius: 999px;
-  background: var(--tier-color);
-  color: var(--chip-text);
+  padding: 2px 8px;
+  border: 1px solid var(--tier-surface);
+  border-radius: var(--radius-sm);
+  background: var(--tier-surface);
+  color: var(--tier-color);
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
 }
 
-.tier-chip__glyph {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  color: var(--chip-text);
-}
-
-.tier-chip__shape {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: var(--chip-text);
-  stroke-width: 1.25;
-  opacity: 0.7;
-}
-
-.tier-chip__shape--outline {
-  fill: none;
+.tier-chip--dashed {
+  border: 1px dashed var(--tier-color);
 }
 
 .tier-chip__icon {
-  position: relative;
+  flex: none;
 }
 
 /* ---------- Alert rail ---------- */
@@ -651,7 +657,6 @@ kbd {
   text-align: left;
   padding: 12px;
   border: 1px solid var(--line-soft);
-  border-left: 4px solid var(--tier-color);
   border-radius: var(--radius-md);
   background: var(--panel);
   cursor: pointer;
@@ -663,7 +668,6 @@ kbd {
 
 .rail__item[aria-pressed='true'] {
   border-color: var(--surface-raised);
-  border-left-color: var(--tier-color);
   background: var(--surface);
 }
 
@@ -780,9 +784,9 @@ kbd {
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  border: 2px solid var(--panel);
-  background: var(--tier-color);
-  color: var(--chip-text, var(--text));
+  border: 1px solid var(--tier-color);
+  background: var(--tier-surface);
+  color: var(--tier-color);
 }
 
 .organ-pin__label {
@@ -831,9 +835,9 @@ kbd {
 
 .body-map__zone {
   cursor: pointer;
-  fill: color-mix(in srgb, var(--tier-color) 55%, transparent);
-  stroke: var(--text);
-  stroke-width: 1;
+  fill: var(--tier-surface);
+  stroke: var(--tier-color);
+  stroke-width: 1.5;
 }
 
 .body-map__zone--dashed {
@@ -841,7 +845,7 @@ kbd {
 }
 
 .body-map__hit:hover .body-map__zone {
-  fill: var(--tier-color);
+  fill: color-mix(in srgb, var(--tier-color) 25%, var(--tier-surface));
 }
 
 .body-map__hit:focus-visible {
@@ -951,7 +955,6 @@ kbd {
 
 .finding {
   border: 1px solid var(--line-soft);
-  border-left: 4px solid var(--tier-color);
   border-radius: var(--radius-md);
   padding: 12px var(--space);
   display: flex;
@@ -1023,8 +1026,9 @@ kbd {
 .latched {
   font-weight: 600;
   padding: 8px 12px;
-  border: 1px solid var(--tier-color);
   border-radius: var(--radius-md);
+  background: var(--tier-surface);
+  color: var(--tier-color);
 }
 
 .proposal-list {
@@ -1035,7 +1039,6 @@ kbd {
 
 .proposal {
   border: 1px solid var(--line-soft);
-  border-left: 4px solid var(--accent);
   border-radius: var(--radius-md);
   padding: 12px var(--space);
   background: var(--panel);
@@ -1246,14 +1249,13 @@ kbd {
 }
 
 .input[aria-invalid='true'] {
-  border-color: var(--text);
-  border-width: 2px;
-  border-style: dashed;
+  border-color: var(--danger);
 }
 
 .field__error {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
+  color: var(--danger);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -1328,7 +1330,15 @@ kbd {
 }
 
 .status-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-weight: 600;
+  color: var(--success);
+}
+
+.status-line:empty {
+  display: none;
 }
 
 /* ---------- CMO and outbox ---------- */
@@ -1343,7 +1353,6 @@ kbd {
 
 .item {
   border: 1px solid var(--line-soft);
-  border-left: 4px solid var(--tier-color);
   border-radius: var(--radius-md);
   padding: 12px var(--space);
   display: flex;

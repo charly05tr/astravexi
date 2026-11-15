@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowSquareOut, Flag } from '@phosphor-icons/react';
+import { ArrowLeft, ExternalLink, Flag } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import type { ReactNode } from 'react';
 import { SourceBadge } from '../../ui/Badge';
@@ -24,7 +24,7 @@ export interface ZonePanelProps {
 function VerifyMark() {
   return (
     <span className="verify-mark">
-      <Flag size={14} weight="bold" aria-hidden="true" />
+      <Flag size={14} aria-hidden="true" />
       Needs verification
     </span>
   );
@@ -45,7 +45,7 @@ function Finding({ f }: { f: FindingView }) {
           Officer acknowledges it.
         </p>
       ) : null}
-      {f.unverified ? <p className="status-line">Unverified: there is no baseline yet.</p> : null}
+      {f.unverified ? <p className="indicator__state">Unverified: there is no baseline yet.</p> : null}
       <dl className="three-part" style={{ margin: 0 }}>
         <dt>What changed</dt>
         <dd>{f.explanation.whatChanged}</dd>
@@ -58,7 +58,7 @@ function Finding({ f }: { f: FindingView }) {
         <span>Source:</span>
         {f.citation.url.startsWith('http') ? (
           <a href={f.citation.url} target="_blank" rel="noreferrer">
-            {f.citation.label} <ArrowSquareOut size={12} aria-hidden="true" />
+            {f.citation.label} <ExternalLink size={12} aria-hidden="true" />
           </a>
         ) : (
           <span>{f.citation.label}</span>
@@ -175,7 +175,7 @@ export function ZonePanel({ model, isLive, focused, onBack, suggestions, update 
       </div>
       {focused ? (
         <button type="button" className="link-button" onClick={onBack}>
-          <ArrowLeft size={14} weight="bold" aria-hidden="true" />
+          <ArrowLeft size={14} aria-hidden="true" />
           Full body
           <kbd>Esc</kbd>
         </button>

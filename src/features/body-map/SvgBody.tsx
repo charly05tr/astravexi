@@ -90,7 +90,7 @@ function ZoneGroup({
         {zone.label}
       </text>
       <g transform={`translate(${LABEL_X}, ${layout.labelY + 5})`} className="body-map__icon" aria-hidden="true">
-        <Icon size={14} weight="bold" />
+        <Icon size={14} />
       </g>
       <text x={LABEL_X + 18} y={layout.labelY + 16} className="body-map__status">
         {theme.label}

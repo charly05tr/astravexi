@@ -1,4 +1,4 @@
-import { ClipboardText, X } from '@phosphor-icons/react';
+import { ClipboardList, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useBrand } from '../brand/brand-context';
 import { BodyMapContainer } from '../features/body-map/BodyMapContainer';
@@ -90,7 +90,7 @@ function Header() {
               aria-controls="check-in-drawer"
               onClick={() => setCheckInOpen(!checkInOpen)}
             >
-              <ClipboardText size={16} weight="bold" aria-hidden="true" />
+              <ClipboardList size={16} aria-hidden="true" />
               Check-in
             </button>
           ) : null}
@@ -127,7 +127,7 @@ function CheckInDrawer() {
           <p className="muted small">Fill in what you measured. Leave the rest empty.</p>
         </div>
         <button type="button" className="icon-button" aria-label="Close check-in" onClick={() => setCheckInOpen(false)}>
-          <X size={18} weight="bold" aria-hidden="true" />
+          <X size={18} aria-hidden="true" />
         </button>
       </div>
       <CheckInContainer />
@@ -200,7 +200,7 @@ export function AppShell() {
         ) : null}
         {view === 'dashboard' ? <Dashboard /> : view === 'comms' ? <Comms /> : <SourcesView />}
       </main>
-      <Footer />
+      {view !== 'dashboard' ? <Footer /> : null}
     </div>
   );
 }

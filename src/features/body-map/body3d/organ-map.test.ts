@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createRuleSuggestionProvider } from '../../../adapters/rule-suggestions';
 import { content } from '../../../knowledge';
 import type { SuggestionContext } from '../../../core/ports';
-import { meshesOfZone, pickZone } from './organ-map';
+import { explodingOrgans, meshesOfZone, pickZone } from './organ-map';
 
 describe('organ picking', () => {
   it('passes through the skull to the brain behind it', () => {
@@ -24,6 +24,15 @@ describe('organ picking', () => {
 
   it('ignores unknown meshes', () => {
     expect(pickZone(['Helper', 'Liver'])).toBe('metabolism');
+  });
+
+  it('pulls out only the focused zone\'s own organs, and nothing for zones without one', () => {
+    expect(explodingOrgans('brain')).toEqual(new Set(['Brain']));
+    expect(explodingOrgans('eyes')).toEqual(new Set(['Eye']));
+    expect(explodingOrgans('metabolism')).toEqual(new Set(['Liver', 'Gallbladder', 'DigestiveSystem']));
+    expect(explodingOrgans('heart')).toEqual(new Set(['Heart']));
+    expect(explodingOrgans('bone').size).toBe(0);
+    expect(explodingOrgans(null).size).toBe(0);
   });
 
   it('keeps every mesh opaque for the systemic immune zone', () => {
