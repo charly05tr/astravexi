@@ -2271,4 +2271,113 @@ details > summary {
   grid-column: 1 / -1;
 }
 
+/* ---------- Module 4: Guided triage & adaptive communication ---------- */
+.triage-action {
+  display: flex;
+  flex-direction: column;
+}
+
+.triage-action__pill {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--tier-surface);
+  color: var(--tier-color);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.triage-mode-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.triage-mode-bar__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.triage-question {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+
+.triage-question__prompt {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.triage-question__answers {
+  display: inline-flex;
+  align-self: flex-start;
+}
+
+.triage-question__answers button {
+  min-height: 30px;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.triage-protocol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--tier-color);
+  background: var(--tier-surface);
+}
+
+.triage-protocol__head {
+  color: var(--tier-color);
+  font-size: 0.95rem;
+}
+
+.triage-protocol__summary {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.triage-protocol__steps {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.triage-glossary {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+
+.triage-glossary__item + .triage-glossary__item {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-soft);
+}
+
+
 

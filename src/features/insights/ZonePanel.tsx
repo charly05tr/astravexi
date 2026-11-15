@@ -28,6 +28,8 @@ export interface ZonePanelProps {
   update?: ReactNode;
   /** Clean trigger for localized anatomical symptom intake (slot). */
   symptomAction?: ReactNode;
+  /** Compact Guided Triage & adaptive communication launcher (slot). */
+  triageAction?: ReactNode;
   /** Compact Environment vs. Individual context card (slot). */
   envContext?: ReactNode;
   /** NASA OSDR/RadLab benchmark details shown in the full Zone detail modal (slot). */
@@ -192,7 +194,7 @@ export function summaryIndicator(model: ZonePanelModel): IndicatorView | null {
  * Presentational zone panel: no store access. Everything it shows comes in through `model` and the slots.
  * Two levels: a summary (status, one chart, one recommendation) and the full detail on demand.
  */
-export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSuggestion, update, symptomAction, envContext, envBenchmark, detail, onDetail }: ZonePanelProps) {
+export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSuggestion, update, symptomAction, triageAction, envContext, envBenchmark, detail, onDetail }: ZonePanelProps) {
   const hasFindings = model.findings.length > 0 || model.corroboration !== null;
   const primary = summaryIndicator(model);
   const emptyText =
@@ -227,6 +229,7 @@ export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSugg
           {envContext}
           {symptomAction}
           {detail ? null : topSuggestion}
+          {triageAction}
         </>
       ) : (
         <>
@@ -239,6 +242,7 @@ export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSugg
           {envContext}
           {symptomAction}
           {detail ? null : topSuggestion}
+          {triageAction}
           <div className="zone-panel__actions">
             <button type="button" className="button zone-panel__more" aria-haspopup="dialog" onClick={() => onDetail(true)}>
               View details

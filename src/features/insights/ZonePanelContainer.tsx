@@ -8,8 +8,10 @@ import { CheckInContainer } from '../check-in/CheckInContainer';
 import { buildSymptomLlmSuggestions } from '../body-map/symptom-advisor';
 import { hasZoneSymptoms } from '../body-map/symptom-model';
 import { SymptomReportAction } from '../body-map/SymptomReportDialog';
+import { createInitialSymptomReports } from '../body-map/symptom-model';
 import { ZoneBenchmarkSection, ZoneEnvironmentCard } from '../environment/EnvironmentDialog';
 import { evaluateZoneEnvironment } from '../environment/environment-model';
+import { GuidedTriageAction } from '../triage/GuidedTriagePanel';
 import { SuggestionList } from '../suggestions/SuggestionList';
 import { useSuggestions } from '../suggestions/use-suggestions';
 import type { SuggestionsState } from '../suggestions/use-suggestions';
@@ -116,6 +118,15 @@ export function ZonePanelContainer() {
         <ZoneUpdate key={model.zoneId} label={model.label} indicatorIds={zone.indicatorIds} />
       }
       symptomAction={<SymptomReportAction zoneId={model.zoneId} zoneLabel={model.label} />}
+      triageAction={
+        <GuidedTriageAction
+          zoneId={model.zoneId}
+          zoneLabel={model.label}
+          status={model.status}
+          symptomReport={symptomReport ?? createInitialSymptomReports()[model.zoneId]}
+          envAssessment={envAssessment}
+        />
+      }
       envContext={envAssessment ? <ZoneEnvironmentCard assessment={envAssessment} /> : null}
       envBenchmark={envAssessment ? <ZoneBenchmarkSection assessment={envAssessment} /> : null}
     />

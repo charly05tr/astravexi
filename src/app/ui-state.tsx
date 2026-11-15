@@ -8,6 +8,7 @@ import {
   sanitizeEnvironmentConfig,
 } from '../features/environment/environment-model';
 import type { EnvironmentConfig, HabitatPresetId } from '../features/environment/environment-model';
+import type { TriageAnswer } from '../features/triage/triage-model';
 
 export type View = 'dashboard' | 'comms' | 'sources';
 
@@ -29,6 +30,10 @@ export interface UiState {
   setHabitatPreset(presetId: HabitatPresetId): void;
   updateEnvironment(patch: Partial<EnvironmentConfig>): void;
   resetEnvironment(): void;
+  /** Guided differential triage Yes/No answers per zone (Module 4). */
+  triageAnswers: Readonly<Record<string, TriageAnswer>>;
+  setTriageAnswer(questionId: string, answer: TriageAnswer): void;
+  clearTriageAnswers(questionIds: readonly string[]): void;
 }
 
 const UiContext = createContext<UiState | null>(null);
@@ -41,9 +46,22 @@ export function UiProvider({ children, initialView = 'dashboard' }: { children: 
     createInitialSymptomReports(),
   );
   const [environment, setEnvironment] = useState<EnvironmentConfig>(() => createDefaultEnvironmentConfig('transit'));
+  const [triageAnswers, setTriageAnswers] = useState<Record<string, TriageAnswer>>({});
 
   const selectZone = useCallback((id: ZoneId) => setSelected(id), []);
   const clearZone = useCallback(() => setSelected(null), []);
+
+  const setTriageAnswer = useCallback((questionId: string, answer: TriageAnswer) => {
+    setTriageAnswers((prev) => ({ ...prev, [questionId]: answer }));
+  }, []);
+
+  const clearTriageAnswers = useCallback((questionIds: readonly string[]) => {
+    setTriageAnswers((prev) => {
+      const next = { ...prev };
+      for (const id of questionIds) delete next[id];
+      return next;
+    });
+  }, []);
 
   const setHabitatPreset = useCallback((presetId: HabitatPresetId) => {
     setEnvironment(createDefaultEnvironmentConfig(presetId));
@@ -99,6 +117,9 @@ export function UiProvider({ children, initialView = 'dashboard' }: { children: 
       setHabitatPreset,
       updateEnvironment,
       resetEnvironment,
+      triageAnswers,
+      setTriageAnswer,
+      clearTriageAnswers,
     }),
     [
       view,
@@ -113,6 +134,9 @@ export function UiProvider({ children, initialView = 'dashboard' }: { children: 
       setHabitatPreset,
       updateEnvironment,
       resetEnvironment,
+      triageAnswers,
+      setTriageAnswer,
+      clearTriageAnswers,
     ],
   );
   return <UiContext.Provider value={value}>{children}</UiContext.Provider>;
