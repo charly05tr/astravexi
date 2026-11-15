@@ -1202,6 +1202,16 @@ kbd {
   transition: opacity 120ms ease, transform 120ms ease;
 }
 
+/* Label on the left: the dot (2px padding + 11px radius from the edge) stays on the anchor. */
+.organ-pin--left {
+  flex-direction: row-reverse;
+  transform: translateX(calc(-50% + 13px));
+}
+
+.organ-pin--left .organ-pin__label {
+  transform: translateX(4px);
+}
+
 .organ-pin--alert .organ-pin__label,
 .organ-pin:hover .organ-pin__label,
 .organ-pin:focus-visible .organ-pin__label,
