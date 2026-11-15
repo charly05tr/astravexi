@@ -161,6 +161,26 @@ describe('alert rail and zone selection', () => {
     await waitFor(() => expect(transformOf()).not.toBe(before));
   });
 
+  it('turns the wheel with the arrow keys when nothing on the page has focus', async () => {
+    await mountApp('demo');
+    const transformOf = () => rail().querySelector<HTMLElement>('.rail__slot:has([data-zone-id="brain"])')!.style.transform;
+    (document.activeElement as HTMLElement | null)?.blur();
+    const before = transformOf();
+    fireEvent.keyDown(document.body, { key: 'ArrowDown' });
+    await waitFor(() => expect(transformOf()).not.toBe(before));
+  });
+
+  it('leaves the arrow keys alone while a control has focus', async () => {
+    await mountApp('demo');
+    const transformOf = () => rail().querySelector<HTMLElement>('.rail__slot:has([data-zone-id="brain"])')!.style.transform;
+    const nav = screen.getByRole('button', { name: 'Comms' });
+    nav.focus();
+    const before = transformOf();
+    fireEvent.keyDown(nav, { key: 'ArrowDown' });
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    expect(transformOf()).toBe(before);
+  });
+
   it('opens a zone panel when a rail row is selected, and marks the selection', async () => {
     const m = await mountApp('demo');
     await m.user.click(railRow('heart'));

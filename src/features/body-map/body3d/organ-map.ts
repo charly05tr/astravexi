@@ -65,23 +65,14 @@ export function explodingOrgans(zone: ZoneId | null): ReadonlySet<string> {
   return new Set(focus === 'all' ? [] : focus.filter((name) => EXPLODABLE.has(name)));
 }
 
-/** Where a zone's pin sits, as a mesh name, or a fixed point (model units, cm) for systemic zones. */
+/** Where a zone's pin sits, as a mesh name, or a fixed point (model units, cm) for systemic or adjacent zones. */
 export const ZONE_PIN: Readonly<Record<ZoneId, string | readonly [number, number, number]>> = {
-  brain: 'Brain',
+  brain: [0, 168, 4],
   eyes: 'Eye',
   heart: 'Heart',
   metabolism: 'Liver',
   bone: 'Pelvis',
   immune: [0, 142, 4],
-};
-
-/**
- * Fine pin offsets (model units, cm) so adjacent head pins never overlap:
- * Brain sits higher on the upper cranium while Eyes sits laterally over an eye socket.
- */
-export const ZONE_PIN_OFFSET: Partial<Readonly<Record<ZoneId, readonly [number, number, number]>>> = {
-  brain: [0, 5.5, 0],
-  eyes: [-3.8, -1.5, 1.5],
 };
 
 /**

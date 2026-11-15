@@ -9,17 +9,7 @@ import type { ZoneId, ZoneStatus } from '../../../core/health/model';
 import { tierTheme } from '../../../theme/tiers';
 import { tierStyle } from '../../../ui/TierChip';
 import type { BodyModelProps, ZoneView } from '../body-model';
-import {
-  EXPLODABLE,
-  EXPLODE_TARGET,
-  ORGAN_ZONE,
-  ZONE_FOCUS,
-  ZONE_PIN,
-  ZONE_PIN_OFFSET,
-  explodingOrgans,
-  meshesOfZone,
-  pickZone,
-} from './organ-map';
+import { EXPLODABLE, EXPLODE_TARGET, ORGAN_ZONE, ZONE_FOCUS, ZONE_PIN, explodingOrgans, meshesOfZone, pickZone } from './organ-map';
 
 export const BODY_MODEL_URL = '/models/body.glb';
 /** The model is authored in centimetres; the scene works in metres. */
@@ -87,6 +77,7 @@ interface OrganMaterial {
   zone: ZoneId | null;
   baseTransparent: boolean;
   baseOpacity: number;
+  baseDepthWrite: boolean;
 }
 
 function Loader() {
@@ -120,23 +111,17 @@ function Pins({
     for (const zone of zones) {
       const pin = ZONE_PIN[zone.id];
       const pulledOut = zone.id === focusZoneId ? explodedBoxOf(meshes, zone.id) : null;
-      let point: Vector3 | null = null;
       if (pulledOut) {
-        point = pulledOut.getCenter(new Vector3());
+        out.set(zone.id, pulledOut.getCenter(new Vector3()));
       } else if (typeof pin === 'string') {
         const mesh = meshes.get(pin);
         if (mesh) {
           // Parents' world matrices may be stale before the first frame: refresh the whole chain first.
           mesh.updateWorldMatrix(true, false);
-          point = new Box3().setFromObject(mesh).getCenter(new Vector3());
+          out.set(zone.id, new Box3().setFromObject(mesh).getCenter(new Vector3()));
         }
       } else {
-        point = new Vector3(...pin).multiplyScalar(MODEL_SCALE);
-      }
-      if (point) {
-        const offset = ZONE_PIN_OFFSET[zone.id];
-        if (offset) point.add(new Vector3(...offset).multiplyScalar(MODEL_SCALE));
-        out.set(zone.id, point);
+        out.set(zone.id, new Vector3(...pin).multiplyScalar(MODEL_SCALE));
       }
     }
     return out;
@@ -174,6 +159,41 @@ function Pins({
       })}
     </>
   );
+}
+
+export interface MaterialBase {
+  transparent: boolean;
+  opacity: number;
+  depthWrite: boolean;
+}
+
+/**
+ * The material's authored state. useGLTF caches the scene, so materials outlive the component that fades
+ * them; the state is recorded once, the first time a material is seen, and never re-read afterwards, so a
+ * remount cannot mistake a faded material for its original.
+ */
+export function materialBase(material: MeshStandardMaterial): MaterialBase {
+  const data = material.userData as { base?: MaterialBase };
+  data.base ??= { transparent: material.transparent, opacity: material.opacity, depthWrite: material.depthWrite };
+  return data.base;
+}
+
+/** Puts every material and morph of the cached scene back to its authored state. */
+function restoreScene(meshes: ReadonlyMap<string, Mesh>, materials: readonly OrganMaterial[]) {
+  for (const entry of materials) {
+    entry.material.transparent = entry.baseTransparent;
+    entry.material.opacity = entry.baseOpacity;
+    entry.material.depthWrite = entry.baseDepthWrite;
+    entry.material.emissiveIntensity = 0;
+    entry.material.needsUpdate = true;
+  }
+  for (const mesh of meshes.values()) {
+    mesh.renderOrder = 0;
+    const index = EXPLODE_TARGET[mesh.userData.organ as string];
+    if (index !== undefined && mesh.morphTargetInfluences && index < mesh.morphTargetInfluences.length) {
+      mesh.morphTargetInfluences[index] = 0;
+    }
+  }
 }
 
 /** Writes the status glow onto the organ materials. Runs every frame, outside React state. */
@@ -232,11 +252,13 @@ function BodyModel({
       meshes.set(name, obj);
       obj.userData.organ = name;
       const material = obj.material as MeshStandardMaterial;
+      const base = materialBase(material);
       materials.push({
         material,
         zone: ORGAN_ZONE[name] ?? null,
-        baseTransparent: material.transparent,
-        baseOpacity: material.opacity,
+        baseTransparent: base.transparent,
+        baseOpacity: base.opacity,
+        baseDepthWrite: base.depthWrite,
       });
     });
     return { meshes, materials };
@@ -265,11 +287,14 @@ function BodyModel({
       const faded = keep !== null && !keep.has(organ);
       entry.material.transparent = faded || entry.baseTransparent;
       entry.material.opacity = faded ? FADED_OPACITY : entry.baseOpacity;
-      entry.material.depthWrite = !faded;
+      entry.material.depthWrite = faded ? false : entry.baseDepthWrite;
       entry.material.needsUpdate = true;
       m.renderOrder = faded ? 1 : 0;
     }
   }, [focusZoneId, meshes, materials]);
+
+  // Leave the cached scene as it was authored: no fade, glow or pulled-out organ survives an unmount.
+  useEffect(() => () => restoreScene(meshes, materials), [meshes, materials]);
 
   // Status glow: alerting zones glow in their tier color; hover lifts any selectable zone slightly.
   // Three.js objects are mutated every frame, so the render loop reads them through a ref.

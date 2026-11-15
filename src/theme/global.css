@@ -218,16 +218,16 @@ kbd {
   gap: 8px;
 }
 
-.brand__mark {
-  width: 32px;
+.brand__logo {
+  display: block;
   height: 32px;
-  border-radius: var(--radius-md);
+  width: auto;
 }
 
-.brand__name {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 20px;
+.onboarding__logo img {
+  display: block;
+  height: 56px;
+  width: auto;
 }
 
 .header__status {

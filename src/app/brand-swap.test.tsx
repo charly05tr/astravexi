@@ -94,6 +94,6 @@ describe('brand swap leaves tier meaning unchanged', () => {
     const railB = chipsOf(screen.getByRole('list', { name: /^body zones$/i }));
     expect(railB).toEqual(railA);
     expect(railB).toHaveLength(6);
-    expect(document.querySelector('.brand__mark')).toHaveAttribute('src', '/brand-b/mark.svg');
+    expect(document.querySelector('.brand__logo')).toHaveAttribute('src', '/brand-b/logo.svg');
   });
 });

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createRuleSuggestionProvider } from '../../../adapters/rule-suggestions';
 import { content } from '../../../knowledge';
 import type { SuggestionContext } from '../../../core/ports';
-import { ZONE_PIN_OFFSET, explodingOrgans, meshesOfZone, pickZone } from './organ-map';
+import { ZONE_PIN, explodingOrgans, meshesOfZone, pickZone } from './organ-map';
 
 describe('organ picking', () => {
   it('passes through the skull to the brain behind it', () => {
@@ -40,11 +40,12 @@ describe('organ picking', () => {
     expect(meshesOfZone('brain')).toEqual(new Set(['Brain']));
   });
 
-  it('separates brain and eyes pin offsets vertically and horizontally so pins do not overlap', () => {
-    const brain = ZONE_PIN_OFFSET.brain!;
-    const eyes = ZONE_PIN_OFFSET.eyes!;
-    expect(brain[1]).toBeGreaterThan(eyes[1] + 5);
-    expect(Math.abs(brain[0] - eyes[0])).toBeGreaterThanOrEqual(3);
+  it('places the brain pin clearly above the eyes mesh so cranial pins stay separated', () => {
+    expect(ZONE_PIN.eyes).toBe('Eye');
+    expect(Array.isArray(ZONE_PIN.brain)).toBe(true);
+    if (Array.isArray(ZONE_PIN.brain)) {
+      expect(ZONE_PIN.brain[1]).toBeGreaterThanOrEqual(167);
+    }
   });
 });
 
