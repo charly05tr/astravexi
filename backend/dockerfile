@@ -1,0 +1,21 @@
+FROM python:3.13-slim
+
+COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /usr/local/bin/uv
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN uv pip install --system --no-cache -r requirements.txt
+
+# Run as an unprivileged user. STATIC_ROOT (/app/staticfiles) must be writable for entrypoint's collectstatic.
+RUN useradd --system --uid 1000 --create-home app     && mkdir -p /app/staticfiles     && chown app:app /app /app/staticfiles
+
+COPY --chown=app:app . .
+
+USER app
+
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2"]

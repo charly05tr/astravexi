@@ -99,6 +99,8 @@ export interface Reading {
   context: ReadingContext;
   symptomatic: boolean;
   groupId: string;
+  /** ISO-8601 time of the last write. Set on every stored (MANUAL) reading; synthetic history has none. */
+  updatedAt?: string;
 }
 export interface PersonalBaseline {
   indicatorId: IndicatorId;
@@ -247,14 +249,19 @@ export interface RecommendationDecision {
   findingKey: string;
   decision: 'accepted' | 'dismissed';
   t: MissionMinute;
+  /** ISO-8601 time of the last write. */
+  updatedAt: string;
 }
 /** Releases the latched red flags of one (zone, check-in group) with one click. */
 export interface Acknowledgement {
   id: string;
   zoneId: ZoneId;
   groupId: string;
-  by: 'cmo';
+  /** The acknowledging profile (stable pseudonymous id) and the role it held at that moment. */
+  by: { profileId: string; role: Audience };
   t: MissionMinute;
+  /** ISO-8601 time of the last write. */
+  updatedAt: string;
 }
 export interface ProjectedItem {
   zoneId: ZoneId;
@@ -275,7 +282,8 @@ export interface ProjectedItem {
   latestValue?: number;
 }
 export interface OutboxPayload {
-  crewMember: string;
+  /** Stable pseudonymous id of the profile whose data this is. */
+  profileId: string;
   source: ReadingSource;
   trigger: Array<{
     ruleId: string;
@@ -300,4 +308,6 @@ export interface OutboxMessage {
   sentAt?: MissionMinute;
   oneWayDelayMin?: number;
   replyPossibleAt?: MissionMinute;
+  /** ISO-8601 time of the last write. */
+  updatedAt: string;
 }

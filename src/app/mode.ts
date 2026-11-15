@@ -8,6 +8,19 @@ export const DB_NAME: Record<AppMode, string> = {
   demo: 'astravexi-demo',
 };
 
+/** Pre-profile LIVE database. New data goes to `liveDbName(profileId)`; this one is only read once, to adopt it. */
+export const LEGACY_LIVE_DB = DB_NAME.live;
+
+/** LIVE keeps one record database per profile. */
+export const liveDbName = (profileId: string) => `astravexi-live-${profileId}`;
+
+export const PROFILES_DB_NAME: Record<AppMode, string> = {
+  live: 'astravexi-live-profiles',
+  demo: 'astravexi-demo-profiles',
+};
+
+export const activeProfileKey = (mode: AppMode) => `astravexi.profile.${mode}`;
+
 export function isAppMode(value: unknown): value is AppMode {
   return value === 'live' || value === 'demo';
 }

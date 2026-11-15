@@ -6,6 +6,8 @@ import type { SuggestionsState } from './use-suggestions';
 export interface SuggestionListProps {
   state: SuggestionsState;
   onDecide(suggestion: Suggestion, decision: 'accepted' | 'dismissed'): void | Promise<void>;
+  /** False hides Accept and Dismiss (the role policy only lets astronauts decide). Default true. */
+  canDecide?: boolean;
   /**
    * `summary`: only the first open suggestion, no empty/loading chatter.
    * `full`: every suggestion, grouped so each recommendation shows once, laid out as a card grid.
@@ -30,7 +32,15 @@ export function groupSuggestions(items: readonly Suggestion[]): SuggestionGroup[
   return [...groups.values()];
 }
 
-function SuggestionCard({ group, onDecide }: { group: SuggestionGroup; onDecide: SuggestionListProps['onDecide'] }) {
+function SuggestionCard({
+  group,
+  onDecide,
+  canDecide,
+}: {
+  group: SuggestionGroup;
+  onDecide: SuggestionListProps['onDecide'];
+  canDecide: boolean;
+}) {
   const { head, members } = group;
   const open = members.filter((m) => m.decision !== 'accepted');
   const reasons = [...new Set(members.map((m) => m.rationale))];
@@ -88,7 +98,7 @@ function SuggestionCard({ group, onDecide }: { group: SuggestionGroup; onDecide:
             <CircleCheck size={14} aria-hidden="true" />
             Accepted
           </p>
-        ) : (
+        ) : canDecide ? (
           <div className="proposal__actions">
             <Button size="small" variant="primary" onClick={() => void decide('accepted')}>
               Accept
@@ -97,14 +107,14 @@ function SuggestionCard({ group, onDecide }: { group: SuggestionGroup; onDecide:
               Dismiss
             </Button>
           </div>
-        )}
+        ) : null}
       </div>
     </li>
   );
 }
 
 /** Routine changes for the zone in focus. Shown only when an indicator crossed a threshold. */
-export function SuggestionList({ state, onDecide, variant = 'full' }: SuggestionListProps) {
+export function SuggestionList({ state, onDecide, canDecide = true, variant = 'full' }: SuggestionListProps) {
   if (state.status === 'idle') return null;
   const summary = variant === 'summary';
   const groups = groupSuggestions(state.items);
@@ -131,7 +141,7 @@ export function SuggestionList({ state, onDecide, variant = 'full' }: Suggestion
       {shown.length > 0 ? (
         <ul className={summary ? 'stack proposal-list' : 'card-grid proposal-list'}>
           {shown.map((g) => (
-            <SuggestionCard key={g.head.id} group={g} onDecide={onDecide} />
+            <SuggestionCard key={g.head.id} group={g} onDecide={onDecide} canDecide={canDecide} />
           ))}
         </ul>
       ) : null}

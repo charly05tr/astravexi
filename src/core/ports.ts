@@ -1,3 +1,13 @@
+import type { CrewProfile, PinRecord } from './profiles/model';
+import type {
+  DeviceCredentials,
+  PullQuery,
+  PullResponse,
+  PushRequest,
+  PushResponse,
+  RecordChanges,
+  SyncState,
+} from './sync/model';
 import type {
   Acknowledgement,
   IndicatorId,
@@ -78,7 +88,7 @@ export interface RecordStore {
   load(): Promise<StoreSnapshot>;
   addReadings(readings: readonly Reading[]): Promise<void>;
   addDecision(decision: RecommendationDecision): Promise<void>;
-  /** Idempotent by id: acknowledging the same (zone, group) twice stores one record. */
+  /** Idempotent by (zone, group): acknowledging the same pair twice stores one record, whatever the ids. */
   addAck(ack: Acknowledgement): Promise<void>;
   /** Stores the message only when its dedupeKey is unknown. Returns true when it was stored. */
   putOutboxIfAbsent(message: OutboxMessage): Promise<boolean>;
@@ -86,6 +96,15 @@ export interface RecordStore {
   updateOutbox(messages: readonly OutboxMessage[]): Promise<void>;
   getMeta<T>(key: string): Promise<T | undefined>;
   setMeta<T>(key: string, value: T): Promise<void>;
+  /** Every row (all kinds, and the meta rows) whose `updatedAt` is at or after `since`; null returns everything. */
+  changedSince(since: string | null): Promise<RecordChanges>;
+  /**
+   * Applies rows that came from the server, last-write-wins: a row is written only when it is absent or its
+   * `updatedAt` is strictly newer than the stored one, so a newer local row is never overwritten. An
+   * acknowledgement for a (zone, group) already acknowledged, and an outbox message whose dedupeKey is already
+   * taken by another id, are skipped. Idempotent. Returns how many rows were written.
+   */
+  applyRemote(changes: RecordChanges): Promise<number>;
   /** Deletes every table. Only the DEMO reset use-case may call it. */
   clearAll(): Promise<void>;
 }
@@ -108,4 +127,55 @@ export interface MissionClock {
 export interface ModePreference<M extends string = string> {
   get(): M | null;
   set(mode: M): void;
+}
+
+/** Persisted profiles of one mode. Soft delete only: a deleted row stays so the deletion can sync. */
+export interface ProfileStore {
+  readonly name: string;
+  readonly persistent: boolean;
+  /** Non-deleted profiles by default, oldest first. */
+  list(options?: { includeDeleted?: boolean }): Promise<CrewProfile[]>;
+  /** Also returns a deleted profile. */
+  get(id: string): Promise<CrewProfile | undefined>;
+  /** Inserts or replaces by id. */
+  upsert(profile: CrewProfile): Promise<void>;
+  /** Marks the profile deleted and bumps `updatedAt`. No-op for an unknown id. */
+  softDelete(id: string, updatedAt: string): Promise<void>;
+  /**
+   * Last-write-wins upsert for a profile that came from the server: stores it when it is absent or its
+   * `updatedAt` is strictly newer. The server never holds a PIN, so the stored PIN is kept when the incoming
+   * profile has none. Returns true when the row was written.
+   */
+  upsertIfNewer(profile: CrewProfile): Promise<boolean>;
+}
+
+/** Which profile this device last used in a mode. Same shape as the mode preference. */
+export interface ActiveProfile {
+  get(): string | null;
+  set(profileId: string): void;
+  clear(): void;
+}
+
+/** Derives a PIN record and checks a PIN against it. The core never touches WebCrypto. */
+export interface PinHasher {
+  hash(pin: string): Promise<PinRecord>;
+  verify(pin: string, record: PinRecord): Promise<boolean>;
+}
+
+/** The HTTP API of the backend. `token` is the device token; it never appears in logs or errors. */
+export interface SyncGateway {
+  /** Exchanges a single-use enrollment code for a device id and token. Throws the typed errors of `core/sync/errors`. */
+  enroll(input: { code: string; name: string }): Promise<{ deviceId: string; token: string }>;
+  push(token: string, body: PushRequest): Promise<PushResponse>;
+  pull(token: string, query: PullQuery): Promise<PullResponse>;
+}
+
+/** Device-wide enrollment and sync state. LIVE only; not per profile, and never written in DEMO. */
+export interface DeviceCredentialStore {
+  get(): Promise<DeviceCredentials | null>;
+  set(credentials: DeviceCredentials): Promise<void>;
+  /** Removes the credentials and resets the sync state (watermarks included). */
+  clear(): Promise<void>;
+  getState(): Promise<SyncState>;
+  setState(state: SyncState): Promise<void>;
 }

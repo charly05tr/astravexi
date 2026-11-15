@@ -87,8 +87,9 @@ describe('outbox view', () => {
     groupId: 'g1',
     createdAt: 100,
     to: 'flightSurgeon',
-    payload: { crewMember: 'Crew', source: 'MANUAL', trigger: [], zoneTiers: {} as never },
+    payload: { profileId: 'p-1', source: 'MANUAL', trigger: [], zoneTiers: {} as never },
     state: 'queued',
+    updatedAt: '2026-06-01T00:00:00.000Z',
   };
   const labels = new Map([['heart' as const, 'Heart']]);
 

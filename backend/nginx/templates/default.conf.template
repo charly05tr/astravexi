@@ -1,0 +1,62 @@
+# Per-client-IP rate limits for the sensitive endpoints (the `http` context includes this file).
+limit_req_zone $binary_remote_addr zone=admin_zone:10m rate=30r/m;
+limit_req_zone $binary_remote_addr zone=enroll_zone:10m rate=10r/m;
+limit_req_status 429;
+
+server {
+    listen 80;
+    server_name ${DOMAIN};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    # Request bodies above this are refused here (Django accepts up to the same 10 MiB).
+    client_max_body_size 10m;
+
+    # Security headers. Django's copies are hidden so each header is sent exactly once.
+    proxy_hide_header Strict-Transport-Security;
+    proxy_hide_header X-Content-Type-Options;
+    proxy_hide_header Referrer-Policy;
+    proxy_hide_header X-Frame-Options;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-Frame-Options "DENY" always;
+
+    # Inherited by every location below.
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    location /admin/ {
+        limit_req zone=admin_zone burst=20 nodelay;
+        proxy_pass http://web:8000;
+    }
+
+    location = /api/devices/enroll/ {
+        limit_req zone=enroll_zone burst=5 nodelay;
+        proxy_pass http://web:8000;
+    }
+
+    # Backend only: /api/, /admin/ and /static/ (served by whitenoise) all go to gunicorn.
+    # The frontend is deployed separately.
+    location / {
+        proxy_pass http://web:8000;
+    }
+}

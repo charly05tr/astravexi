@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryRecordStore } from '../adapters/memory-record-store';
 import type { RecordStore } from '../core/ports';
+import { toActor } from '../core/profiles/model';
 import { DB_NAME } from './mode';
-import { createTestWorld } from '../test-support/compose';
+import { createTestWorld, testProfile } from '../test-support/compose';
 import { FIRST_DAY } from '../adapters/seeded-history';
 import type { Reading, ZoneId } from '../core/health/model';
 
@@ -210,6 +211,7 @@ describe('acknowledge', () => {
       'bp-crisis-systolic',
     ]);
 
+    state().setActor(toActor(testProfile('cmo')));
     await state().acknowledge('heart', first.groupId);
     const after = state().session!;
     expect(after.evaluation.zones.heart.status).toBe('notice'); // back to its data-derived status
@@ -223,6 +225,7 @@ describe('acknowledge', () => {
     const { state } = await world.app('demo');
     const first = await state().submitCheckIn(bp(185, 125));
     if (!first.ok) throw new Error('expected ok');
+    state().setActor(toActor(testProfile('cmo')));
     await state().acknowledge('heart', first.groupId);
     await state().acknowledge('heart', first.groupId);
     expect(state().session!.acks).toHaveLength(1);
@@ -310,7 +313,7 @@ describe('reset demo', () => {
 
   it('leaves LIVE data untouched and never calls clearAll on the LIVE store', async () => {
     const world = createTestWorld();
-    const liveSpy = spy(createMemoryRecordStore(DB_NAME.live));
+    const liveSpy = spy(createMemoryRecordStore(world.dbName('live')));
     world.instrument('live', () => liveSpy.wrapped);
     const live = await world.app('live');
     await live.state().submitCheckIn({ values: { heartRate: 64 } });
@@ -320,7 +323,7 @@ describe('reset demo', () => {
     await demo.state().resetDemo();
 
     expect(liveSpy.calls.clearAll).toBe(0);
-    const liveSnap = await world.databases.get(DB_NAME.live)!.load();
+    const liveSnap = await world.databases.get(world.dbName('live'))!.load();
     expect(liveSnap.manualReadings).toHaveLength(1);
     expect(liveSnap.manualReadings[0]).toMatchObject({ indicatorId: 'heartRate', value: 64 });
   });
@@ -387,7 +390,7 @@ describe('LIVE mode', () => {
   it('opens only the LIVE database and starts empty: no synthetic data, zones read noData', async () => {
     const world = createTestWorld();
     const { state } = await world.app('live');
-    expect(world.opened).toEqual([DB_NAME.live]);
+    expect(world.opened).toEqual([world.dbName('live')]);
     const s = state();
     expect(s.session!.synthetic).toEqual([]);
     expect(s.mission).toMatchObject({ today: 1, transitDays: 210, destination: 'Mars', scaleLabel: 'real minutes' });
@@ -438,7 +441,8 @@ describe('LIVE mode', () => {
 describe('storage fallback', () => {
   it('reports when the memory fallback is in use', async () => {
     const { composeAdapters } = await import('./composition-root');
-    const adapters = await composeAdapters('live', {
+    const { testProfile } = await import('../test-support/compose');
+    const adapters = await composeAdapters('live', testProfile(), {
       open: async (name) => ({ store: createMemoryRecordStore(name), storageAvailable: false }),
     });
     expect(adapters.storageAvailable).toBe(false);

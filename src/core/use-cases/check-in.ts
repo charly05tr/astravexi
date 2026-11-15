@@ -1,6 +1,7 @@
 import type { LinkState } from '../escalation/link';
 import type { IndicatorId, Reading, ReadingContext } from '../health/model';
 import { toStored } from '../health/rounding';
+import { assertCan } from '../profiles/policy';
 import { type Deps, type Session, currentAsOf, refresh } from './session';
 
 export interface CheckInEntry {
@@ -22,7 +23,7 @@ export type CheckInResult =
 const SYMPTOM_INDICATORS: readonly IndicatorId[] = ['temperature', 'heartRate'];
 
 /**
- * Validate (R1.5), store as MANUAL readings of one check-in group on the current mission day, and
+ * Astronaut only. Validate (R1.5), store as MANUAL readings of one check-in group on the current mission day, and
  * re-evaluate. Invalid input is rejected whole: nothing is saved.
  */
 export async function submitCheckIn(
@@ -31,6 +32,7 @@ export async function submitCheckIn(
   entry: CheckInEntry,
   link: LinkState,
 ): Promise<CheckInResult> {
+  assertCan(deps.actor.role, 'checkIn');
   const errors: CheckInErrors = {};
   const accepted: Array<{ id: IndicatorId; stored: number }> = [];
   for (const [key, value] of Object.entries(entry.values)) {
@@ -53,6 +55,7 @@ export async function submitCheckIn(
   if (Object.keys(errors).length > 0) return { ok: false, errors };
 
   const { day, t } = currentAsOf(deps.clock);
+  const updatedAt = deps.nowIso();
   const known = new Set(session.manual.map((r) => r.groupId));
   const base = `ci:${t}`;
   let groupId = base;
@@ -61,7 +64,7 @@ export async function submitCheckIn(
   const readings: Reading[] = accepted.map(({ id, stored }) => {
     const indicator = deps.knowledge.indicators.find((i) => i.id === id)!;
     return {
-      id: `${groupId}:${id}`,
+      id: deps.newId(),
       indicatorId: id,
       value: stored,
       day,
@@ -70,6 +73,7 @@ export async function submitCheckIn(
       context: indicator.contextAware ? (entry.context ?? 'rest') : 'rest',
       symptomatic: SYMPTOM_INDICATORS.includes(id) ? (entry.symptomatic ?? false) : false,
       groupId,
+      updatedAt,
     };
   });
 

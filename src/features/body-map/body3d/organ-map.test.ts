@@ -61,7 +61,7 @@ describe('rule suggestion provider', () => {
   });
 
   it('drops dismissed and marks accepted suggestions', async () => {
-    const decision = (d: 'accepted' | 'dismissed') => [{ id: 'd', recommendationId: id, findingKey: 'f1', decision: d, t: 0 }];
+    const decision = (d: 'accepted' | 'dismissed') => [{ id: 'd', recommendationId: id, findingKey: 'f1', decision: d, t: 0, updatedAt: '2026-06-01T00:00:00.000Z' }];
     expect(await provider.suggest(context(decision('dismissed')))).toEqual([]);
     expect((await provider.suggest(context(decision('accepted'))))[0]!.decision).toBe('accepted');
   });

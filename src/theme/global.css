@@ -302,6 +302,205 @@ kbd {
   gap: 8px;
 }
 
+.brand__logo--mark {
+  display: none;
+}
+
+.button--nowrap {
+  white-space: nowrap;
+}
+
+/* ---------- Account menu: avatar button + popover ---------- */
+.user-menu {
+  position: relative;
+}
+
+.user-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 2px 10px 2px 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.user-menu__trigger:hover,
+.user-menu__trigger[aria-expanded='true'] {
+  background: var(--surface);
+}
+
+.user-menu__avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface-raised);
+  color: var(--on-raised);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.user-menu__name {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-menu__popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 240px;
+  max-width: min(320px, 92vw);
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+}
+
+.user-menu__head {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.user-menu__head-name {
+  font-weight: 600;
+}
+
+.user-menu__label {
+  margin: 8px 8px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.user-menu__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.user-menu__item:hover,
+.user-menu__item:focus-visible {
+  background: var(--surface);
+}
+
+/* Sync status dot on the account button. Never the only signal: the menu spells the status out. */
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex: none;
+}
+
+.sync-dot--ok {
+  background: var(--success);
+}
+
+.sync-dot--error {
+  background: var(--danger);
+}
+
+.sync-dot--busy {
+  background: var(--text-muted);
+  animation: sync-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes sync-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sync-dot--busy {
+    animation: none;
+  }
+}
+
+.sync-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space);
+  margin: 0;
+}
+
+.sync-facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  .brand__logo--full {
+    display: none;
+  }
+
+  .brand__logo--mark {
+    display: block;
+  }
+
+  .user-menu__name,
+  .button__label {
+    display: none;
+  }
+
+  .user-menu__trigger {
+    padding: 2px;
+  }
+
+  .header__row {
+    flex-wrap: nowrap;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .header__status {
+    min-width: 0;
+  }
+
+  .header__tools {
+    flex-wrap: nowrap;
+    margin-left: auto;
+  }
+
+  .nav {
+    min-width: 0;
+    overflow-x: auto;
+  }
+}
+
 .nav {
   display: flex;
   gap: 4px;

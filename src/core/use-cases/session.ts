@@ -10,6 +10,7 @@ import type {
   RecommendationDecision,
 } from '../health/model';
 import { evaluate } from '../health/rule-engine/evaluate';
+import type { Actor, Subject } from '../profiles/model';
 import type { HistorySource, MissionClock, RecordStore } from '../ports';
 
 /** Everything a use-case needs from the outside. Built once per mode by the composition root. */
@@ -19,7 +20,14 @@ export interface Deps {
   history: HistorySource;
   knowledge: Knowledge;
   seed: number;
-  crewMember: string;
+  /** Who is acting. Role-gated use-cases check it; written records carry it. */
+  actor: Actor;
+  /** Whose data the store holds (the profile that owns the database; the demo crew member in DEMO). */
+  subject: Subject;
+  /** Fresh globally unique id (UUID). Injected so the core never touches the platform. */
+  newId(): string;
+  /** Wall-clock time as an ISO-8601 string, for `updatedAt`. Not mission time. */
+  nowIso(): string;
 }
 
 /** The in-memory working set. Immutable: every use-case returns a new one (or the same reference if unchanged). */
@@ -59,9 +67,11 @@ export async function emitWarnings(
   link: LinkState,
 ): Promise<readonly OutboxMessage[]> {
   const fresh = buildWarningMessages(evaluation, deps.knowledge.indicators, outbox, {
-    crewMember: deps.crewMember,
+    profileId: deps.subject.profileId,
     now: deps.clock.now(),
     link,
+    newId: deps.newId,
+    updatedAt: deps.nowIso(),
   });
   if (fresh.length === 0) return outbox;
   const stored: OutboxMessage[] = [];

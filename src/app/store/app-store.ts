@@ -2,6 +2,7 @@ import { createStore } from 'zustand/vanilla';
 import type { MissionConfig } from '../../adapters/wall-clock';
 import type { LinkState } from '../../core/escalation/link';
 import type { RecommendationDecision, ZoneId } from '../../core/health/model';
+import type { Actor } from '../../core/profiles/model';
 import { acknowledge, advanceLink, decideRecommendation, sendNow } from '../../core/use-cases/actions';
 import { bootstrap, reevaluate } from '../../core/use-cases/bootstrap';
 import { submitCheckIn } from '../../core/use-cases/check-in';
@@ -30,6 +31,8 @@ export interface MissionInfo {
 
 export interface AppState {
   mode: AppMode;
+  /** Who is acting. Role-gated actions reject any other role, and the UI hides what the role cannot do. */
+  actor: Actor;
   status: 'idle' | 'hydrating' | 'ready' | 'error';
   error: string | null;
   /** Bumped by Reset demo; queued work that started under an older generation is discarded. */
@@ -43,6 +46,10 @@ export interface AppState {
   link: LinkState;
 
   hydrate(): Promise<void>;
+  /** Re-reads the stores into the session without the loading state: used after a sync pulled remote changes. */
+  refresh(): Promise<void>;
+  /** The signed-in profile was renamed or changed role: later actions run as the new actor. */
+  setActor(actor: Actor): void;
   submitCheckIn(entry: CheckInEntry): Promise<CheckInResult>;
   acknowledge(zoneId: ZoneId, groupId: string): Promise<void>;
   decideRecommendation(input: {
@@ -119,6 +126,7 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
 
     return {
       mode: adapters.mode,
+      actor: adapters.deps.actor,
       status: 'idle',
       error: null,
       generation: 0,
@@ -138,6 +146,20 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
             set({ status: 'error', error: error instanceof Error ? error.message : String(error) });
           }
         });
+      },
+
+      async refresh() {
+        await guarded(async () => {
+          if (get().status !== 'ready') return;
+          applySession(await bootstrap(adapters.deps, get().link));
+        });
+      },
+
+      setActor(actor) {
+        adapters.deps.actor = actor;
+        // In LIVE the signed-in profile owns the database, so its name is the subject's name too.
+        if (adapters.mode === 'live') adapters.deps.subject = { profileId: actor.profileId, name: actor.name };
+        set({ actor });
       },
 
       async submitCheckIn(entry) {

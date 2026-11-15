@@ -67,7 +67,13 @@ describe('golden persona at demo day 150', () => {
     const e = run(rs);
     expect(e.zones.heart.status).toBe('warning');
     const link = { oneWayDelayMin: 12, blackout: false };
-    const opts = { crewMember: 'Demo crew member', now: ASOF.t, link };
+    const opts = {
+      profileId: 'p-demo',
+      now: ASOF.t,
+      link,
+      newId: () => crypto.randomUUID(),
+      updatedAt: '2026-06-01T00:00:00.000Z',
+    };
     const first = buildWarningMessages(e, knowledge.indicators, [], opts);
     expect(first).toHaveLength(1);
     expect(first[0]!.payload.source).toBe('MANUAL');

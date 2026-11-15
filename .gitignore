@@ -1,3 +1,11 @@
 node_modules
 dist
 *.local
+
+# Backend
+backend/.venv
+backend/staticfiles
+*.sqlite3
+.env
+__pycache__
+*.pyc
