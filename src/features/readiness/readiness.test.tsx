@@ -83,24 +83,15 @@ describe('readiness-model semaphore & task translation', () => {
   });
 });
 
-describe('Role views & Readiness UI integration', () => {
-  it('supports switching between All, Crew, and CMO views inside the single-row header and shows task translations', async () => {
+describe('Readiness & Comms UI integration', () => {
+  it('shows the Green/Yellow/Red readiness pill, opens task translations, and renders readiness overview on Comms', async () => {
     const m = await mountApp('demo');
 
-    const roleGroup = screen.getByRole('group', { name: /role profile/i });
-    expect(within(roleGroup).getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.queryByTestId('role-banner')).toBeNull();
+    expect(screen.queryByRole('group', { name: /role profile/i })).toBeNull();
 
     // Demo day 150 starts at Yellow due to brain Caution findings
     const trigger = screen.getByTestId('readiness-trigger');
     expect(trigger).toHaveAttribute('data-readiness-level', 'yellow');
-
-    await m.user.click(within(roleGroup).getByRole('button', { name: 'Crew' }));
-    expect(screen.getByTestId('role-banner')).toHaveAttribute('data-role', 'crew');
-
-    await m.user.click(within(roleGroup).getByRole('button', { name: 'CMO' }));
-    const cmoBanner = screen.getByTestId('role-banner');
-    expect(cmoBanner).toHaveAttribute('data-role', 'cmo');
 
     // Open Readiness modal and inspect all 4 activity clearances
     await m.user.click(trigger);
@@ -118,8 +109,9 @@ describe('Role views & Readiness UI integration', () => {
     await m.user.click(within(screen.getByTestId('environment-dialog')).getByRole('button', { name: /^done$/i }));
     expect(screen.getByTestId('readiness-trigger')).toHaveAttribute('data-readiness-level', 'red');
 
-    // Jump to Comms from CMO banner and verify readiness card appears cleanly
-    await m.user.click(within(screen.getByTestId('role-banner')).getByRole('button', { name: /triage/i }));
+    // Jump to Comms via Readiness modal CTA and verify readiness card appears cleanly
+    await m.user.click(trigger);
+    await m.user.click(within(screen.getByTestId('readiness-dialog')).getByRole('button', { name: /open cmo & outbox/i }));
     expect(screen.getByTestId('comms-readiness')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /crew medical officer/i })).toBeInTheDocument();
   }, 15000);

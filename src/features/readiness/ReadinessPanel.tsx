@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, CheckCircle2, OctagonAlert, ShieldAlert, Stethoscope } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, OctagonAlert, Stethoscope } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useAppContext, useAppState } from '../../app/app-context';
 import { useUi } from '../../app/ui-state';
@@ -28,7 +28,7 @@ function ClearanceIcon({ clearance }: { clearance: ActivityClearance }) {
 function useReadiness() {
   const { knowledge } = useAppContext();
   const evaluation = useAppState((s) => s.session?.evaluation ?? null);
-  const { environment, symptomReports, roleView, setView } = useUi();
+  const { environment, symptomReports, setView } = useUi();
 
   const assessment = useMemo<ReadinessAssessment | null>(() => {
     if (!evaluation) return null;
@@ -41,7 +41,7 @@ function useReadiness() {
     return buildCmoOperationalBrief(evaluation, knowledge.indicators, labels);
   }, [evaluation, knowledge]);
 
-  return { assessment, cmoBrief, roleView, setView };
+  return { assessment, cmoBrief, setView };
 }
 
 /**
@@ -59,12 +59,11 @@ export function ReadinessDialog({
   onOpenComms(): void;
   onClose(): void;
 }) {
-  const { roleView } = useUi();
   const theme = tierTheme(assessment.statusEquivalent);
 
   return (
     <Dialog
-      eyebrow={`Module 3 · Mission readiness (${roleView === 'cmo' ? 'CMO / Rescuer' : roleView === 'crew' ? 'Crew' : 'Integrated'})`}
+      eyebrow="Module 3 · Mission readiness"
       title="Operational readiness & translation"
       closeLabel="Close mission readiness"
       aside={
@@ -120,7 +119,7 @@ export function ReadinessDialog({
           </div>
         </section>
 
-        {roleView === 'cmo' || pendingAckCount > 0 || assessment.cautionCount > 0 ? (
+        {pendingAckCount > 0 || assessment.cautionCount > 0 ? (
           <div className="readiness-cmo-bar">
             <span className="readiness-cmo-bar__text">
               <Stethoscope size={15} aria-hidden="true" />
@@ -153,7 +152,7 @@ export function ReadinessDialog({
  * immediately see Green/Yellow/Red readiness without cluttering side cards or the single-row header.
  */
 export function StageReadinessTrigger() {
-  const { assessment, cmoBrief, roleView, setView } = useReadiness();
+  const { assessment, cmoBrief, setView } = useReadiness();
   const [open, setOpen] = useState(false);
 
   if (!assessment) return null;
@@ -173,7 +172,7 @@ export function StageReadinessTrigger() {
         <ReadinessIcon level={assessment.level} size={13} />
         <span>
           Readiness: <strong>{assessment.shortLabel}</strong>
-          {roleView === 'cmo' && pendingAck > 0 ? ` · ${pendingAck} ack` : ''}
+          {pendingAck > 0 ? ` · ${pendingAck} ack` : ''}
         </span>
       </button>
       {open ? (
@@ -188,43 +187,9 @@ export function StageReadinessTrigger() {
   );
 }
 
-/**
- * Subtle single-line context strip placed inside ZonePanel only when switched to Crew or CMO role mode.
- */
-export function RoleZoneBanner() {
-  const { assessment, cmoBrief, roleView, setView } = useReadiness();
-  if (roleView === 'integrated' || !assessment) return null;
-
-  if (roleView === 'crew') {
-    return (
-      <div className="role-banner" data-testid="role-banner" data-role="crew" style={tierStyle(assessment.statusEquivalent)}>
-        <span className="role-banner__text">
-          <Activity size={13} aria-hidden="true" />
-          Crew view · Readiness {assessment.shortLabel} · Self-check &amp; pacing
-        </span>
-      </div>
-    );
-  }
-
-  const urgentCount = cmoBrief ? cmoBrief.priorityZones.length : 0;
-  const pendingAck = cmoBrief?.pendingAckCount ?? 0;
-  return (
-    <div className="role-banner" data-testid="role-banner" data-role="cmo" style={tierStyle(assessment.statusEquivalent)}>
-      <span className="role-banner__text">
-        <ShieldAlert size={13} aria-hidden="true" />
-        CMO triage · {urgentCount} flagged zone{urgentCount === 1 ? '' : 's'}
-        {pendingAck > 0 ? ` · ${pendingAck} unacknowledged` : ''}
-      </span>
-      <button type="button" className="link-button role-banner__cta" onClick={() => setView('comms')}>
-        Triage
-      </button>
-    </div>
-  );
-}
-
 /** Operational readiness summary panel displayed at the top of the Comms view for CMO & crew synchronization. */
 export function CommsReadinessOverview() {
-  const { assessment, roleView } = useReadiness();
+  const { assessment } = useReadiness();
   if (!assessment) return null;
 
   return (
@@ -233,11 +198,7 @@ export function CommsReadinessOverview() {
         id="readiness"
         title="Operational readiness & mission tasks"
         icon={<ReadinessIcon level={assessment.level} size={20} />}
-        hint={
-          roleView === 'crew'
-            ? 'Crew view: focus on personal pacing and prevention before heavy mission tasks.'
-            : 'Translates onboard physiology + habitat bounds into local task guidance. Privacy-preserving (no raw mood scores).'
-        }
+        hint="Translates onboard physiology + habitat bounds into local task guidance. Privacy-preserving (no raw mood scores)."
       >
         <div className="stack" style={{ gap: 12 }}>
           <div className="readiness-hero readiness-hero--compact" style={tierStyle(assessment.statusEquivalent)}>

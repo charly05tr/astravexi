@@ -8,16 +8,12 @@ import {
   sanitizeEnvironmentConfig,
 } from '../features/environment/environment-model';
 import type { EnvironmentConfig, HabitatPresetId } from '../features/environment/environment-model';
-import type { UserRoleView } from '../features/readiness/readiness-model';
 
 export type View = 'dashboard' | 'comms' | 'sources';
 
 export interface UiState {
   view: View;
   setView(view: View): void;
-  /** Operational perspective: integrated demo, personal crew view, or CMO/rescuer triage view. */
-  roleView: UserRoleView;
-  setRoleView(role: UserRoleView): void;
   /** The zone the user picked, or null: the panel then follows the highest-priority zone. */
   selectedZoneId: ZoneId | null;
   selectZone(id: ZoneId): void;
@@ -40,7 +36,6 @@ const UiContext = createContext<UiState | null>(null);
 /** View and zone selection. Shared by the alert rail, the body model and the zone panel. */
 export function UiProvider({ children, initialView = 'dashboard' }: { children: ReactNode; initialView?: View }) {
   const [view, setView] = useState<View>(initialView);
-  const [roleView, setRoleView] = useState<UserRoleView>('integrated');
   const [selectedZoneId, setSelected] = useState<ZoneId | null>(null);
   const [symptomReports, setSymptomReports] = useState<Record<ZoneId, ZoneSymptomReport>>(() =>
     createInitialSymptomReports(),
@@ -93,8 +88,6 @@ export function UiProvider({ children, initialView = 'dashboard' }: { children: 
     () => ({
       view,
       setView,
-      roleView,
-      setRoleView,
       selectedZoneId,
       selectZone,
       clearZone,
@@ -109,7 +102,6 @@ export function UiProvider({ children, initialView = 'dashboard' }: { children: 
     }),
     [
       view,
-      roleView,
       selectedZoneId,
       selectZone,
       clearZone,

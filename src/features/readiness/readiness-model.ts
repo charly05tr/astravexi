@@ -13,8 +13,6 @@ import { hasZoneSymptoms } from '../body-map/symptom-model';
 import type { ZoneSymptomReport } from '../body-map/symptom-model';
 import { tierTheme } from '../../theme/tiers';
 
-export type UserRoleView = 'integrated' | 'crew' | 'cmo';
-
 export type ReadinessLevel = 'green' | 'yellow' | 'red';
 
 export type MissionActivityId = 'eva' | 'robotics' | 'exercise' | 'maintenance';
@@ -45,12 +43,6 @@ export interface ReadinessAssessment {
 
 export const READINESS_DISCLAIMER =
   'Decision support for local operational pacing only. Does not substitute official flight surgeon or Mission Control medical Go/No-Go authorization.';
-
-export const ROLE_OPTIONS: ReadonlyArray<{ id: UserRoleView; label: string; hint: string }> = [
-  { id: 'integrated', label: 'All', hint: 'Combined demonstration view' },
-  { id: 'crew', label: 'Crew', hint: 'Personal prevention & self-report focus' },
-  { id: 'cmo', label: 'CMO', hint: 'Medical officer & rescuer triage focus' },
-];
 
 function maxZoneRank(evaluation: Evaluation): number {
   let best = 0;

@@ -4,7 +4,6 @@ import { BodyMapContainer } from '../features/body-map/BodyMapContainer';
 import { StageHabitatBar } from '../features/environment/EnvironmentDialog';
 import { CmoContainer } from '../features/cmo/CmoContainer';
 import { CommsReadinessOverview, StageReadinessTrigger } from '../features/readiness/ReadinessPanel';
-import { ROLE_OPTIONS } from '../features/readiness/readiness-model';
 import { SourcesView } from '../features/disclosures/SourcesView';
 import { AlertRailContainer } from '../features/insights/AlertRailContainer';
 import { ZonePanelContainer } from '../features/insights/ZonePanelContainer';
@@ -23,7 +22,7 @@ const VIEWS: ReadonlyArray<{ id: View; label: string }> = [
 
 function Header() {
   const brand = useBrand();
-  const { view, setView, roleView, setRoleView } = useUi();
+  const { view, setView } = useUi();
   const mode = useAppState((s) => s.mode);
   const today = useAppState((s) => s.mission.today);
   const transitDays = useAppState((s) => s.mission.transitDays);
@@ -58,19 +57,6 @@ function Header() {
           ))}
         </nav>
         <div className="header__status">
-          <div className="segmented role-switch" role="group" aria-label="Role profile">
-            {ROLE_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                aria-pressed={roleView === opt.id}
-                title={opt.hint}
-                onClick={() => setRoleView(opt.id)}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
           <div className="badges">
             <Badge variant="solid">{mode === 'live' ? 'LIVE' : 'DEMO'}</Badge>
             {mode === 'demo' ? <Badge variant="dashed">SYNTHETIC</Badge> : null}
