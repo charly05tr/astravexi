@@ -9,3 +9,4 @@ backend/staticfiles
 .env
 __pycache__
 *.pyc
+.cache/

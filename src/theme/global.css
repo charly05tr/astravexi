@@ -2812,3 +2812,492 @@ details > summary {
   margin: 4px 0 0;
   padding-left: 18px;
 }
+
+/* ---------- Cabin forecast ---------- */
+.forecast {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.forecast__list {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+}
+
+.forecast__alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.forecast-table th[scope='row'] {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text);
+}
+
+/* ---------- Cabin & crew status board ----------
+ * Status colors come only from the tier variables (--tier-color / --tier-surface) set inline from src/theme/tiers.ts.
+ * Everything else is a neutral brand token. Marks carry color; text stays in text tokens.
+ */
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  text-decoration-thickness: 2px;
+}
+
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--text-muted);
+}
+
+.board__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: var(--space-lg);
+}
+
+.board__title {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space);
+  margin-top: var(--space);
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: var(--space);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+}
+
+.kpi__label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.kpi__question {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.kpi__value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kpi__text {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.kpi__causes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.cause {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cause > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.cause:hover {
+  border-color: var(--line);
+}
+
+.cause[aria-pressed='true'] {
+  border-color: var(--text);
+  background: var(--surface);
+  font-weight: 700;
+}
+
+.kpi__meter {
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tier-color) 18%, var(--tier-surface));
+  overflow: hidden;
+}
+
+.kpi__meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--tier-color);
+}
+
+.attn {
+  gap: 6px;
+}
+
+.attn summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  list-style: none;
+}
+
+.attn summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The toggle marker sits inline with the title, before it. */
+.attn summary::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: 7px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(-45deg);
+}
+
+.attn details[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+.attn__why {
+  align-self: flex-start;
+}
+
+.attn__people {
+  margin-top: 8px;
+}
+
+.air-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px var(--space);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  list-style: none;
+}
+
+.air__grid {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.7fr) minmax(0, 2fr) minmax(150px, auto);
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.air__name {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.air__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  text-align: right;
+}
+
+.air__track {
+  position: relative;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--line-soft);
+}
+
+.air__range,
+.air__comfort {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.air__range {
+  background: color-mix(in srgb, var(--tier-color) 30%, var(--tier-surface));
+}
+
+.air__comfort {
+  top: 3px;
+  bottom: 3px;
+  border-radius: 999px;
+  background: var(--tier-surface);
+}
+
+.air__ref {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: var(--text-muted);
+}
+
+.air__ref-key {
+  display: inline-block;
+  width: 2px;
+  height: 10px;
+  margin-right: 4px;
+  vertical-align: middle;
+  background: var(--text-muted);
+}
+
+.air__marker {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--tier-color);
+  /* A ring in the surface color keeps the marker legible where it crosses a band. */
+  box-shadow: 0 0 0 2px var(--panel);
+  transform: translate(-50%, -50%);
+}
+
+.air__toggle {
+  align-self: flex-start;
+  font-weight: 500;
+}
+
+.vchart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.vchart__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vchart__bar .button[aria-pressed='true'] {
+  border-color: var(--text);
+  font-weight: 600;
+}
+
+.vchart__plot {
+  position: relative;
+  border-radius: var(--radius-md);
+}
+
+.vchart__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.vchart__grid {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+}
+
+.vchart__tick,
+.vchart__label {
+  fill: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 11px;
+}
+
+.vchart__band {
+  fill: color-mix(in srgb, var(--tier-color) 14%, var(--tier-surface));
+  opacity: 0.55;
+}
+
+.vchart__limit {
+  stroke: var(--tier-color);
+  stroke-width: 1.5;
+}
+
+.vchart__area {
+  fill: var(--chart-series-1);
+  opacity: 0.1;
+}
+
+.vchart__line {
+  fill: none;
+  stroke: var(--chart-series-1);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.vchart__cross {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+  opacity: 0;
+}
+
+.vchart__cross[data-active='true'] {
+  opacity: 1;
+}
+
+.vchart__dot {
+  fill: var(--chart-series-1);
+  stroke: var(--panel);
+  stroke-width: 2;
+}
+
+.vchart__plot:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.vchart__tip {
+  position: absolute;
+  top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 12px;
+  pointer-events: none;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.vchart__tip strong {
+  font-size: 14px;
+}
+
+.vchart__tip span {
+  color: var(--text-muted);
+}
+
+.vchart__table {
+  max-height: 280px;
+  overflow: auto;
+}
+
+.disclosure {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: inherit;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.method {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space);
+}
+
+.method__block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--space);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+}
+
+.method__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.method__sources {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+@media (max-width: 1100px) {
+  .kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .kpi-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The track drops under the name where the row is narrow. */
+  .air__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .air__value {
+    justify-content: flex-start;
+    text-align: left;
+  }
+}

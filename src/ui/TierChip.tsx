@@ -9,7 +9,8 @@ export function tierStyle(status: ZoneStatus): CSSProperties {
 }
 
 /** Icon, color and text label together, on a soft surface. Independent of the brand. */
-export function TierChip({ status }: { status: ZoneStatus }) {
+/** `label` replaces the tier's own wording where the tier label does not fit the subject (e.g. "Within limits"). */
+export function TierChip({ status, label }: { status: ZoneStatus; label?: string }) {
   const theme = tierTheme(status);
   const Icon = theme.icon;
   return (
@@ -21,7 +22,7 @@ export function TierChip({ status }: { status: ZoneStatus }) {
       data-tier-color={theme.color}
     >
       <Icon className="tier-chip__icon" size={14} strokeWidth={2.25} aria-hidden="true" />
-      <span>{theme.label}</span>
+      <span>{label ?? theme.label}</span>
     </span>
   );
 }

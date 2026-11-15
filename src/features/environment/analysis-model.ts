@@ -37,6 +37,19 @@ export const withUnit = (value: number, unit: string, digits = 1): string =>
 
 const signed = (n: number, digits = 1): string => `${n > 0 ? '+' : n < 0 ? '-' : ''}${Math.abs(n).toFixed(digits)}`;
 
+/** A number for display with thousands separators and its unit: "3,947 ppm", "27 °C", "45%". */
+export const formatValue = (value: number, unit: string, digits = 1): string =>
+  `${value.toLocaleString('en-US', { maximumFractionDigits: digits })}${UNIT_SPACE(unit)}`;
+
+/** The mission day (1-based) of a mission minute. */
+export const missionDay = (t: number): number => Math.floor(t / 1440) + 1;
+
+/** "06:24" from a mission minute. */
+export function clockLabel(t: number): string {
+  const minute = ((t % 1440) + 1440) % 1440;
+  return `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`;
+}
+
 /** "Day 133, 06:24" from a mission minute. */
 export function missionTimeLabel(t: number): string {
   const day = Math.floor(t / 1440) + 1;
@@ -85,3 +98,9 @@ export function countByVerdict(findings: readonly AttributedReading[]): Record<V
   for (const f of findings) counts[f.verdict] += 1;
   return counts;
 }
+
+/** A forecast value rounded for display: whole ppm for CO2, one decimal for temperature and humidity. */
+export const forecastNumber = (variable: string, value: number): number => (variable === 'co2' ? Math.round(value) : Math.round(value * 10) / 10);
+
+/** A mean absolute error for the model card table: 1 decimal for CO2 (ppm), 3 for the small-valued variables. */
+export const maeNumber = (variable: string, value: number): string => value.toFixed(variable === 'co2' ? 1 : 3);

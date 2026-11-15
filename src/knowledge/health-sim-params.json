@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "note": "Parameters of the synthetic crew health generator (src/adapters/health-sim). Display units. Every parameter carries either a source or assumption=true. 'citationChecked' is true only when the number was checked against a document in this repository; false means the citation is given from the authors' recollection of the literature and must be re-verified before any clinical use. Between-person and within-person spreads are almost all design assumptions: public literature gives population ranges, not the day-to-day spread of a fit, 6-month-isolated adult at a fixed morning time.",
+  "global": {
+    "withinSdLogScaleSd": {
+      "value": 0.2,
+      "source": null,
+      "assumption": true,
+      "note": "Per-person multiplier of the day-to-day SD is lognormal(0, this): people differ in how variable they are."
+    },
+    "readingTimeJitterSdMin": {
+      "value": 15,
+      "source": null,
+      "assumption": true,
+      "note": "Day-level shift of the whole morning reading block around the app schedule (seededMinute: 06:00 + 12 min per indicator). Gives the body temperature circadian slope something to act on."
+    },
+    "readingTimeJitterClampMin": { "value": 30, "source": null, "assumption": true },
+    "bpCorrelation": {
+      "value": 0.5,
+      "source": null,
+      "assumption": true,
+      "note": "Correlation of the systolic and diastolic day-to-day innovations."
+    }
+  },
+  "indicators": {
+    "sleepHours": {
+      "unit": "h",
+      "baselineMean": {
+        "value": 6.1,
+        "source": "Barger et al. 2014, Lancet Neurol 13:904-912: ISS crew slept on average about 6.1 h per night in flight",
+        "assumption": false,
+        "citationChecked": false
+      },
+      "baselineBetweenSd": { "value": 0.5, "source": null, "assumption": true },
+      "withinSd": { "value": 0.7, "source": null, "assumption": true, "note": "Stationary SD of the biological day-to-day process." },
+      "ar1": { "value": 0.2, "source": null, "assumption": true },
+      "measurementSd": { "value": 0.2, "source": null, "assumption": true, "note": "Self-reported sleep, rounded to 0.1 h." }
+    },
+    "phq2": {
+      "unit": "points",
+      "baselineMean": {
+        "value": 0.8,
+        "source": "Kroenke, Spitzer, Williams 2003, Med Care 41:1284-1292 (PHQ-2): general-population scores concentrate at 0-1; repository note research_notes/.../thresholds_glucose_mood.md for the cutoff of 3",
+        "assumption": true,
+        "citationChecked": false,
+        "note": "The mean is a design assumption for a healthy crew; the source only supports the 0-6 range and the low typical scores."
+      },
+      "baselineBetweenSd": { "value": 0.4, "source": null, "assumption": true },
+      "withinSd": { "value": 0.8, "source": null, "assumption": true, "note": "SD on the latent continuous scale, rounded and clamped to the integer 0-6 score afterwards." },
+      "ar1": { "value": 0.3, "source": null, "assumption": true },
+      "measurementSd": { "value": 0, "source": null, "assumption": true, "note": "The score is the instrument output; no extra noise." }
+    },
+    "heartRate": {
+      "unit": "bpm",
+      "baselineMean": {
+        "value": 64,
+        "source": "Ostchega et al. 2011, NCHS resting pulse reference data, US adults 1999-2008 (population mean about 72 bpm); Norsk et al. 2015, J Physiol 593:573-584: resting heart rate unchanged on the ISS (repository note thresholds_bp_hr_temperature.md)",
+        "assumption": true,
+        "citationChecked": false,
+        "note": "Shifted below the population mean on the assumption of a fit crew; the engine uses each person's own baseline so the absolute level does not affect the result."
+      },
+      "baselineBetweenSd": { "value": 7, "source": null, "assumption": true },
+      "withinSd": { "value": 2.5, "source": null, "assumption": true },
+      "ar1": { "value": 0.3, "source": null, "assumption": true },
+      "measurementSd": { "value": 1, "source": null, "assumption": true, "note": "Manual 60 s pulse count." }
+    },
+    "temperature": {
+      "unit": "C",
+      "baselineMean": {
+        "value": 36.8,
+        "source": "Obermeyer, Samra, Mullainathan 2017, BMJ 359:j5468: mean oral temperature about 36.6 C; Stahn et al. 2017, Sci Rep 7:16180 (repository note thresholds_bp_hr_temperature.md): resting core temperature about +1 C on the ISS, not applied here",
+        "assumption": true,
+        "citationChecked": false
+      },
+      "baselineBetweenSd": { "value": 0.25, "source": null, "assumption": true },
+      "withinSd": { "value": 0.15, "source": null, "assumption": true },
+      "ar1": { "value": 0.2, "source": null, "assumption": true },
+      "measurementSd": { "value": 0.08, "source": null, "assumption": true },
+      "circadian": {
+        "amplitude": {
+          "value": 0.25,
+          "source": "Refinetti & Menaker 1992, Physiol Behav 51:613-637: core temperature peak-to-trough of about 0.5 C",
+          "assumption": false,
+          "citationChecked": false
+        },
+        "peakHour": {
+          "value": 17.5,
+          "source": "Refinetti & Menaker 1992: acrophase in the late afternoon",
+          "assumption": false,
+          "citationChecked": false
+        },
+        "referenceHour": {
+          "value": 6.6,
+          "source": null,
+          "assumption": true,
+          "note": "Hour at which the baseline mean is defined: the app's nominal temperature reading time (06:36)."
+        }
+      }
+    },
+    "bpSystolic": {
+      "unit": "mmHg",
+      "baselineMean": {
+        "value": 114,
+        "source": "AHA/ACC 2017 guideline: normal blood pressure below 120/80 mmHg; Norsk et al. 2015: in-flight 24 h blood pressure about 8-9 mmHg lower than on the ground (repository note thresholds_bp_hr_temperature.md)",
+        "assumption": true,
+        "citationChecked": false
+      },
+      "baselineBetweenSd": { "value": 8, "source": null, "assumption": true },
+      "withinSd": { "value": 5, "source": null, "assumption": true },
+      "ar1": { "value": 0.15, "source": null, "assumption": true },
+      "measurementSd": { "value": 3.5, "source": null, "assumption": true, "note": "Home cuff measurement error." }
+    },
+    "bpDiastolic": {
+      "unit": "mmHg",
+      "baselineMean": {
+        "value": 72,
+        "source": "AHA/ACC 2017 guideline: normal diastolic pressure below 80 mmHg",
+        "assumption": true,
+        "citationChecked": false
+      },
+      "baselineBetweenSd": { "value": 5, "source": null, "assumption": true },
+      "withinSd": { "value": 3.5, "source": null, "assumption": true },
+      "ar1": { "value": 0.15, "source": null, "assumption": true },
+      "measurementSd": { "value": 2.5, "source": null, "assumption": true }
+    },
+    "glucose": {
+      "unit": "mg/dL",
+      "baselineMean": {
+        "value": 90,
+        "source": "ADA Standards of Care: normal fasting plasma glucose below 100 mg/dL",
+        "assumption": false,
+        "citationChecked": false
+      },
+      "baselineBetweenSd": { "value": 6, "source": null, "assumption": true },
+      "withinSd": { "value": 4, "source": null, "assumption": true, "note": "About 4-5 % day-to-day coefficient of variation of fasting glucose, from the literature on within-person variability; the exact value is a design choice." },
+      "ar1": { "value": 0.1, "source": null, "assumption": true },
+      "measurementSd": { "value": 2, "source": null, "assumption": true }
+    }
+  },
+  "cabin": {
+    "note": "The cabin comes from src/adapters/seeded-history/cabin-timeline.ts (calibrated on NASA OSDR EDA telemetry, see src/knowledge/cabin-calibration.json). No parameters are added here."
+  }
+}

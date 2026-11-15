@@ -22,7 +22,7 @@ import type { HabitSnapshot } from '../../core/habits/model';
 import type { CrewMember, CrewReview } from '../../core/use-cases/crew';
 import type { CheckInEntry, CheckInResult } from '../../core/use-cases/check-in';
 import type { Session } from '../../core/use-cases/session';
-import { cabinKnowledge } from '../../knowledge';
+import { cabinCalibration, cabinForecastModel, cabinKnowledge } from '../../knowledge';
 import { MISSION_META_KEY } from '../adapters';
 import type { Adapters } from '../adapters';
 import { advanceDemoDay, persistDemoClock, resetDemo } from '../demo/demo-use-cases';
@@ -251,7 +251,7 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
 
       loadCabinAnalysis() {
         // Local reads only (no network), so it can share the serial queue with the crew review.
-        return enqueue(() => loadCabinAnalysis({ ...adapters.deps, timeline: adapters.environment.timeline, cabin: cabinKnowledge }, adapters.crew));
+        return enqueue(() => loadCabinAnalysis({ ...adapters.deps, timeline: adapters.environment.timeline, cabin: cabinKnowledge, forecast: { model: cabinForecastModel, calibration: cabinCalibration } }, adapters.crew));
       },
 
       async decideRecommendation(input) {

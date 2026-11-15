@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "declaredOn": "2026-11-15",
+  "note": "Scenario catalog of the attribution engine evaluation. Declared BEFORE the first run and not edited after seeing results: the report records the SHA-256 of this file. Synthetic data from our own simulator (src/adapters/health-sim): the numbers verify the engine's logic under these assumptions, not clinical validity.",
+  "crewSize": 3,
+  "firstDay": 121,
+  "warmupDays": 28,
+  "judgedDays": 21,
+  "seeds": { "first": 1001, "count": 30 },
+  "demoSeedIndex": 0,
+  "magnitudeSd": {
+    "min": 2,
+    "max": 6,
+    "note": "Per injected anomaly, uniform. Unit: the person's own day-to-day SD of that indicator (process plus measurement), known to the simulator. Small effects (2-3 SD) are expected to be hard to detect."
+  },
+  "durationDays": { "min": 1, "max": 3, "note": "Number of consecutive mission days the effect lasts, uniform integer." },
+  "onsetOffsetDays": {
+    "min": 3,
+    "max": 14,
+    "note": "First affected day = firstDay + warmupDays + offset, uniform integer. Offset 0 is the first judged day, so the warm-up has at least 28 normal days and the episode ends at least 4 days before the end of the run."
+  },
+  "cabinExcursionTiming": {
+    "startHourPreviousDay": 22,
+    "endHourLastDay": 7.5,
+    "note": "The excursion starts at 22:00 the evening before the first affected day and ends at 07:30 of the last affected day, so every morning reading of the episode sits inside it and past the documented lags (heart rate and temperature 6 h, sleep 12 h)."
+  },
+  "scenarioTypes": [
+    {
+      "id": "no-anomaly",
+      "name": "No anomaly",
+      "description": "Normal mission days only. False-alarm control.",
+      "cabinExcursion": null,
+      "anomalies": []
+    },
+    {
+      "id": "individual-fever",
+      "name": "Individual fever",
+      "description": "One crew member's body temperature rises; the cabin stays nominal.",
+      "cabinExcursion": null,
+      "anomalies": [{ "indicatorId": "temperature", "affected": "one", "direction": "up", "class": "individual" }]
+    },
+    {
+      "id": "individual-heart-rate",
+      "name": "Individual heart rate",
+      "description": "One crew member's resting heart rate rises; the cabin stays nominal.",
+      "cabinExcursion": null,
+      "anomalies": [{ "indicatorId": "heartRate", "affected": "one", "direction": "up", "class": "individual" }]
+    },
+    {
+      "id": "cabin-heat-crew",
+      "name": "Cabin heat, whole crew",
+      "description": "Cabin temperature goes above 27 C overnight; resting heart rate and body temperature rise in all 3 crew, the two indicators that have a documented link to cabin temperature in cabin.json.",
+      "cabinExcursion": { "variable": "cabinTemperature", "deltaRange": [6.2, 8] },
+      "anomalies": [
+        { "indicatorId": "heartRate", "affected": "all", "direction": "up", "class": "environmental" },
+        { "indicatorId": "temperature", "affected": "all", "direction": "up", "class": "environmental" }
+      ]
+    },
+    {
+      "id": "co2-two-crew",
+      "name": "CO2 above limit, two crew",
+      "description": "Cabin CO2 goes above its NASA limit; sleep drops in 2 of the 3 crew. CO2 is only linked to sleep in cabin.json, so only sleep is affected.",
+      "cabinExcursion": { "variable": "co2", "deltaRange": [1900, 2500] },
+      "anomalies": [{ "indicatorId": "sleepHours", "affected": "two", "direction": "down", "class": "environmental" }]
+    },
+    {
+      "id": "shared-non-environmental",
+      "name": "Shared, not environmental",
+      "description": "All 3 crew sleep less (for example a schedule shift) while the cabin is nominal.",
+      "cabinExcursion": null,
+      "anomalies": [{ "indicatorId": "sleepHours", "affected": "all", "direction": "down", "class": "shared" }]
+    },
+    {
+      "id": "confounder",
+      "name": "Confounder: heat plus unrelated glucose",
+      "description": "Cabin temperature goes above 27 C while one crew member has an unrelated rise in fasting glucose, an indicator with no documented link to any cabin variable. The cabin must not be blamed.",
+      "cabinExcursion": { "variable": "cabinTemperature", "deltaRange": [6.2, 8] },
+      "anomalies": [{ "indicatorId": "glucose", "affected": "one", "direction": "up", "class": "individual" }]
+    }
+  ]
+}

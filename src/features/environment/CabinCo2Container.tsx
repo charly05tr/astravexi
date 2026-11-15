@@ -1,28 +1,21 @@
 import { useEffect, useState } from 'react';
-import { useAppContext, useAppState } from '../../app/app-context';
-import { can } from '../../core/profiles/policy';
+import { useAppContext } from '../../app/app-context';
 import type { CabinEnvironmentView } from '../../core/use-cases/environment';
-import { CabinCo2Panel } from './CabinCo2Panel';
 
-type Load = { status: 'loading' } | { status: 'error' } | { status: 'ready'; view: CabinEnvironmentView };
+export type ReferenceLoad = { status: 'loading' } | { status: 'error' } | { status: 'ready'; view: CabinEnvironmentView };
 
 /**
- * The cabin CO2 panel of the CMO dashboard. Renders nothing for any other role; the use-case refuses them again,
- * so this check only keeps the UI honest.
+ * Loads the NASA ISS CO2 reference for the cabin page. Cache-first: the saved copy is shown at once and refreshed in
+ * the background only when stale. Only the page of a role that may view the cabin mounts this; the use-case refuses
+ * everyone else again. The presentation lives in the "Cabin air" row and in "Data & method".
  */
-export function CabinCo2Container() {
-  const role = useAppState((s) => s.actor.role);
-  return can(role, 'viewCabinEnvironment') ? <CabinCo2 /> : null;
-}
-
-function CabinCo2() {
+export function useCabinReference(): ReferenceLoad {
   const { store } = useAppContext();
-  const [load, setLoad] = useState<Load>({ status: 'loading' });
+  const [load, setLoad] = useState<ReferenceLoad>({ status: 'loading' });
 
   useEffect(() => {
     let cancelled = false;
     const { loadCabinEnvironment } = store.getState();
-    // Cache-first: show the saved NASA reference at once, then refresh it in the background only when stale.
     loadCabinEnvironment({ cacheFirst: true })
       .then((view) => {
         if (cancelled) return;
@@ -43,19 +36,5 @@ function CabinCo2() {
     };
   }, [store]);
 
-  if (load.status === 'loading') {
-    return (
-      <p className="muted" role="status" aria-busy="true">
-        Loading cabin CO2.
-      </p>
-    );
-  }
-  if (load.status === 'error') {
-    return (
-      <p className="banner" role="alert">
-        The cabin CO2 could not be loaded.
-      </p>
-    );
-  }
-  return <CabinCo2Panel view={load.view} />;
+  return load;
 }

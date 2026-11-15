@@ -1,5 +1,9 @@
 import type { CabinKnowledge } from '../core/attribution/model';
+import type { CabinCalibrationArtifact } from '../core/calibration/artifact';
+import type { ForecastModelArtifact } from '../core/forecast/model';
 import cabinJson from './cabin.json';
+import calibrationJson from './cabin-calibration.json';
+import forecastModelJson from './cabin-forecast-model.json';
 import type {
   Attribution,
   BodyZone,
@@ -110,6 +114,10 @@ export function loadKnowledge(flags: KnowledgeFlags = DEFAULT_FLAGS): Knowledge 
 
 /** Cabin variables, their NASA limits and the documented variable-to-indicator links, each with its citation. */
 export const cabinKnowledge: CabinKnowledge = cabinJson as unknown as CabinKnowledge;
+
+/** Forecast model (ridge, leave-mission-out evaluated) and the simulator calibration, both fitted offline on real NASA OSDR ISS telemetry. */
+export const cabinForecastModel = forecastModelJson as unknown as ForecastModelArtifact;
+export const cabinCalibration = calibrationJson as unknown as CabinCalibrationArtifact;
 
 export const risks = risksJson as unknown as Risk[];
 export const knowledge: Knowledge = loadKnowledge();

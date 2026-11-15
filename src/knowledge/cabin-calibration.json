@@ -1,0 +1,404 @@
+{
+  "schemaVersion": 1,
+  "provenance": {
+    "source": "NASA Open Science Data Repository, Environmental Data Application (EDA) API, ISS-side telemetry",
+    "sourceUrl": "https://visualization.osdr.nasa.gov/eda/api_reference",
+    "fetchedAt": "2026-11-15T16:09:54.724Z",
+    "generatedOn": "2026-11-15",
+    "gridMinutes": 15,
+    "method": "Per variable and mission: remove the mission median, fit the first two daily harmonics by least squares over all missions (time of day in UTC), then take the residual standard deviation and its lag-1 autocorrelation (AR(1)) inside contiguous segments. The level is the median across missions of the mission medians. Excursions are maximal runs above each mission own 95th percentile.",
+    "variables": {
+      "co2": {
+        "sourceField": "co2_iss",
+        "unit": "ppm",
+        "unitNote": "Documented by NASA OSDR (parts per million).",
+        "missions": [
+          {
+            "mission": "RR-1",
+            "firstDay": "2014-09-20",
+            "lastDay": "2014-11-01",
+            "days": 35.64
+          },
+          {
+            "mission": "RR-3",
+            "firstDay": "2016-04-13",
+            "lastDay": "2016-05-27",
+            "days": 44.08
+          },
+          {
+            "mission": "RR-5",
+            "firstDay": "2017-06-10",
+            "lastDay": "2017-08-08",
+            "days": 57.19
+          },
+          {
+            "mission": "RR-6",
+            "firstDay": "2017-12-15",
+            "lastDay": "2018-02-06",
+            "days": 51.6
+          },
+          {
+            "mission": "RR-7",
+            "firstDay": "2018-07-06",
+            "lastDay": "2018-09-17",
+            "days": 70.08
+          },
+          {
+            "mission": "RR-9",
+            "firstDay": "2018-08-18",
+            "lastDay": "2018-09-17",
+            "days": 30.92
+          },
+          {
+            "mission": "RR-12",
+            "firstDay": "2019-04-22",
+            "lastDay": "2019-05-28",
+            "days": 36.1
+          },
+          {
+            "mission": "RR-19",
+            "firstDay": "2019-12-10",
+            "lastDay": "2020-01-07",
+            "days": 27.82
+          },
+          {
+            "mission": "RR-23",
+            "firstDay": "2020-12-12",
+            "lastDay": "2021-01-15",
+            "days": 32.44
+          }
+        ],
+        "days": 385.9,
+        "rawRows": 191758,
+        "cleanRows": 144353,
+        "cleaningRules": "Null dropped. Fill values 2000, 3000, 250, 500 and 128 ppm dropped. Values outside 350-10000 ppm dropped (sensor offline or impossible for a ventilated cabin). Runs of one identical value spanning 3 hours or more dropped: a ppm sensor held at one reading is stuck, not measuring."
+      },
+      "cabinTemperature": {
+        "sourceField": "temperature_iss",
+        "unit": "degrees Celsius",
+        "unitNote": "Not stated on the EDA reference page; inferred from the magnitude (cabin median 22 C, NASA limit 18-27 C).",
+        "missions": [
+          {
+            "mission": "RR-1",
+            "firstDay": "2014-09-20",
+            "lastDay": "2014-11-01",
+            "days": 42.01
+          },
+          {
+            "mission": "RR-3",
+            "firstDay": "2016-04-08",
+            "lastDay": "2016-05-28",
+            "days": 50
+          },
+          {
+            "mission": "RR-5",
+            "firstDay": "2017-06-01",
+            "lastDay": "2017-08-08",
+            "days": 66.55
+          },
+          {
+            "mission": "RR-6",
+            "firstDay": "2017-12-06",
+            "lastDay": "2018-02-06",
+            "days": 61.03
+          },
+          {
+            "mission": "RR-7",
+            "firstDay": "2018-07-01",
+            "lastDay": "2018-09-17",
+            "days": 75.38
+          },
+          {
+            "mission": "RR-9",
+            "firstDay": "2018-08-14",
+            "lastDay": "2018-09-18",
+            "days": 35.01
+          },
+          {
+            "mission": "RR-12",
+            "firstDay": "2019-04-17",
+            "lastDay": "2019-05-28",
+            "days": 40.97
+          },
+          {
+            "mission": "RR-18",
+            "firstDay": "2021-12-20",
+            "lastDay": "2022-02-28",
+            "days": 70.01
+          },
+          {
+            "mission": "RR-19",
+            "firstDay": "2019-12-03",
+            "lastDay": "2020-01-07",
+            "days": 35.42
+          },
+          {
+            "mission": "RR-23",
+            "firstDay": "2020-12-09",
+            "lastDay": "2021-01-15",
+            "days": 36.56
+          }
+        ],
+        "days": 512.9,
+        "rawRows": 339222,
+        "cleanRows": 266365,
+        "cleaningRules": "Null dropped. Values outside 15-32 C dropped as sensor errors (the NASA crew-health range is 18-27 C). Flat runs are kept: the readings are quantised to 0.1-1 C."
+      },
+      "humidity": {
+        "sourceField": "humidity_iss",
+        "unit": "percent relative humidity",
+        "unitNote": "Not stated on the EDA reference page; inferred from the magnitude (median 38-49) and the 0-100 range.",
+        "missions": [
+          {
+            "mission": "RR-1",
+            "firstDay": "2014-09-20",
+            "lastDay": "2014-11-01",
+            "days": 42.01
+          },
+          {
+            "mission": "RR-3",
+            "firstDay": "2016-04-08",
+            "lastDay": "2016-05-28",
+            "days": 50
+          },
+          {
+            "mission": "RR-5",
+            "firstDay": "2017-06-01",
+            "lastDay": "2017-08-08",
+            "days": 66.55
+          },
+          {
+            "mission": "RR-6",
+            "firstDay": "2017-12-06",
+            "lastDay": "2018-02-06",
+            "days": 61.03
+          },
+          {
+            "mission": "RR-7",
+            "firstDay": "2018-07-01",
+            "lastDay": "2018-09-17",
+            "days": 75.38
+          },
+          {
+            "mission": "RR-9",
+            "firstDay": "2018-08-14",
+            "lastDay": "2018-09-18",
+            "days": 35.01
+          },
+          {
+            "mission": "RR-12",
+            "firstDay": "2019-04-17",
+            "lastDay": "2019-05-28",
+            "days": 40.97
+          },
+          {
+            "mission": "RR-18",
+            "firstDay": "2021-12-20",
+            "lastDay": "2022-02-28",
+            "days": 68.78
+          },
+          {
+            "mission": "RR-19",
+            "firstDay": "2019-12-03",
+            "lastDay": "2020-01-07",
+            "days": 35.42
+          },
+          {
+            "mission": "RR-23",
+            "firstDay": "2020-12-09",
+            "lastDay": "2021-01-15",
+            "days": 36.56
+          }
+        ],
+        "days": 511.7,
+        "rawRows": 339222,
+        "cleanRows": 264932,
+        "cleaningRules": "Null dropped. Values outside 5-100 % dropped: relative humidity above 100 % is physically impossible (RR-18 reaches 125.8) and below 5 % is a sensor error. Flat runs are kept: the readings are quantised to 1 %."
+      }
+    }
+  },
+  "variables": {
+    "co2": {
+      "level": 3169,
+      "levelAcrossMissions": {
+        "min": 2165.07,
+        "max": 3664.83,
+        "sd": 495.794
+      },
+      "cycle": [
+        {
+          "harmonic": 1,
+          "amplitude": 196.235,
+          "peakSlot": 81.3979
+        },
+        {
+          "harmonic": 2,
+          "amplitude": 27.7975,
+          "peakSlot": 47.7436
+        }
+      ],
+      "noise": {
+        "sd": 438.694,
+        "ar1": 0.992105,
+        "innovationSd": 55.0159,
+        "sdAcrossMissions": {
+          "min": 274.847,
+          "max": 1320.57
+        }
+      },
+      "bounds": {
+        "low": 2138.92,
+        "high": 4070.83
+      },
+      "excursions": {
+        "p95OffsetFromMedian": 629.083,
+        "fractionAboveP95": 0.0499136,
+        "episodesPerDay": 0.671202,
+        "meanDurationHours": 1.78475,
+        "p90DurationHours": 3.75,
+        "meanPeakExcess": 134.454,
+        "p90PeakExcess": 361.247
+      },
+      "limits": {
+        "fractionOutsideOperating": 0.0831714,
+        "episodesPer30Days": 8.3965,
+        "fractionOutsideComfort": null
+      },
+      "samples": 37044,
+      "days": 385.875,
+      "missions": [
+        "RR-1",
+        "RR-3",
+        "RR-5",
+        "RR-6",
+        "RR-7",
+        "RR-9",
+        "RR-12",
+        "RR-19",
+        "RR-23"
+      ]
+    },
+    "cabinTemperature": {
+      "level": 22.506,
+      "levelAcrossMissions": {
+        "min": 21.7,
+        "max": 23.4333,
+        "sd": 0.539893
+      },
+      "cycle": [
+        {
+          "harmonic": 1,
+          "amplitude": 0.178212,
+          "peakSlot": 54.1625
+        },
+        {
+          "harmonic": 2,
+          "amplitude": 0.0567862,
+          "peakSlot": 32.0337
+        }
+      ],
+      "noise": {
+        "sd": 0.773682,
+        "ar1": 0.983567,
+        "innovationSd": 0.139682,
+        "sdAcrossMissions": {
+          "min": 0.486445,
+          "max": 0.980376
+        }
+      },
+      "bounds": {
+        "low": 20.9614,
+        "high": 24.8228
+      },
+      "excursions": {
+        "p95OffsetFromMedian": 0.95,
+        "fractionAboveP95": 0.0463629,
+        "episodesPerDay": 0.502985,
+        "meanDurationHours": 2.21221,
+        "p90DurationHours": 4.825,
+        "meanPeakExcess": 0.420089,
+        "p90PeakExcess": 1.06333
+      },
+      "limits": {
+        "fractionOutsideOperating": 0.000873238,
+        "episodesPer30Days": 0.409407,
+        "fractionOutsideComfort": 0.0207749
+      },
+      "samples": 49242,
+      "days": 512.938,
+      "missions": [
+        "RR-1",
+        "RR-3",
+        "RR-5",
+        "RR-6",
+        "RR-7",
+        "RR-9",
+        "RR-12",
+        "RR-18",
+        "RR-19",
+        "RR-23"
+      ]
+    },
+    "humidity": {
+      "level": 41,
+      "levelAcrossMissions": {
+        "min": 37.6667,
+        "max": 48.9833,
+        "sd": 2.85547
+      },
+      "cycle": [
+        {
+          "harmonic": 1,
+          "amplitude": 0.160057,
+          "peakSlot": 54.5964
+        },
+        {
+          "harmonic": 2,
+          "amplitude": 0.158027,
+          "peakSlot": 47.8301
+        }
+      ],
+      "noise": {
+        "sd": 3.64956,
+        "ar1": 0.989612,
+        "innovationSd": 0.524672,
+        "sdAcrossMissions": {
+          "min": 1.77627,
+          "max": 8.81372
+        }
+      },
+      "bounds": {
+        "low": 33.5,
+        "high": 59.5333
+      },
+      "excursions": {
+        "p95OffsetFromMedian": 6.5,
+        "fractionAboveP95": 0.0329574,
+        "episodesPerDay": 0.173927,
+        "meanDurationHours": 4.54775,
+        "p90DurationHours": 10.5,
+        "meanPeakExcess": 6.33601,
+        "p90PeakExcess": 21.1333
+      },
+      "limits": {
+        "fractionOutsideOperating": 0.00576093,
+        "episodesPer30Days": 1.23117,
+        "fractionOutsideComfort": 0.0185449
+      },
+      "samples": 49124,
+      "days": 511.708,
+      "missions": [
+        "RR-1",
+        "RR-3",
+        "RR-5",
+        "RR-6",
+        "RR-7",
+        "RR-9",
+        "RR-12",
+        "RR-18",
+        "RR-19",
+        "RR-23"
+      ]
+    }
+  }
+}

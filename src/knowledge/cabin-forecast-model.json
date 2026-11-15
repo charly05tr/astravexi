@@ -1,0 +1,829 @@
+{
+  "schemaVersion": 1,
+  "provenance": {
+    "source": "NASA Open Science Data Repository, Environmental Data Application (EDA) API, ISS-side telemetry",
+    "sourceUrl": "https://visualization.osdr.nasa.gov/eda/api_reference",
+    "fetchedAt": "2026-11-15T16:09:54.724Z",
+    "generatedOn": "2026-11-15",
+    "gridMinutes": 15,
+    "resampling": "Mean of the clean points inside each 15-minute slot (slot = floor(minutes since epoch / 15)). A gap of at most maxFillSlots empty slots is bridged by linear interpolation; a longer gap ends the segment. Segments shorter than minSlots are discarded.",
+    "evaluation": "Leave-mission-out: each mission is the test set once and is never in its own training set; nothing is shuffled across time. The ridge lambda of each fold is chosen by an inner leave-one-mission-out on the training missions only. Metrics pool the held-out predictions and score only origins with 24 h of history, for the model and both baselines alike. The shipped coefficients are fitted on all missions with a lambda chosen by leave-mission-out validation; the stored metrics are the held-out ones. The 80% interval uses the 10th and 90th percentile of the held-out residuals.",
+    "gate": "A horizon is enabled only if the held-out MAE of the model is lower than the MAE of both persistence and seasonal naive (same time 24 h earlier).",
+    "variables": {
+      "co2": {
+        "sourceField": "co2_iss",
+        "unit": "ppm",
+        "unitNote": "Documented by NASA OSDR (parts per million).",
+        "missions": [
+          {
+            "mission": "RR-1",
+            "firstDay": "2014-09-20",
+            "lastDay": "2014-11-01",
+            "days": 35.64
+          },
+          {
+            "mission": "RR-3",
+            "firstDay": "2016-04-13",
+            "lastDay": "2016-05-27",
+            "days": 44.08
+          },
+          {
+            "mission": "RR-5",
+            "firstDay": "2017-06-10",
+            "lastDay": "2017-08-08",
+            "days": 57.19
+          },
+          {
+            "mission": "RR-6",
+            "firstDay": "2017-12-15",
+            "lastDay": "2018-02-06",
+            "days": 51.6
+          },
+          {
+            "mission": "RR-7",
+            "firstDay": "2018-07-06",
+            "lastDay": "2018-09-17",
+            "days": 70.08
+          },
+          {
+            "mission": "RR-9",
+            "firstDay": "2018-08-18",
+            "lastDay": "2018-09-17",
+            "days": 30.92
+          },
+          {
+            "mission": "RR-12",
+            "firstDay": "2019-04-22",
+            "lastDay": "2019-05-28",
+            "days": 36.1
+          },
+          {
+            "mission": "RR-19",
+            "firstDay": "2019-12-10",
+            "lastDay": "2020-01-07",
+            "days": 27.82
+          },
+          {
+            "mission": "RR-23",
+            "firstDay": "2020-12-12",
+            "lastDay": "2021-01-15",
+            "days": 32.44
+          }
+        ],
+        "days": 385.9,
+        "rawRows": 191758,
+        "cleanRows": 144353,
+        "cleaningRules": "Null dropped. Fill values 2000, 3000, 250, 500 and 128 ppm dropped. Values outside 350-10000 ppm dropped (sensor offline or impossible for a ventilated cabin). Runs of one identical value spanning 3 hours or more dropped: a ppm sensor held at one reading is stuck, not measuring."
+      },
+      "cabinTemperature": {
+        "sourceField": "temperature_iss",
+        "unit": "degrees Celsius",
+        "unitNote": "Not stated on the EDA reference page; inferred from the magnitude (cabin median 22 C, NASA limit 18-27 C).",
+        "missions": [
+          {
+            "mission": "RR-1",
+            "firstDay": "2014-09-20",
+            "lastDay": "2014-11-01",
+            "days": 42.01
+          },
+          {
+            "mission": "RR-3",
+            "firstDay": "2016-04-08",
+            "lastDay": "2016-05-28",
+            "days": 50
+          },
+          {
+            "mission": "RR-5",
+            "firstDay": "2017-06-01",
+            "lastDay": "2017-08-08",
+            "days": 66.55
+          },
+          {
+            "mission": "RR-6",
+            "firstDay": "2017-12-06",
+            "lastDay": "2018-02-06",
+            "days": 61.03
+          },
+          {
+            "mission": "RR-7",
+            "firstDay": "2018-07-01",
+            "lastDay": "2018-09-17",
+            "days": 75.38
+          },
+          {
+            "mission": "RR-9",
+            "firstDay": "2018-08-14",
+            "lastDay": "2018-09-18",
+            "days": 35.01
+          },
+          {
+            "mission": "RR-12",
+            "firstDay": "2019-04-17",
+            "lastDay": "2019-05-28",
+            "days": 40.97
+          },
+          {
+            "mission": "RR-18",
+            "firstDay": "2021-12-20",
+            "lastDay": "2022-02-28",
+            "days": 70.01
+          },
+          {
+            "mission": "RR-19",
+            "firstDay": "2019-12-03",
+            "lastDay": "2020-01-07",
+            "days": 35.42
+          },
+          {
+            "mission": "RR-23",
+            "firstDay": "2020-12-09",
+            "lastDay": "2021-01-15",
+            "days": 36.56
+          }
+        ],
+        "days": 512.9,
+        "rawRows": 339222,
+        "cleanRows": 266365,
+        "cleaningRules": "Null dropped. Values outside 15-32 C dropped as sensor errors (the NASA crew-health range is 18-27 C). Flat runs are kept: the readings are quantised to 0.1-1 C."
+      },
+      "humidity": {
+        "sourceField": "humidity_iss",
+        "unit": "percent relative humidity",
+        "unitNote": "Not stated on the EDA reference page; inferred from the magnitude (median 38-49) and the 0-100 range.",
+        "missions": [
+          {
+            "mission": "RR-1",
+            "firstDay": "2014-09-20",
+            "lastDay": "2014-11-01",
+            "days": 42.01
+          },
+          {
+            "mission": "RR-3",
+            "firstDay": "2016-04-08",
+            "lastDay": "2016-05-28",
+            "days": 50
+          },
+          {
+            "mission": "RR-5",
+            "firstDay": "2017-06-01",
+            "lastDay": "2017-08-08",
+            "days": 66.55
+          },
+          {
+            "mission": "RR-6",
+            "firstDay": "2017-12-06",
+            "lastDay": "2018-02-06",
+            "days": 61.03
+          },
+          {
+            "mission": "RR-7",
+            "firstDay": "2018-07-01",
+            "lastDay": "2018-09-17",
+            "days": 75.38
+          },
+          {
+            "mission": "RR-9",
+            "firstDay": "2018-08-14",
+            "lastDay": "2018-09-18",
+            "days": 35.01
+          },
+          {
+            "mission": "RR-12",
+            "firstDay": "2019-04-17",
+            "lastDay": "2019-05-28",
+            "days": 40.97
+          },
+          {
+            "mission": "RR-18",
+            "firstDay": "2021-12-20",
+            "lastDay": "2022-02-28",
+            "days": 68.78
+          },
+          {
+            "mission": "RR-19",
+            "firstDay": "2019-12-03",
+            "lastDay": "2020-01-07",
+            "days": 35.42
+          },
+          {
+            "mission": "RR-23",
+            "firstDay": "2020-12-09",
+            "lastDay": "2021-01-15",
+            "days": 36.56
+          }
+        ],
+        "days": 511.7,
+        "rawRows": 339222,
+        "cleanRows": 264932,
+        "cleaningRules": "Null dropped. Values outside 5-100 % dropped: relative humidity above 100 % is physically impossible (RR-18 reaches 125.8) and below 5 % is a sensor error. Flat runs are kept: the readings are quantised to 1 %."
+      }
+    },
+    "radiation": "Radiation (gcr, saa, total) is daily and its unit is not documented on the EDA reference page or in the API responses, so it is not used for calibration or forecasting; the simulated radiation stays illustrative."
+  },
+  "featureSpec": {
+    "slotMinutes": 15,
+    "minHistorySlots": 13,
+    "featureNames": [
+      "value",
+      "delta_lag_15min",
+      "delta_lag_30min",
+      "delta_lag_45min",
+      "delta_lag_60min",
+      "delta_lag_90min",
+      "delta_lag_120min",
+      "delta_lag_180min",
+      "slope_per_hour",
+      "time_of_day_sin",
+      "time_of_day_cos"
+    ],
+    "target": "value at the horizon minus value now"
+  },
+  "variables": {
+    "co2": {
+      "horizons": [
+        {
+          "horizonH": 1,
+          "enabled": true,
+          "lambda": 100000,
+          "coefficients": [
+            -0.00354711,
+            -0.0373132,
+            -0.00973246,
+            -0.00156582,
+            0.000467052,
+            0.000759365,
+            0.000147496,
+            -0.000580302,
+            -0.00516346,
+            -6.48392,
+            -12.0424
+          ],
+          "intercept": 11.0275,
+          "metrics": {
+            "n": 34567,
+            "testMissions": [
+              "RR-1",
+              "RR-3",
+              "RR-5",
+              "RR-6",
+              "RR-7",
+              "RR-9",
+              "RR-12",
+              "RR-19",
+              "RR-23"
+            ],
+            "model": {
+              "mae": 89.5063,
+              "rmse": 159.735
+            },
+            "persistence": {
+              "mae": 89.7856,
+              "rmse": 161.172
+            },
+            "seasonalNaive": {
+              "mae": 270.277,
+              "rmse": 461.471
+            },
+            "missionsBeatingBoth": 8,
+            "foldLambdas": [
+              100000,
+              100000,
+              100000,
+              100000,
+              100000,
+              10000,
+              100000,
+              100000,
+              100000,
+              100000
+            ]
+          },
+          "interval": {
+            "q10": -136.402,
+            "q90": 156.548
+          }
+        },
+        {
+          "horizonH": 3,
+          "enabled": true,
+          "lambda": 10000,
+          "coefficients": [
+            -0.0263583,
+            -0.108793,
+            -0.0209122,
+            -0.0273901,
+            -0.036625,
+            0.00375722,
+            0.030969,
+            0.099858,
+            -0.026146,
+            -39.7252,
+            -120.02
+          ],
+          "intercept": 81.7887,
+          "metrics": {
+            "n": 34567,
+            "testMissions": [
+              "RR-1",
+              "RR-3",
+              "RR-5",
+              "RR-6",
+              "RR-7",
+              "RR-9",
+              "RR-12",
+              "RR-19",
+              "RR-23"
+            ],
+            "model": {
+              "mae": 170.456,
+              "rmse": 266.953
+            },
+            "persistence": {
+              "mae": 183.141,
+              "rmse": 283.992
+            },
+            "seasonalNaive": {
+              "mae": 270.277,
+              "rmse": 461.471
+            },
+            "missionsBeatingBoth": 7,
+            "foldLambdas": [
+              10000,
+              10000,
+              1000,
+              10000,
+              10000,
+              1000,
+              10000,
+              10000,
+              10000,
+              10000
+            ]
+          },
+          "interval": {
+            "q10": -245.889,
+            "q90": 272.246
+          }
+        },
+        {
+          "horizonH": 6,
+          "enabled": true,
+          "lambda": 1000,
+          "coefficients": [
+            -0.0504956,
+            -0.114184,
+            0.00529968,
+            0.0269116,
+            0.0131363,
+            0.00369738,
+            0.0150029,
+            0.214865,
+            -0.0314478,
+            9.51649,
+            -283.542
+          ],
+          "intercept": 156.955,
+          "metrics": {
+            "n": 34567,
+            "testMissions": [
+              "RR-1",
+              "RR-3",
+              "RR-5",
+              "RR-6",
+              "RR-7",
+              "RR-9",
+              "RR-12",
+              "RR-19",
+              "RR-23"
+            ],
+            "model": {
+              "mae": 227.971,
+              "rmse": 336.856
+            },
+            "persistence": {
+              "mae": 280.682,
+              "rmse": 391.423
+            },
+            "seasonalNaive": {
+              "mae": 270.277,
+              "rmse": 461.471
+            },
+            "missionsBeatingBoth": 6,
+            "foldLambdas": [
+              100,
+              1000,
+              0.1,
+              1000,
+              1000,
+              1000,
+              1000,
+              100,
+              1000,
+              1000
+            ]
+          },
+          "interval": {
+            "q10": -337.239,
+            "q90": 354.243
+          }
+        }
+      ]
+    },
+    "cabinTemperature": {
+      "horizons": [
+        {
+          "horizonH": 1,
+          "enabled": false,
+          "lambda": 1000000,
+          "coefficients": [
+            -0.00259158,
+            -0.00666598,
+            0.000278008,
+            0.00199354,
+            0.00250302,
+            0.00230774,
+            0.00158861,
+            0.00185558,
+            -0.00428,
+            0.00211755,
+            -0.000649775
+          ],
+          "intercept": 0.057922,
+          "metrics": {
+            "n": 47245,
+            "testMissions": [
+              "RR-1",
+              "RR-3",
+              "RR-5",
+              "RR-6",
+              "RR-7",
+              "RR-9",
+              "RR-12",
+              "RR-18",
+              "RR-19",
+              "RR-23"
+            ],
+            "model": {
+              "mae": 0.147578,
+              "rmse": 0.305686
+            },
+            "persistence": {
+              "mae": 0.147015,
+              "rmse": 0.306003
+            },
+            "seasonalNaive": {
+              "mae": 0.375642,
+              "rmse": 0.725388
+            },
+            "missionsBeatingBoth": 2,
+            "foldLambdas": [
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000
+            ]
+          },
+          "interval": {
+            "q10": -0.202887,
+            "q90": 0.19855
+          },
+          "disabledReason": "Test MAE does not beat persistence."
+        },
+        {
+          "horizonH": 3,
+          "enabled": true,
+          "lambda": 1000000,
+          "coefficients": [
+            -0.00697309,
+            -0.00316967,
+            0.00267833,
+            0.0040185,
+            0.0045244,
+            0.00475032,
+            0.004882,
+            0.00536559,
+            -0.00838217,
+            0.00639596,
+            -0.000221981
+          ],
+          "intercept": 0.155394,
+          "metrics": {
+            "n": 47245,
+            "testMissions": [
+              "RR-1",
+              "RR-3",
+              "RR-5",
+              "RR-6",
+              "RR-7",
+              "RR-9",
+              "RR-12",
+              "RR-18",
+              "RR-19",
+              "RR-23"
+            ],
+            "model": {
+              "mae": 0.267335,
+              "rmse": 0.50281
+            },
+            "persistence": {
+              "mae": 0.267582,
+              "rmse": 0.505469
+            },
+            "seasonalNaive": {
+              "mae": 0.375642,
+              "rmse": 0.725388
+            },
+            "missionsBeatingBoth": 4,
+            "foldLambdas": [
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000
+            ]
+          },
+          "interval": {
+            "q10": -0.388536,
+            "q90": 0.329931
+          }
+        },
+        {
+          "horizonH": 6,
+          "enabled": true,
+          "lambda": 100000,
+          "coefficients": [
+            -0.0788641,
+            -0.0371621,
+            0.00949104,
+            0.0218925,
+            0.0267618,
+            0.0302622,
+            0.0304845,
+            0.0397928,
+            -0.0550281,
+            0.0778073,
+            0.0230353
+          ],
+          "intercept": 1.77049,
+          "metrics": {
+            "n": 47245,
+            "testMissions": [
+              "RR-1",
+              "RR-3",
+              "RR-5",
+              "RR-6",
+              "RR-7",
+              "RR-9",
+              "RR-12",
+              "RR-18",
+              "RR-19",
+              "RR-23"
+            ],
+            "model": {
+              "mae": 0.374493,
+              "rmse": 0.635188
+            },
+            "persistence": {
+              "mae": 0.383091,
+              "rmse": 0.666958
+            },
+            "seasonalNaive": {
+              "mae": 0.375642,
+              "rmse": 0.725388
+            },
+            "missionsBeatingBoth": 6,
+            "foldLambdas": [
+              100000,
+              100000,
+              100000,
+              100000,
+              100000,
+              100000,
+              100000,
+              100000,
+              100000,
+              100000,
+              100000
+            ]
+          },
+          "interval": {
+            "q10": -0.565224,
+            "q90": 0.474669
+          }
+        }
+      ]
+    },
+    "humidity": {
+      "horizons": [
+        {
+          "horizonH": 1,
+          "enabled": false,
+          "lambda": 1000000,
+          "coefficients": [
+            -0.00197208,
+            -0.0115057,
+            -0.0052806,
+            -0.00292212,
+            -0.0013763,
+            0.000691012,
+            0.00197648,
+            0.00261208,
+            -0.00296504,
+            0.0015136,
+            -0.000953407
+          ],
+          "intercept": 0.0845429,
+          "metrics": {
+            "n": 47031,
+            "testMissions": [
+              "RR-1",
+              "RR-3",
+              "RR-5",
+              "RR-6",
+              "RR-7",
+              "RR-9",
+              "RR-12",
+              "RR-18",
+              "RR-19",
+              "RR-23"
+            ],
+            "model": {
+              "mae": 0.574604,
+              "rmse": 1.72521
+            },
+            "persistence": {
+              "mae": 0.570685,
+              "rmse": 1.72661
+            },
+            "seasonalNaive": {
+              "mae": 2.06383,
+              "rmse": 4.86986
+            },
+            "missionsBeatingBoth": 1,
+            "foldLambdas": [
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000
+            ]
+          },
+          "interval": {
+            "q10": -1.00287,
+            "q90": 0.991955
+          },
+          "disabledReason": "Test MAE does not beat persistence."
+        },
+        {
+          "horizonH": 3,
+          "enabled": false,
+          "lambda": 1000000,
+          "coefficients": [
+            -0.00565573,
+            -0.00122913,
+            0.00353415,
+            0.0052318,
+            0.00624602,
+            0.00684856,
+            0.00680063,
+            0.00619033,
+            -0.0119271,
+            0.00491607,
+            -0.00158438
+          ],
+          "intercept": 0.240148,
+          "metrics": {
+            "n": 47031,
+            "testMissions": [
+              "RR-1",
+              "RR-3",
+              "RR-5",
+              "RR-6",
+              "RR-7",
+              "RR-9",
+              "RR-12",
+              "RR-18",
+              "RR-19",
+              "RR-23"
+            ],
+            "model": {
+              "mae": 1.134,
+              "rmse": 2.87708
+            },
+            "persistence": {
+              "mae": 1.12461,
+              "rmse": 2.88643
+            },
+            "seasonalNaive": {
+              "mae": 2.06383,
+              "rmse": 4.86986
+            },
+            "missionsBeatingBoth": 1,
+            "foldLambdas": [
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000
+            ]
+          },
+          "interval": {
+            "q10": -1.41954,
+            "q90": 1.30906
+          },
+          "disabledReason": "Test MAE does not beat persistence."
+        },
+        {
+          "horizonH": 6,
+          "enabled": false,
+          "lambda": 1000000,
+          "coefficients": [
+            -0.00977644,
+            0.000974204,
+            0.00445096,
+            0.00576093,
+            0.00658015,
+            0.00796991,
+            0.00895638,
+            0.00952728,
+            -0.0139922,
+            0.00921345,
+            0.00143491
+          ],
+          "intercept": 0.407081,
+          "metrics": {
+            "n": 47031,
+            "testMissions": [
+              "RR-1",
+              "RR-3",
+              "RR-5",
+              "RR-6",
+              "RR-7",
+              "RR-9",
+              "RR-12",
+              "RR-18",
+              "RR-19",
+              "RR-23"
+            ],
+            "model": {
+              "mae": 1.69985,
+              "rmse": 3.69182
+            },
+            "persistence": {
+              "mae": 1.6935,
+              "rmse": 3.71794
+            },
+            "seasonalNaive": {
+              "mae": 2.06383,
+              "rmse": 4.86986
+            },
+            "missionsBeatingBoth": 0,
+            "foldLambdas": [
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000,
+              1000000
+            ]
+          },
+          "interval": {
+            "q10": -2.31265,
+            "q90": 2.34411
+          },
+          "disabledReason": "Test MAE does not beat persistence."
+        }
+      ]
+    }
+  }
+}
