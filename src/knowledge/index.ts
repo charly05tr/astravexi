@@ -1,3 +1,5 @@
+import type { CabinKnowledge } from '../core/attribution/model';
+import cabinJson from './cabin.json';
 import type {
   Attribution,
   BodyZone,
@@ -105,6 +107,9 @@ export function loadKnowledge(flags: KnowledgeFlags = DEFAULT_FLAGS): Knowledge 
   }));
   return { indicators, zones, rules };
 }
+
+/** Cabin variables, their NASA limits and the documented variable-to-indicator links, each with its citation. */
+export const cabinKnowledge: CabinKnowledge = cabinJson as unknown as CabinKnowledge;
 
 export const risks = risksJson as unknown as Risk[];
 export const knowledge: Knowledge = loadKnowledge();

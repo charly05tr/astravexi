@@ -21,7 +21,7 @@ const GRANTS: Record<Exclude<Action, 'manageProfiles'>, readonly Role[]> = {
   // The medical kit and each astronaut's medication and allergy record are the CMO's alone.
   manageMedicalStock: ['cmo'],
   viewMedicalRecords: ['cmo'],
-  // The cabin CO2 comparison against the NASA ISS reference is the CMO's alone.
+  // The cabin & crew analysis page (cabin variables, the CO2 comparison with the NASA ISS reference) is the CMO's alone.
   viewCabinEnvironment: ['cmo'],
 };
 

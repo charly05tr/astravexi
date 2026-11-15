@@ -9,13 +9,17 @@ import { dexieDatabaseExists, openDexieRecordStore } from '../adapters/dexie-rec
 import { emptyHistory } from '../adapters/empty-history';
 import { createNasaOsdrEnvironment } from '../adapters/nasa-osdr-environment';
 import { openEnvironmentCache } from '../adapters/nasa-osdr-environment/dexie-cache';
-import { createSimulatedCabinCo2 } from '../adapters/seeded-history/cabin-co2';
+import { createSimulatedCabinTimeline, withScenarioEpisodes } from '../adapters/seeded-history/cabin-timeline';
 import { createMemoryMedicationStore } from '../adapters/memory-medication-store';
 import { createMemoryProfileStore } from '../adapters/memory-profile-store';
 import { createMemoryRecordStore } from '../adapters/memory-record-store';
 import { createModePreference } from '../adapters/mode-preference';
 import { createPinHasher } from '../adapters/pin-hasher';
 import { calmHistory, seededHistory } from '../adapters/seeded-history';
+
+/** The DEMO histories carry the scripted attribution episodes (the base histories stay untouched). */
+const demoHistory = withScenarioEpisodes(seededHistory);
+const demoCalmHistory = withScenarioEpisodes(calmHistory);
 import { WallClock, defaultMissionConfig } from '../adapters/wall-clock';
 import { brand } from '../brand/brand.config';
 import type { BrandConfig } from '../brand/brand.types';
@@ -153,7 +157,7 @@ export async function composeAdapters(
   const environment = {
     reference: options.cabinReference ?? createNasaOsdrEnvironment(osdrConfig()),
     cache: options.cabinCache ?? (await openEnvironmentCache()),
-    simulated: mode === 'demo' ? createSimulatedCabinCo2(DEMO_SEED) : null,
+    timeline: mode === 'demo' ? createSimulatedCabinTimeline(DEMO_SEED) : null,
   };
 
   if (mode === 'demo') {
@@ -178,11 +182,11 @@ export async function composeAdapters(
         profiles,
         async open(p): Promise<CrewMemberData> {
           // The demo astronaut owns the DEMO database; the other demo profiles have no records of their own.
-          if (p.id === DEMO_ASTRONAUT_ID) return { store, history: seededHistory, seed: DEMO_SEED };
+          if (p.id === DEMO_ASTRONAUT_ID) return { store, history: demoHistory, seed: DEMO_SEED };
           const extra = DEMO_CREW_EXTRAS.find((c) => c.id === p.id);
           return {
             store: await extraStore(p.id),
-            history: extra ? (extra.scenario ? seededHistory : calmHistory) : emptyHistory,
+            history: extra ? (extra.scenario ? demoHistory : demoCalmHistory) : emptyHistory,
             seed: extra?.seed ?? 0,
           };
         },
@@ -193,7 +197,7 @@ export async function composeAdapters(
       deps: {
         store,
         clock: new DemoClock(saved, nowMs), // re-anchors: no time passes while the tab was closed
-        history: seededHistory,
+        history: demoHistory,
         knowledge,
         seed: DEMO_SEED,
         actor,

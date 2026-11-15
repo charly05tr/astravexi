@@ -33,6 +33,10 @@ describe('cabin environment use-case', () => {
     expect(view.reference.status).toBe('live');
     expect(view.simulated?.readings).toHaveLength(192);
     expect(view.assessment).toMatchObject({ thresholdPpm: 2986, valuePpm: view.simulated!.latest.ppm });
+    const analysis = await app.state().loadCabinAnalysis();
+    const card = analysis.variables.find((v) => v.def.id === 'co2')!;
+    expect(view.simulated!.latest.ppm).toBe(card.latest); // one source of truth with the cabin variable card
+    expect(view.simulated!.readings.map((r) => r.ppm)).toEqual(card.trend);
     expect(view.assessment!.deltaPpm).toBe(Math.round(view.simulated!.latest.ppm - 2986));
   });
 

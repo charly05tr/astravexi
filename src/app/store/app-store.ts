@@ -9,6 +9,8 @@ import { submitCheckIn } from '../../core/use-cases/check-in';
 import { acknowledgeForMember, loadCrew } from '../../core/use-cases/crew';
 import { deleteMedication, loadMedicalRecord, loadMedicalStock, saveMedication } from '../../core/use-cases/medical';
 import type { MedicalRecordView, MedicalStockView, SaveMedicationResult } from '../../core/use-cases/medical';
+import { loadCabinAnalysis } from '../../core/use-cases/cabin-analysis';
+import type { CabinAnalysisView } from '../../core/use-cases/cabin-analysis';
 import { loadCabinEnvironment } from '../../core/use-cases/environment';
 import type { CabinEnvironmentView, LoadCabinOptions } from '../../core/use-cases/environment';
 import type { MedicationInput } from '../../core/medical/model';
@@ -20,6 +22,7 @@ import type { HabitSnapshot } from '../../core/habits/model';
 import type { CrewMember, CrewReview } from '../../core/use-cases/crew';
 import type { CheckInEntry, CheckInResult } from '../../core/use-cases/check-in';
 import type { Session } from '../../core/use-cases/session';
+import { cabinKnowledge } from '../../knowledge';
 import { MISSION_META_KEY } from '../adapters';
 import type { Adapters } from '../adapters';
 import { advanceDemoDay, persistDemoClock, resetDemo } from '../demo/demo-use-cases';
@@ -80,6 +83,8 @@ export interface AppState {
   loadMedicalRecord(profileId: string): Promise<MedicalRecordView>;
   /** CMO only: the simulated cabin CO2 against the NASA ISS reference threshold. */
   loadCabinEnvironment(options?: LoadCabinOptions): Promise<CabinEnvironmentView>;
+  /** CMO only: the cabin variables against their NASA limits, and the atypical readings of the crew with their verdict. */
+  loadCabinAnalysis(): Promise<CabinAnalysisView>;
   decideRecommendation(input: {
     recommendationId: string;
     findingKey: string;
@@ -242,6 +247,11 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
       loadCabinEnvironment(options) {
         // Not queued: it reads its own databases and a slow NASA download must not block the serial queue.
         return loadCabinEnvironment({ ...adapters.deps, ...adapters.environment }, options);
+      },
+
+      loadCabinAnalysis() {
+        // Local reads only (no network), so it can share the serial queue with the crew review.
+        return enqueue(() => loadCabinAnalysis({ ...adapters.deps, timeline: adapters.environment.timeline, cabin: cabinKnowledge }, adapters.crew));
       },
 
       async decideRecommendation(input) {

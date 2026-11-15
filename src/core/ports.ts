@@ -1,6 +1,7 @@
+import type { CabinSample } from './attribution/model';
 import type { FollowUpSuggestion } from './follow-up/blocks';
 import type { PartialFollowUp } from './follow-up/partial';
-import type { Co2Reading, Co2Reference } from './environment/co2';
+import type { Co2Reference } from './environment/co2';
 import type { Allergy, Medication, MedicationAdministration } from './medical/model';
 import type { Habit, HabitBadge, HabitCompletion, HabitSnapshot } from './habits/model';
 import type { CrewProfile, PinRecord } from './profiles/model';
@@ -303,8 +304,11 @@ export interface CabinReferenceCache {
   save(reference: Co2Reference, fetchedAt: string): Promise<void>;
 }
 
-/** Simulated cabin CO2 of OUR ship. DEMO only: LIVE has no such source (there is no cabin sensor to read). */
-export interface SimulatedCabinSource {
-  /** Samples up to and including `nowIso`, oldest first. Deterministic for a given seed and instant. */
-  recent(nowIso: string): Co2Reading[];
+/**
+ * Simulated cabin of OUR ship on the MISSION clock (the axis the crew readings use), for the attribution of atypical
+ * readings. DEMO only: LIVE has no such source, so the analysis there reports "no data" instead of inventing values.
+ */
+export interface SimulatedCabinTimeline {
+  /** Samples every 15 minutes from `fromMinute` to `toMinute` inclusive, oldest first. Deterministic. */
+  samples(fromMinute: MissionMinute, toMinute: MissionMinute): CabinSample[];
 }

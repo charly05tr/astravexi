@@ -1,17 +1,19 @@
 import { assessCo2 } from '../environment/co2';
-import type { Co2Assessment, Co2Reading, Co2Reference } from '../environment/co2';
-import type { CabinReferenceCache, CabinReferenceSource, SimulatedCabinSource } from '../ports';
+import { recentSeries } from '../attribution/variable-status';
+import type { Co2Assessment, Co2Reference } from '../environment/co2';
+import type { MissionMinute } from '../health/model';
+import type { CabinReferenceCache, CabinReferenceSource, SimulatedCabinTimeline } from '../ports';
 import { assertCan } from '../profiles/policy';
 import { tsMs } from '../sync/time';
 import type { Deps } from './session';
 
 /** What the cabin environment use-case needs: a subset of the session `Deps` plus the three cabin ports. */
-export type EnvironmentDeps = Pick<Deps, 'actor' | 'nowIso'> & {
+export type EnvironmentDeps = Pick<Deps, 'actor' | 'nowIso' | 'clock'> & {
   /** Real NASA OSDR ISS telemetry (the reference). */
   reference: CabinReferenceSource;
   cache: CabinReferenceCache;
-  /** Our simulated cabin. Null in LIVE: no simulated values are ever shown there. */
-  simulated: SimulatedCabinSource | null;
+  /** Our simulated cabin on the mission clock (the same source the cabin analysis reads). Null in LIVE: no simulated values are shown there. */
+  timeline: SimulatedCabinTimeline | null;
 };
 
 export type ReferenceState =
@@ -33,9 +35,15 @@ export interface LoadCabinOptions {
  */
 export const REFERENCE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
+/** One simulated CO2 sample, stamped in mission minutes. */
+export interface SimulatedCo2Reading {
+  t: MissionMinute;
+  ppm: number;
+}
+
 export interface CabinEnvironmentView {
   /** Null in LIVE. */
-  simulated: { readings: Co2Reading[]; latest: Co2Reading } | null;
+  simulated: { readings: SimulatedCo2Reading[]; latest: SimulatedCo2Reading } | null;
   reference: ReferenceState;
   /** Our latest value against the reference threshold. Null without both a simulated value and a reference. */
   assessment: Co2Assessment | null;
@@ -45,7 +53,9 @@ export interface CabinEnvironmentView {
 export async function loadCabinEnvironment(deps: EnvironmentDeps, options: LoadCabinOptions = {}): Promise<CabinEnvironmentView> {
   assertCan(deps.actor.role, 'viewCabinEnvironment');
   const now = deps.nowIso();
-  const readings = deps.simulated?.recent(now) ?? [];
+  const missionNow = deps.clock.now();
+  const samples = deps.timeline?.samples(missionNow - 48 * 60, missionNow) ?? [];
+  const readings = recentSeries(samples, 'co2', missionNow).map((r) => ({ t: r.t, ppm: r.value }));
   const latest = readings[readings.length - 1];
   const simulated = latest ? { readings, latest } : null;
 

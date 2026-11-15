@@ -4,7 +4,6 @@ import { useUi } from '../../app/ui-state';
 import type { Tier, ZoneId } from '../../core/health/model';
 import type { CrewMember, CrewReview } from '../../core/use-cases/crew';
 import { tierTheme } from '../../theme/tiers';
-import { CabinCo2Container } from '../environment/CabinCo2Container';
 import { MedicalRecordContainer } from '../medical/MedicalRecordContainer';
 import { MedicationStockContainer } from '../medical/MedicationStockContainer';
 import { CrewMemberDetail } from './CrewMemberDetail';
@@ -84,7 +83,6 @@ export function CrewContainer() {
   }
   return (
     <CrewOverview cards={cards} unavailable={load.review.unavailable.map((u) => u.name)} onOpen={selectCrewMember}>
-      <CabinCo2Container />
       <MedicationStockContainer />
     </CrewOverview>
   );
