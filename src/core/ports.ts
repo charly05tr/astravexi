@@ -1,3 +1,5 @@
+import type { FollowUpSuggestion } from './follow-up/blocks';
+import type { PartialFollowUp } from './follow-up/partial';
 import type { CrewProfile, PinRecord } from './profiles/model';
 import type {
   DeviceCredentials,
@@ -69,6 +71,70 @@ export interface Suggestion {
 export interface SuggestionProvider {
   readonly id: string;
   suggest(context: SuggestionContext, options?: { signal?: AbortSignal }): Promise<Suggestion[]>;
+}
+
+/**
+ * What a follow-up provider may use: the recommendation the astronaut just accepted, the finding(s) behind it
+ * and a few recent shareable readings. Tiers and explanation text only for findings; readings of `tierOnly`
+ * indicators (mood) are never included, so this can leave the device.
+ */
+export interface FollowUpContext {
+  accepted: { id: string; title: string; steps: readonly string[]; rationale: string };
+  zone: { id: ZoneId; label: string; status: ZoneStatus };
+  missionDay: MissionDay;
+  findings: ReadonlyArray<{ indicatorLabel: string; tier: Tier; whatChanged: string }>;
+  readings: ReadonlyArray<{
+    indicator: string;
+    unit: string;
+    value: number;
+    day: MissionDay;
+    context: 'rest' | 'exercise';
+  }>;
+}
+
+/**
+ * Proposes what to do next once a recommendation was accepted. The rules stay the source of truth: this only
+ * builds on an accepted recommendation and never changes a tier. It rejects with a `FollowUpError`; callers
+ * fall back to showing just the accepted recommendation.
+ */
+export interface FollowUpSuggestionProvider {
+  readonly id: string;
+  /** False until the user configured it (for an LLM adapter: a key and a model). */
+  isConfigured(): boolean;
+  /** Notifies when configuration changes. Returns the unsubscribe function. */
+  subscribe(listener: () => void): () => void;
+  /** `onPartial` receives the finished, valid parts while the answer is still streaming. */
+  suggest(
+    context: FollowUpContext,
+    options?: { signal?: AbortSignal; onPartial?: (partial: PartialFollowUp) => void },
+  ): Promise<FollowUpSuggestion>;
+}
+
+/** Lists the models a key can call, which doubles as a connection test. Rejects with a `FollowUpError`. */
+export interface AiModelCatalog {
+  listModels(settings: Pick<AiSettings, 'apiKey' | 'baseUrl'>, options?: { signal?: AbortSignal }): Promise<string[]>;
+  /** The model to prefer from a listing, or null when it is empty. */
+  pickDefault(models: readonly string[]): string | null;
+}
+
+/** The user's own model access (bring your own key). Kept on the device; never synced. */
+export interface AiSettings {
+  apiKey: string;
+  model: string;
+  /** OpenAI-compatible base URL, e.g. a hosted endpoint or a local server. */
+  baseUrl: string;
+  /** True when the key may be kept across browser sessions on this device. */
+  remember: boolean;
+}
+
+export interface AiSettingsStore {
+  readonly presets: { readonly models: readonly string[]; readonly defaultBaseUrl: string };
+  get(): AiSettings;
+  set(settings: AiSettings): void;
+  /** Forgets the key and every saved setting, in memory and in storage. */
+  clear(): void;
+  isConfigured(): boolean;
+  subscribe(listener: () => void): () => void;
 }
 
 /** Everything the record store holds. Synthetic history is never part of it. */

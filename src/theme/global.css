@@ -2229,3 +2229,224 @@ details > summary {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ---------- AI follow-up (generated suggestion under an accepted change) ---------- */
+.ai-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: var(--space);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.ai-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ai-panel__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ai-panel__blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.ai-block {
+  margin: 0;
+}
+
+.ai-block--rationale,
+.ai-block--slot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  line-height: 1.45;
+}
+
+.ai-block--card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px var(--space);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+}
+
+.ai-block--card .proposal__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ai-block__title {
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.ai-block__shift {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.ai-block__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.ai-block__facts dt {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ai-block__facts dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- Toasts (app-level notifications) ---------- */
+.toast-stack {
+  position: fixed;
+  right: var(--space);
+  bottom: var(--space);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(360px, calc(100vw - 2 * var(--space)));
+  pointer-events: none;
+}
+
+.toast-stack__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px var(--space);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  color: var(--text);
+}
+
+.toast__icon {
+  flex: none;
+  margin-top: 1px;
+}
+
+.toast--success {
+  border-color: var(--success);
+}
+
+.toast--success .toast__icon {
+  color: var(--success);
+}
+
+.toast--error {
+  border-color: var(--danger);
+  background: var(--danger-surface);
+}
+
+.toast--error .toast__icon {
+  color: var(--danger);
+}
+
+.toast__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.toast__message {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.toast__action {
+  font-weight: 600;
+}
+
+.toast__close {
+  flex: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .toast {
+    animation: toast-in 160ms ease-out;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* ---------- Spinner and AI processing state ---------- */
+.ai-panel__working {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.spinner {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--line);
+  border-top-color: var(--text);
+  border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spinner {
+    animation: spin 800ms linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

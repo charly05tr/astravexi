@@ -1,10 +1,17 @@
 import { useEffect, useMemo } from 'react';
+import { createLlmFollowUpProvider } from '../adapters/llm-suggestions';
+import { createAiModelCatalog } from '../adapters/llm-suggestions/models';
+import { createAiSettingsStore } from '../adapters/llm-suggestions/settings-store';
 import { createRuleSuggestionProvider } from '../adapters/rule-suggestions';
 import { content as defaultContent, knowledge as defaultKnowledge } from '../knowledge';
 import type { Content } from '../knowledge';
 import type { Knowledge } from '../core/health/model';
-import type { SuggestionProvider } from '../core/ports';
+import type { AiModelCatalog, AiSettingsStore, FollowUpSuggestionProvider, SuggestionProvider } from '../core/ports';
 import { MissionSetup } from '../features/onboarding/MissionSetup';
+import { AiSettingsDialog } from '../features/ai/AiSettingsDialog';
+import { NotificationProvider } from '../ui/notification';
+import { FollowUpHost } from './follow-up/FollowUpHost';
+import { createFollowUpJobs } from './follow-up/follow-up-jobs';
 import { AppShell } from './AppShell';
 import { AppProvider, useAppState } from './app-context';
 import type { AppStore } from './store/app-store';
@@ -48,6 +55,9 @@ export function AppRoot({
   content = defaultContent,
   autoStart = true,
   suggestions,
+  followUps,
+  aiSettings,
+  aiModels,
 }: {
   store: AppStore;
   knowledge?: Knowledge;
@@ -55,11 +65,37 @@ export function AppRoot({
   autoStart?: boolean;
   /** Defaults to the curated rule provider. Swap in an LLM provider here. */
   suggestions?: SuggestionProvider;
+  /** Defaults to the OpenAI-compatible LLM provider, driven by `aiSettings`. Tests inject a fake. */
+  followUps?: FollowUpSuggestionProvider;
+  /** Defaults to a store backed by sessionStorage (localStorage only when the user opts in). */
+  aiSettings?: AiSettingsStore;
+  /** Defaults to listing models over the OpenAI-compatible `/models` endpoint. */
+  aiModels?: AiModelCatalog;
 }) {
   const provider = useMemo(
     () => suggestions ?? createRuleSuggestionProvider(content.recommendations),
     [suggestions, content],
   );
+  const settings = useMemo(() => aiSettings ?? createAiSettingsStore(), [aiSettings]);
+  const followUpProvider = useMemo(
+    () => followUps ?? createLlmFollowUpProvider({ settings }),
+    [followUps, settings],
+  );
+  const modelCatalog = useMemo(() => aiModels ?? createAiModelCatalog(), [aiModels]);
+  const followUpJobs = useMemo(() => createFollowUpJobs(followUpProvider), [followUpProvider]);
+  // Jobs belong to the signed-in profile: a profile change, or the app going away, aborts them.
+  useEffect(() => {
+    let profileId = store.getState().actor.profileId;
+    const unsubscribe = store.subscribe((state) => {
+      if (state.actor.profileId === profileId) return;
+      profileId = state.actor.profileId;
+      followUpJobs.getState().cancelAll();
+    });
+    return () => {
+      unsubscribe();
+      followUpJobs.getState().cancelAll();
+    };
+  }, [store, followUpJobs]);
   useEffect(() => {
     if (!autoStart) return;
     void store
@@ -75,9 +111,13 @@ export function AppRoot({
   }, [store, autoStart]);
 
   return (
-    <AppProvider value={{ store, knowledge, content, suggestions: provider }}>
+    <AppProvider value={{ store, knowledge, content, suggestions: provider, followUps: followUpProvider, followUpJobs, aiSettings: settings, aiModels: modelCatalog }}>
       <UiProvider>
-        <Gate />
+        <NotificationProvider>
+          <Gate />
+          <FollowUpHost />
+          <AiSettingsDialog />
+        </NotificationProvider>
       </UiProvider>
     </AppProvider>
   );

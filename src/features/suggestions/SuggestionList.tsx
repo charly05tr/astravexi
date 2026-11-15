@@ -1,6 +1,8 @@
 import { CircleCheck, Flag, Sparkles } from 'lucide-react';
 import type { Suggestion } from '../../core/ports';
 import { Button } from '../../ui/Button';
+import { FollowUpHint } from './FollowUpPanel';
+import type { FollowUpJob } from '../../app/follow-up/follow-up-jobs';
 import type { SuggestionsState } from './use-suggestions';
 
 export interface SuggestionListProps {
@@ -13,6 +15,10 @@ export interface SuggestionListProps {
    * `full`: every suggestion, grouped so each recommendation shows once, laid out as a card grid.
    */
   variant?: 'summary' | 'full';
+  /** Setup hint under accepted recommendations when no AI is configured. The AI result itself is a modal. */
+  followUps?: { jobs: Readonly<Record<string, FollowUpJob>>; dismiss(id: string): void };
+  /** Opens the AI assistant settings (the hint under an accepted change links to it). */
+  onConfigureAi?(): void;
 }
 
 /** One recommendation and every finding it answers. */
@@ -36,12 +42,17 @@ function SuggestionCard({
   group,
   onDecide,
   canDecide,
+  followUps,
+  onConfigureAi,
 }: {
   group: SuggestionGroup;
   onDecide: SuggestionListProps['onDecide'];
   canDecide: boolean;
+  followUps?: SuggestionListProps['followUps'];
+  onConfigureAi?(): void;
 }) {
   const { head, members } = group;
+  const followUp = followUps?.jobs[head.id];
   const open = members.filter((m) => m.decision !== 'accepted');
   const reasons = [...new Set(members.map((m) => m.rationale))];
   // A decision applies to every finding this recommendation answers. One at a time: each write reads the
@@ -109,16 +120,29 @@ function SuggestionCard({
           </div>
         ) : null}
       </div>
+      {followUp?.status === 'unconfigured' && followUps ? (
+        <FollowUpHint onDismiss={() => followUps.dismiss(head.id)} onConfigure={() => onConfigureAi?.()} />
+      ) : null}
     </li>
   );
 }
 
 /** Routine changes for the zone in focus. Shown only when an indicator crossed a threshold. */
-export function SuggestionList({ state, onDecide, canDecide = true, variant = 'full' }: SuggestionListProps) {
+export function SuggestionList({
+  state,
+  onDecide,
+  canDecide = true,
+  variant = 'full',
+  followUps,
+  onConfigureAi,
+}: SuggestionListProps) {
   if (state.status === 'idle') return null;
   const summary = variant === 'summary';
   const groups = groupSuggestions(state.items);
-  const shown = summary ? groups.filter((g) => g.members.some((m) => m.decision !== 'accepted')).slice(0, 1) : groups;
+  // The summary keeps an accepted card on screen only while its "set up AI" hint is showing.
+  const shown = summary
+    ? groups.filter((g) => g.members.some((m) => m.decision !== 'accepted') || followUps?.jobs[g.head.id]?.status === 'unconfigured').slice(0, 1)
+    : groups;
   if (summary && shown.length === 0 && state.status !== 'error') return null;
   const headingId = summary ? 'zone-suggestion-top' : 'zone-suggestions';
   return (
@@ -141,7 +165,14 @@ export function SuggestionList({ state, onDecide, canDecide = true, variant = 'f
       {shown.length > 0 ? (
         <ul className={summary ? 'stack proposal-list' : 'card-grid proposal-list'}>
           {shown.map((g) => (
-            <SuggestionCard key={g.head.id} group={g} onDecide={onDecide} canDecide={canDecide} />
+            <SuggestionCard
+              key={g.head.id}
+              group={g}
+              onDecide={onDecide}
+              canDecide={canDecide}
+              followUps={followUps}
+              onConfigureAi={onConfigureAi}
+            />
           ))}
         </ul>
       ) : null}

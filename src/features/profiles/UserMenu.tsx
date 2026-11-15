@@ -30,7 +30,7 @@ export function UserMenu() {
   const actor = useAppState((s) => s.actor);
   const mode = useAppState((s) => s.mode);
   const actions = useAppActions();
-  const { setView } = useUi();
+  const { setView, setAiSettingsOpen } = useUi();
   const syncService = useSyncService();
   const syncSummary = summarize(useSyncStatus(), useNow());
   const menuId = useId();
@@ -193,6 +193,14 @@ export function UserMenu() {
                   </span>
                 </button>
               )}
+            </div>
+          ) : null}
+
+          {can(actor.role, 'decideRecommendation') ? (
+            <div role="group" aria-label="Assistant">
+              <button type="button" role="menuitem" className="user-menu__item" onClick={act(() => setAiSettingsOpen(true))}>
+                AI assistant...
+              </button>
             </div>
           ) : null}
 
