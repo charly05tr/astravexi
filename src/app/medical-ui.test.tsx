@@ -71,7 +71,8 @@ describe('medication stock (CMO crew dashboard)', () => {
     await m.user.click(within(screen.getByRole('dialog', { name: /delete medication/i })).getByRole('button', { name: /^delete$/i }));
     await waitFor(() => expect(screen.queryByText('Naproxen')).toBeNull());
     expect((await store.listMedications()).some((x) => x.name === 'Naproxen')).toBe(false);
-  });
+    // ~60 simulated keystrokes in jsdom exceed the 5 s default when the full suite runs in parallel.
+  }, 15_000);
 
   it('shows the allergies and administered medications in the astronaut detail', async () => {
     const m = await mountApp('demo', { role: 'cmo' });
