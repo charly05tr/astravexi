@@ -28,7 +28,13 @@ export function buildWarningMessages(
   evaluation: Evaluation,
   indicators: readonly Indicator[],
   existing: readonly OutboxMessage[],
-  opts: { crewMember: string; now: MissionMinute; link: LinkState },
+  opts: {
+    profileId: string;
+    now: MissionMinute;
+    link: LinkState;
+    newId(): string;
+    updatedAt: string;
+  },
 ): OutboxMessage[] {
   const byId = new Map<IndicatorId, Indicator>(indicators.map((i) => [i.id, i]));
   const known = new Set(existing.map((m) => m.dedupeKey));
@@ -49,7 +55,7 @@ export function buildWarningMessages(
     if (known.has(dedupeKey)) continue;
     const first = findings[0]!;
     const payload: OutboxPayload = {
-      crewMember: opts.crewMember,
+      profileId: opts.profileId,
       source: first.source,
       trigger: findings.map((f) => {
         const ind = byId.get(f.indicatorId);
@@ -69,7 +75,7 @@ export function buildWarningMessages(
       zoneTiers,
     };
     out.push({
-      id: `msg:${dedupeKey}`,
+      id: opts.newId(),
       dedupeKey,
       zoneId: first.zoneId,
       groupId: first.groupId,
@@ -77,6 +83,7 @@ export function buildWarningMessages(
       to: 'flightSurgeon',
       payload,
       state: initialState(opts.link),
+      updatedAt: opts.updatedAt,
     });
   }
   return out;

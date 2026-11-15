@@ -19,8 +19,19 @@ const crisis = (groupId = 'g1') => [
   reading('bpSystolic', 185, 20, { groupId }),
   reading('bpDiastolic', 125, 20, { groupId }),
 ];
+/** Ids msg-1, msg-2, ... per emit call, so a test can name the message it just built. */
+const counter = () => {
+  let n = 0;
+  return () => `msg-${(n += 1)}`;
+};
 function emit(e: Evaluation, link = OPEN, existing: OutboxMessage[] = []) {
-  return buildWarningMessages(e, knowledge.indicators, existing, { crewMember: 'Crew 1', now: 100, link });
+  return buildWarningMessages(e, knowledge.indicators, existing, {
+    profileId: 'p-1',
+    now: 100,
+    link,
+    newId: counter(),
+    updatedAt: '2026-06-01T00:00:00.000Z',
+  });
 }
 
 describe('routing', () => {
@@ -94,7 +105,7 @@ describe('link state machine', () => {
   });
 
   it('S-6.2: delay is read at send, then frozen', () => {
-    const sent = sendNow([queued()], 'msg:heart:g1', { ...OPEN, oneWayDelayMin: 20 }, 200);
+    const sent = sendNow([queued()], 'msg-1', { ...OPEN, oneWayDelayMin: 20 }, 200);
     const m = sent[0]!;
     expect(m.state).toBe('sent');
     expect(m.oneWayDelayMin).toBe(20);
@@ -107,14 +118,14 @@ describe('link state machine', () => {
   });
 
   it('sent becomes replyPossible once now reaches sentAt + 2D', () => {
-    const sent = sendNow([queued()], 'msg:heart:g1', OPEN, 200);
+    const sent = sendNow([queued()], 'msg-1', OPEN, 200);
     expect(advance(sent, OPEN, 223)[0]!.state).toBe('sent');
     expect(advance(sent, OPEN, 224)[0]!.state).toBe('replyPossible');
   });
 
   it('delay 0: reads T+0 and becomes replyPossible on the NEXT tick', () => {
     const link = { oneWayDelayMin: 0, blackout: false };
-    const sent = sendNow([queued()], 'msg:heart:g1', link, 300);
+    const sent = sendNow([queued()], 'msg-1', link, 300);
     expect(sent[0]!.state).toBe('sent');
     expect(sent[0]!.replyPossibleAt).toBe(300);
     expect(advance(sent, link, 300)[0]!.state).toBe('replyPossible');
@@ -124,7 +135,7 @@ describe('link state machine', () => {
     const held = advance([queued()], DOWN, 150);
     expect(held[0]!.state).toBe('held');
     expect(replyEstimate(held[0]!, DOWN)).toEqual({ kind: 'none' });
-    expect(sendNow(held, 'msg:heart:g1', DOWN, 150)).toBe(held);
+    expect(sendNow(held, 'msg-1', DOWN, 150)).toBe(held);
   });
 
   it('blackout off sends held messages at that moment, with the delay at that moment', () => {
@@ -137,7 +148,7 @@ describe('link state machine', () => {
   });
 
   it('a blackout never recalls a sent message', () => {
-    const sent = sendNow([queued()], 'msg:heart:g1', OPEN, 200);
+    const sent = sendNow([queued()], 'msg-1', OPEN, 200);
     expect(advance(sent, DOWN, 205)).toBe(sent);
   });
 

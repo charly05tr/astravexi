@@ -1,38 +1,50 @@
 import { advance, sendNow as sendNowTransition } from '../escalation/link';
 import type { LinkState } from '../escalation/link';
-import type { OutboxMessage, RecommendationDecision, ZoneId } from '../health/model';
+import type { Acknowledgement, OutboxMessage, RecommendationDecision, ZoneId } from '../health/model';
+import { assertCan } from '../profiles/policy';
 import { type Deps, type Session, evaluateSession } from './session';
 
 /**
- * CMO acknowledgement of one (zone, group): releases the latched red flags of that group with one
- * click. It writes the acknowledgement and re-evaluates; it never touches thresholds or the outbox.
+ * Acknowledgement of one (zone, group) by a CMO or flight surgeon: releases the latched red flags of that
+ * group with one click. It writes the acknowledgement (by the actor's profile id and role) and
+ * re-evaluates; it never touches thresholds or the outbox. Any other role is rejected here, not only in the UI.
+ * Idempotent by (zone, group): a second acknowledgement of the same pair stores nothing.
  */
 export async function acknowledge(
   deps: Deps,
   session: Session,
   target: { zoneId: ZoneId; groupId: string },
 ): Promise<Session> {
-  const id = `ack:${target.zoneId}:${target.groupId}`;
-  if (session.acks.some((a) => a.id === id)) return session;
-  const ack = { id, zoneId: target.zoneId, groupId: target.groupId, by: 'cmo' as const, t: deps.clock.now() };
+  assertCan(deps.actor.role, 'acknowledgeAlert');
+  if (session.acks.some((a) => a.zoneId === target.zoneId && a.groupId === target.groupId)) return session;
+  const ack: Acknowledgement = {
+    id: deps.newId(),
+    zoneId: target.zoneId,
+    groupId: target.groupId,
+    by: { profileId: deps.actor.profileId, role: deps.actor.role },
+    t: deps.clock.now(),
+    updatedAt: deps.nowIso(),
+  };
   await deps.store.addAck(ack);
   const acks = [...session.acks, ack];
   return { ...session, acks, evaluation: evaluateSession(deps, { ...session, acks }) };
 }
 
-/** Accept or dismiss a recommendation. Log only: it never changes a tier or an engine input. */
+/** Accept or dismiss a recommendation (astronaut only). Log only: it never changes a tier or an engine input. */
 export async function decideRecommendation(
   deps: Deps,
   session: Session,
   input: { recommendationId: string; findingKey: string; decision: RecommendationDecision['decision'] },
 ): Promise<Session> {
+  assertCan(deps.actor.role, 'decideRecommendation');
   const t = deps.clock.now();
   const decision: RecommendationDecision = {
-    id: `dec:${t}:${session.decisions.length + 1}`,
+    id: deps.newId(),
     recommendationId: input.recommendationId,
     findingKey: input.findingKey,
     decision: input.decision,
     t,
+    updatedAt: deps.nowIso(),
   };
   await deps.store.addDecision(decision);
   return { ...session, decisions: [...session.decisions, decision] };
@@ -42,9 +54,10 @@ export async function decideRecommendation(
 async function commitOutbox(deps: Deps, session: Session, next: readonly OutboxMessage[]): Promise<Session> {
   if (next === session.outbox) return session;
   const before = new Map(session.outbox.map((m) => [m.id, m]));
-  const changed = next.filter((m) => before.get(m.id) !== m);
-  await deps.store.updateOutbox(changed);
-  return { ...session, outbox: next };
+  const updatedAt = deps.nowIso();
+  const stamped = next.map((m) => (before.get(m.id) === m ? m : { ...m, updatedAt }));
+  await deps.store.updateOutbox(stamped.filter((m, i) => m !== next[i]));
+  return { ...session, outbox: stamped };
 }
 
 /** Explicit "Send now" for one queued message. The delay is read from the link at this moment. */

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { IndicatorId } from '../../core/health/model';
 import { useAppActions, useAppContext, useAppState } from '../../app/app-context';
 import type { SuggestionContext } from '../../core/ports';
+import { can } from '../../core/profiles/policy';
 import { EmptyState } from '../../ui/Panel';
 import { CheckInContainer } from '../check-in/CheckInContainer';
 import { SuggestionList } from '../suggestions/SuggestionList';
@@ -14,6 +15,9 @@ export function ZonePanelContainer() {
   const { knowledge, content } = useAppContext();
   const session = useAppState((s) => s.session);
   const mode = useAppState((s) => s.mode);
+  const role = useAppState((s) => s.actor.role);
+  const canDecide = can(role, 'decideRecommendation');
+  const canCheckIn = can(role, 'checkIn');
   const actions = useAppActions();
   const { selectedZoneId, focusZoneId, clearZone } = useZones();
 
@@ -58,6 +62,7 @@ export function ZonePanelContainer() {
         <SuggestionList
           variant="summary"
           state={suggestions}
+          canDecide={canDecide}
           onDecide={(s, decision) =>
             actions.decideRecommendation({ recommendationId: s.id, findingKey: s.findingKey, decision })
           }
@@ -66,13 +71,14 @@ export function ZonePanelContainer() {
       suggestions={
         <SuggestionList
           state={suggestions}
+          canDecide={canDecide}
           onDecide={(s, decision) =>
             actions.decideRecommendation({ recommendationId: s.id, findingKey: s.findingKey, decision })
           }
         />
       }
       update={
-        <ZoneUpdate key={model.zoneId} label={model.label} indicatorIds={zone.indicatorIds} />
+        canCheckIn ? <ZoneUpdate key={model.zoneId} label={model.label} indicatorIds={zone.indicatorIds} /> : undefined
       }
     />
   );

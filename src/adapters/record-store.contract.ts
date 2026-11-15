@@ -11,7 +11,13 @@ const message = (id: string, dedupeKey: string, state: OutboxMessage['state'] = 
   createdAt: 100,
   to: 'flightSurgeon',
   state,
-  payload: { crewMember: 'Test', source: 'MANUAL', trigger: [], zoneTiers: {} as OutboxMessage['payload']['zoneTiers'] },
+  payload: {
+    profileId: 'p-test',
+    source: 'MANUAL',
+    trigger: [],
+    zoneTiers: {} as OutboxMessage['payload']['zoneTiers'],
+  },
+  updatedAt: '2026-06-01T00:00:00.000Z',
 });
 
 /** The same behavior is required of the in-memory and the Dexie store. */
@@ -26,13 +32,29 @@ export function recordStoreContract(label: string, create: () => Promise<RecordS
       const store = await create();
       const r: Reading = reading('heartRate', 64, 3, { id: 'r1' });
       await store.addReadings([r]);
-      await store.addDecision({ id: 'd1', recommendationId: 'rec', findingKey: 'k', decision: 'dismissed', t: 5 });
+      await store.addDecision({
+        id: 'd1',
+        recommendationId: 'rec',
+        findingKey: 'k',
+        decision: 'dismissed',
+        t: 5,
+        updatedAt: '2026-06-01T00:00:00.000Z',
+      });
       await store.addAck(ack('heart', 'g1', 7));
       await store.addAck(ack('heart', 'g1', 7)); // same (zone, group): one record
       const snap = await store.load();
       expect(snap.manualReadings).toEqual([r]);
       expect(snap.decisions).toHaveLength(1);
       expect(snap.acks).toHaveLength(1);
+    });
+
+    it('acknowledging the same (zone, group) under another id still stores one record', async () => {
+      const store = await create();
+      await store.addAck(ack('heart', 'g1', 7));
+      await store.addAck({ ...ack('heart', 'g1', 9), id: 'another-uuid' });
+      await store.addAck({ ...ack('heart', 'g2', 9), id: 'third-uuid' });
+      const acks = (await store.load()).acks;
+      expect(acks.map((a) => a.id).sort()).toEqual(['ack:heart:g1', 'third-uuid']);
     });
 
     it('putOutboxIfAbsent is idempotent by dedupeKey', async () => {

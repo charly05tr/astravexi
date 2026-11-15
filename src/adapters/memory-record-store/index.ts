@@ -29,6 +29,8 @@ export function createMemoryRecordStore(name = 'memory'): RecordStore {
       decisions.set(d.id, copy(d));
     },
     async addAck(a) {
+      // Idempotent by (zone, group), whatever the new record's id is.
+      for (const existing of acks.values()) if (existing.zoneId === a.zoneId && existing.groupId === a.groupId) return;
       acks.set(a.id, copy(a));
     },
     async putOutboxIfAbsent(message) {

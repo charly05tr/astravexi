@@ -80,5 +80,12 @@ export function endOfDay(day: MissionDay): AsOf {
 }
 
 export function ack(zoneId: ZoneId, groupId: string, t = 0): Acknowledgement {
-  return { id: `ack:${zoneId}:${groupId}`, zoneId, groupId, by: 'cmo', t };
+  return {
+    id: `ack:${zoneId}:${groupId}`,
+    zoneId,
+    groupId,
+    by: { profileId: 'test-cmo', role: 'cmo' },
+    t,
+    updatedAt: '2026-06-01T00:00:00.000Z',
+  };
 }

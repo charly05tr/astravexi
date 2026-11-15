@@ -1,15 +1,35 @@
-import { composeAdapters, createBrowserModePreference } from './composition-root';
+import type { CrewProfile } from '../core/profiles/model';
+import { composeAdapters, composeProfileServices, createBrowserModePreference } from './composition-root';
+import type { ComposeOptions, ProfileServices } from './composition-root';
 import { resolveMode } from './mode';
 import type { AppMode } from './mode';
 import { createAppStore } from './store/app-store';
 import type { AppStore } from './store/app-store';
 
-export type BootResult =
-  | { kind: 'choose'; choose(mode: AppMode): void }
-  | { kind: 'ready'; store: AppStore };
+/** Profiles of the resolved mode, plus the way into the app once a profile is picked. */
+export interface ProfileSession {
+  services: ProfileServices;
+  /** Builds the adapters and the app store for `profile`. LIVE opens that profile's own database. */
+  enter(profile: CrewProfile): Promise<AppStore>;
+}
+
+export type BootResult = { kind: 'choose'; choose(mode: AppMode): void } | { kind: 'ready'; session: ProfileSession };
+
+/** Opens the profile services of `mode` and ties the "enter the app" step to them. */
+export async function createProfileSession(mode: AppMode, options: ComposeOptions = {}): Promise<ProfileSession> {
+  const services = await composeProfileServices(mode, options);
+  return {
+    services,
+    async enter(profile) {
+      await services.adoptLegacyIfPending(profile);
+      return createAppStore(await composeAdapters(mode, profile, options));
+    },
+  };
+}
 
 /**
- * Resolve the mode (URL override > persisted choice > ask), then build that mode's adapters and store.
+ * Resolve the mode (URL override > persisted choice > ask), then open that mode's profiles. The app store
+ * itself is built later, once a profile is picked: LIVE data is per profile.
  * A `?mode=` override is used for this load only; it never overwrites the persisted choice.
  */
 export async function boot(search: string): Promise<BootResult> {
@@ -24,6 +44,5 @@ export async function boot(search: string): Promise<BootResult> {
       },
     };
   }
-  const adapters = await composeAdapters(mode);
-  return { kind: 'ready', store: createAppStore(adapters) };
+  return { kind: 'ready', session: await createProfileSession(mode) };
 }

@@ -1,3 +1,4 @@
+import type { CrewProfile, PinRecord } from './profiles/model';
 import type {
   Acknowledgement,
   IndicatorId,
@@ -78,7 +79,7 @@ export interface RecordStore {
   load(): Promise<StoreSnapshot>;
   addReadings(readings: readonly Reading[]): Promise<void>;
   addDecision(decision: RecommendationDecision): Promise<void>;
-  /** Idempotent by id: acknowledging the same (zone, group) twice stores one record. */
+  /** Idempotent by (zone, group): acknowledging the same pair twice stores one record, whatever the ids. */
   addAck(ack: Acknowledgement): Promise<void>;
   /** Stores the message only when its dedupeKey is unknown. Returns true when it was stored. */
   putOutboxIfAbsent(message: OutboxMessage): Promise<boolean>;
@@ -108,4 +109,31 @@ export interface MissionClock {
 export interface ModePreference<M extends string = string> {
   get(): M | null;
   set(mode: M): void;
+}
+
+/** Persisted profiles of one mode. Soft delete only: a deleted row stays so the deletion can sync. */
+export interface ProfileStore {
+  readonly name: string;
+  readonly persistent: boolean;
+  /** Non-deleted profiles by default, oldest first. */
+  list(options?: { includeDeleted?: boolean }): Promise<CrewProfile[]>;
+  /** Also returns a deleted profile. */
+  get(id: string): Promise<CrewProfile | undefined>;
+  /** Inserts or replaces by id. */
+  upsert(profile: CrewProfile): Promise<void>;
+  /** Marks the profile deleted and bumps `updatedAt`. No-op for an unknown id. */
+  softDelete(id: string, updatedAt: string): Promise<void>;
+}
+
+/** Which profile this device last used in a mode. Same shape as the mode preference. */
+export interface ActiveProfile {
+  get(): string | null;
+  set(profileId: string): void;
+  clear(): void;
+}
+
+/** Derives a PIN record and checks a PIN against it. The core never touches WebCrypto. */
+export interface PinHasher {
+  hash(pin: string): Promise<PinRecord>;
+  verify(pin: string, record: PinRecord): Promise<boolean>;
 }

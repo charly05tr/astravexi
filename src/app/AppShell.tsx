@@ -4,12 +4,14 @@ import { useBrand } from '../brand/brand-context';
 import { BodyMapContainer } from '../features/body-map/BodyMapContainer';
 import { CheckInContainer } from '../features/check-in/CheckInContainer';
 import { CmoContainer } from '../features/cmo/CmoContainer';
-import { DemoControls } from '../features/demo/DemoControls';
 import { SourcesView } from '../features/disclosures/SourcesView';
 import { AlertRailContainer } from '../features/insights/AlertRailContainer';
 import { ZonePanelContainer } from '../features/insights/ZonePanelContainer';
 import { useZones } from '../features/insights/use-zones';
 import { OutboxContainer } from '../features/outbox/OutboxContainer';
+import { UserMenu } from '../features/profiles/UserMenu';
+import { ProfilesView } from '../features/profiles/ProfilesView';
+import { can } from '../core/profiles/policy';
 import { Badge } from '../ui/Badge';
 import { Dialog } from '../ui/Dialog';
 import { useAppState } from './app-context';
@@ -26,18 +28,16 @@ function Header() {
   const brand = useBrand();
   const { view, setView, setCheckInOpen } = useUi();
   const mode = useAppState((s) => s.mode);
-  const today = useAppState((s) => s.mission.today);
-  const transitDays = useAppState((s) => s.mission.transitDays);
-  const destination = useAppState((s) => s.mission.destination);
+  const role = useAppState((s) => s.actor.role);
   const pending = useAppState((s) => s.session?.outbox.filter((m) => m.state !== 'replyPossible').length ?? 0);
-  const progress = Math.min(100, Math.max(0, Math.round((today / transitDays) * 100)));
 
   return (
     <header className="header">
       <div className="header__row">
         <div className="brand">
           {/* The full logo carries the wordmark; the name stays in the accessibility tree. */}
-          <img className="brand__logo" src={brand.logos.full} alt="" height={32} />
+          <img className="brand__logo brand__logo--full" src={brand.logos.full} alt="" height={32} />
+          <img className="brand__logo brand__logo--mark" src={brand.logos.mark} alt="" height={32} />
           <span className="sr-only">{brand.productName}</span>
         </div>
         <nav className="nav" aria-label="Views">
@@ -63,36 +63,19 @@ function Header() {
             <Badge variant="solid">{mode === 'live' ? 'LIVE' : 'DEMO'}</Badge>
             {mode === 'demo' ? <Badge variant="dashed">SYNTHETIC</Badge> : null}
           </div>
-          <div className="mission">
-            <span className="mission-day">
-              Day {today} of {transitDays}
-            </span>
-            <div
-              className="mission-track"
-              role="progressbar"
-              aria-label={`Mission progress to ${destination}`}
-              aria-valuemin={0}
-              aria-valuemax={transitDays}
-              aria-valuenow={Math.min(today, transitDays)}
-            >
-              <div className="mission-track__fill" style={{ width: `${progress}%` }} />
-            </div>
-          </div>
         </div>
         <div className="header__tools">
-          {mode === 'demo' ? <DemoControls /> : null}
-          <a className="button button--small button--ghost" href={mode === 'demo' ? '?mode=live' : '?mode=demo'}>
-            Switch to {mode === 'demo' ? 'LIVE' : 'DEMO'}
-          </a>
-          {view === 'dashboard' ? (
+          <UserMenu />
+          {view === 'dashboard' && can(role, 'checkIn') ? (
             <button
               type="button"
-              className="button button--small button--primary"
+              className="button button--small button--primary button--nowrap"
               aria-haspopup="dialog"
+              aria-label="Check-in"
               onClick={() => setCheckInOpen(true)}
             >
               <ClipboardList size={16} aria-hidden="true" />
-              Check-in
+              <span className="button__label">Check-in</span>
             </button>
           ) : null}
         </div>
@@ -116,7 +99,8 @@ function Footer() {
 /** The full daily check-in, in a modal dialog over the dashboard. */
 function CheckInDialog() {
   const { checkInOpen, setCheckInOpen } = useUi();
-  if (!checkInOpen) return null;
+  const role = useAppState((s) => s.actor.role);
+  if (!checkInOpen || !can(role, 'checkIn')) return null;
   return (
     <Dialog
       title="Daily check-in"
@@ -190,7 +174,15 @@ export function AppShell() {
             Storage is unavailable in this browser. Entries will not be kept.
           </p>
         ) : null}
-        {view === 'dashboard' ? <Dashboard /> : view === 'comms' ? <Comms /> : <SourcesView />}
+        {view === 'dashboard' ? (
+          <Dashboard />
+        ) : view === 'comms' ? (
+          <Comms />
+        ) : view === 'profiles' ? (
+          <ProfilesView />
+        ) : (
+          <SourcesView />
+        )}
       </main>
       {view !== 'dashboard' ? <Footer /> : null}
     </div>

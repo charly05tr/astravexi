@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { knowledge } from '../knowledge';
 import { mountApp } from '../test-support/mount';
@@ -16,6 +16,10 @@ const dailyForm = () => screen.queryByRole('form', { name: /daily check-in/i });
 async function openCheckIn(m: Mounted) {
   if (!dailyForm()) await m.user.click(screen.getByRole('button', { name: /^check-in$/i }));
   return within(dailyForm()!);
+}
+/** Signs the same app in as a Crew Medical Officer (the UI follows the store's actor). */
+async function asCmo(m: Mounted) {
+  await act(async () => m.actAs('cmo'));
 }
 /** Switches the main view from the header navigation. */
 async function goTo(m: Mounted, view: 'Dashboard' | 'Comms' | 'Sources') {
@@ -50,12 +54,11 @@ async function enterBp(m: Mounted, sys: string, dia: string) {
 
 describe('app shell: disclaimer and mode badge on both views, both modes', () => {
   for (const mode of ['demo', 'live'] as const) {
-    it(`shows the header badge and mission day in ${mode.toUpperCase()} on both views, and the disclaimer footer off the dashboard`, async () => {
+    it(`shows the header badge in ${mode.toUpperCase()} on both views, and the disclaimer footer off the dashboard`, async () => {
       const m = await mountApp(mode);
       const header = () => screen.getByRole('banner');
       const check = () => {
         expect(within(header()).getByText(mode === 'demo' ? 'DEMO' : 'LIVE')).toBeInTheDocument();
-        expect(within(header()).getByText(/Day \d+ of 210/)).toBeInTheDocument();
         const synthetic = within(header()).queryByText('SYNTHETIC');
         if (mode === 'demo') expect(synthetic).toBeInTheDocument();
         else expect(synthetic).toBeNull();
@@ -72,33 +75,41 @@ describe('app shell: disclaimer and mode badge on both views, both modes', () =>
     });
   }
 
-  it('shows Day 150 of 210 and the demo controls only in DEMO', async () => {
+  it('shows the demo actions only in DEMO, inside the account menu', async () => {
     const demo = await mountApp('demo');
-    expect(within(screen.getByRole('banner')).getByText('Day 150 of 210')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Advance one day' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reset demo' })).toBeInTheDocument();
+    expect(demo.state().mission.today).toBe(150);
+    await demo.user.click(screen.getByRole('button', { name: /^profile menu/i }));
+    const menu = within(screen.getByRole('menu'));
+    expect(menu.getByRole('menuitem', { name: 'Advance one day' })).toBeInTheDocument();
+    expect(menu.getByRole('menuitem', { name: 'Reset demo' })).toBeInTheDocument();
     demo.unmount();
-    await mountApp('live');
-    expect(within(screen.getByRole('banner')).getByText('Day 1 of 210')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Advance one day' })).toBeNull();
+    const live = await mountApp('live');
+    expect(live.state().mission.today).toBe(1);
+    await live.user.click(screen.getByRole('button', { name: /^profile menu/i }));
+    expect(screen.queryByRole('menuitem', { name: 'Advance one day' })).toBeNull();
   });
 
   it('asks for confirmation before Reset demo and keeps data when cancelled', async () => {
     const m = await mountApp('demo');
-    await m.user.click(screen.getByRole('button', { name: 'Reset demo' }));
+    const reset = async () => {
+      await m.user.click(screen.getByRole('button', { name: /^profile menu/i }));
+      await m.user.click(screen.getByRole('menuitem', { name: 'Reset demo' }));
+    };
+    await reset();
     expect(screen.getByText(/reset the demo\?/i)).toBeInTheDocument();
     await m.user.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.getByRole('button', { name: 'Reset demo' })).toBeInTheDocument();
+    expect(screen.queryByText(/reset the demo\?/i)).toBeNull();
     expect(m.state().generation).toBe(0);
-    await m.user.click(screen.getByRole('button', { name: 'Reset demo' }));
+    await reset();
     await m.user.click(screen.getByRole('button', { name: 'Yes, reset' }));
     await waitFor(() => expect(m.state().generation).toBe(1));
   });
 
   it('advances one day from the header', async () => {
     const m = await mountApp('demo');
-    await m.user.click(screen.getByRole('button', { name: 'Advance one day' }));
-    await waitFor(() => expect(within(screen.getByRole('banner')).getByText('Day 151 of 210')).toBeInTheDocument());
+    await m.user.click(screen.getByRole('button', { name: /^profile menu/i }));
+    await m.user.click(screen.getByRole('menuitem', { name: 'Advance one day' }));
+    await waitFor(() => expect(m.state().mission.today).toBe(151));
   });
 
   it('shows a persistent banner when storage is unavailable', async () => {
@@ -111,7 +122,8 @@ describe('app shell: disclaimer and mode badge on both views, both modes', () =>
     const { brand } = await import('../brand/brand.config');
     const { AppRoot } = await import('./AppRoot');
     const world = createTestWorld();
-    const adapters = await composeAdapters('demo', {
+    const { testProfile } = await import('../test-support/compose');
+    const adapters = await composeAdapters('demo', testProfile(), {
       nowMs: () => world.time.ms,
       open: async (name) => ({ store: createMemoryRecordStore(name), storageAvailable: false }),
     });
@@ -133,7 +145,8 @@ describe('LIVE first run', () => {
     expect(screen.getByLabelText(/transit length/i)).toHaveValue('210');
     expect(screen.getByLabelText(/destination/i)).toHaveValue('Mars');
     await m.user.click(screen.getByRole('button', { name: /start mission/i }));
-    await waitFor(() => expect(within(screen.getByRole('banner')).getByText('Day 1 of 210')).toBeInTheDocument());
+    await waitFor(() => expect(m.state().hasMissionConfig).toBe(true));
+    expect(m.state().mission.today).toBe(1);
   });
 
   it('rejects a bad transit length inline', async () => {
@@ -151,6 +164,8 @@ describe('LIVE first run', () => {
     expect(screen.queryByText('SYNTHETIC')).toBeNull();
     await goTo(m, 'Comms');
     expect(screen.getByText(/no messages/i)).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /crew medical officer/i })).toBeNull(); // astronauts do not see it
+    await asCmo(m);
     expect(screen.getByText(/nothing needs review/i)).toBeInTheDocument();
   });
 });
@@ -377,6 +392,7 @@ describe('golden flows through the UI', () => {
     await openDetails(m);
     await waitFor(() => expect(screen.getAllByText(/latest re-measure/i).length).toBeGreaterThan(0));
     expect(railRow('heart')).toHaveTextContent(/warning/i);
+    await asCmo(m);
     await goTo(m, 'Comms');
     const cmo = screen.getByRole('region', { name: /crew medical officer/i });
     const acks = within(cmo).getAllByRole('button', { name: /acknowledge heart warning/i });
@@ -391,7 +407,7 @@ describe('golden flows through the UI', () => {
 
 describe('Crew Medical Officer panel', () => {
   it('shows the corroborated brain zone as tiers, never as scores', async () => {
-    const m = await mountApp('demo');
+    const m = await mountApp('demo', { role: 'cmo' });
     await goTo(m, 'Comms');
     const cmo = screen.getByRole('region', { name: /crew medical officer/i });
     expect(within(cmo).getByText('Brain')).toBeInTheDocument();
@@ -404,6 +420,7 @@ describe('Crew Medical Officer panel', () => {
     await phq(m, /little interest.*: 3,/i);
     await phq(m, /feeling down.*: 3,/i);
     await enterBp(m, '185', '125');
+    await asCmo(m);
     await goTo(m, 'Comms');
     await waitFor(() => expect(outboxCards()).toHaveLength(1));
     const cmo = screen.getByRole('region', { name: /crew medical officer/i });
