@@ -76,6 +76,15 @@ export const ZONE_PIN: Readonly<Record<ZoneId, string | readonly [number, number
 };
 
 /**
+ * Fine pin offsets (model units, cm) so adjacent head pins never overlap:
+ * Brain sits higher on the upper cranium while Eyes sits laterally over an eye socket.
+ */
+export const ZONE_PIN_OFFSET: Partial<Readonly<Record<ZoneId, readonly [number, number, number]>>> = {
+  brain: [0, 5.5, 0],
+  eyes: [-3.8, -1.5, 1.5],
+};
+
+/**
  * Resolves a click from the meshes under the pointer, nearest first. Enclosing bones are skipped while an
  * organ lies behind them, so clicking the head picks the brain, not the skull; with no organ behind, the
  * bone itself is picked. A mesh with no zone (lungs) stops the pick.

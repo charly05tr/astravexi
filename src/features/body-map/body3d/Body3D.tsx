@@ -9,7 +9,17 @@ import type { ZoneId, ZoneStatus } from '../../../core/health/model';
 import { tierTheme } from '../../../theme/tiers';
 import { tierStyle } from '../../../ui/TierChip';
 import type { BodyModelProps, ZoneView } from '../body-model';
-import { EXPLODABLE, EXPLODE_TARGET, ORGAN_ZONE, ZONE_FOCUS, ZONE_PIN, explodingOrgans, meshesOfZone, pickZone } from './organ-map';
+import {
+  EXPLODABLE,
+  EXPLODE_TARGET,
+  ORGAN_ZONE,
+  ZONE_FOCUS,
+  ZONE_PIN,
+  ZONE_PIN_OFFSET,
+  explodingOrgans,
+  meshesOfZone,
+  pickZone,
+} from './organ-map';
 
 export const BODY_MODEL_URL = '/models/body.glb';
 /** The model is authored in centimetres; the scene works in metres. */
@@ -110,17 +120,23 @@ function Pins({
     for (const zone of zones) {
       const pin = ZONE_PIN[zone.id];
       const pulledOut = zone.id === focusZoneId ? explodedBoxOf(meshes, zone.id) : null;
+      let point: Vector3 | null = null;
       if (pulledOut) {
-        out.set(zone.id, pulledOut.getCenter(new Vector3()));
+        point = pulledOut.getCenter(new Vector3());
       } else if (typeof pin === 'string') {
         const mesh = meshes.get(pin);
         if (mesh) {
           // Parents' world matrices may be stale before the first frame: refresh the whole chain first.
           mesh.updateWorldMatrix(true, false);
-          out.set(zone.id, new Box3().setFromObject(mesh).getCenter(new Vector3()));
+          point = new Box3().setFromObject(mesh).getCenter(new Vector3());
         }
       } else {
-        out.set(zone.id, new Vector3(...pin).multiplyScalar(MODEL_SCALE));
+        point = new Vector3(...pin).multiplyScalar(MODEL_SCALE);
+      }
+      if (point) {
+        const offset = ZONE_PIN_OFFSET[zone.id];
+        if (offset) point.add(new Vector3(...offset).multiplyScalar(MODEL_SCALE));
+        out.set(zone.id, point);
       }
     }
     return out;
