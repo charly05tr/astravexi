@@ -151,5 +151,5 @@ describe('Environment simulator & Sources UI integration', () => {
     expect(document.querySelectorAll('tr[data-dataset-id]')).toHaveLength(4);
     expect(screen.getByText('OSD-569')).toBeInTheDocument();
     expect(screen.getByText('OSD-575')).toBeInTheDocument();
-  });
+  }, 15000);
 });

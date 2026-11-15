@@ -2654,3 +2654,81 @@ details > summary {
   background: var(--tier-surface);
 }
 
+/* ---------- Module 6: DTN Store-and-Forward & Deferred Ground Validation ---------- */
+.dtn-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+  font-size: 0.78rem;
+}
+
+.dtn-strip__bandwidth {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.dtn-strip__tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dtn-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text-muted);
+  font-size: 0.74rem;
+}
+
+.ground-validation {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--tier-color);
+  background: var(--tier-surface);
+  color: var(--text);
+}
+
+.ground-validation__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--tier-color);
+  font-size: 0.85rem;
+}
+
+.ground-validation__head strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ground-validation__summary {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.ground-validation__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
