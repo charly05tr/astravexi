@@ -1,5 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { lazy, Suspense } from 'react';
+import type { ReactNode } from 'react';
 import type { ZoneId } from '../../core/health/model';
 import { Panel } from '../../ui/Panel';
 import { TierChip, tierStyle } from '../../ui/TierChip';
@@ -15,10 +16,13 @@ export function CrewMemberDetail({
   detail,
   onBack,
   onAcknowledge,
+  medical,
 }: {
   detail: CrewDetailView;
   onBack(): void;
   onAcknowledge(zoneId: ZoneId, groupId: string): void;
+  /** Allergies and administered medications; only given to a role that may see them. */
+  medical?: ReactNode;
 }) {
   const { card } = detail;
   return (
@@ -55,12 +59,13 @@ export function CrewMemberDetail({
             zones={detail.cmoZones}
             onAcknowledge={onAcknowledge}
           />
-        </div>
-
-        <div className="stack">
           <Panel title="Habits" id="crew-habits" hint="Read-only. Habits are set and checked off by the astronaut.">
             <HabitsPanel view={detail.habits} emptyText="No habits saved yet." />
           </Panel>
+        </div>
+
+        <div className="stack">
+          {medical}
           <Panel title="Trends" id="crew-trends" hint="Last 30 days. Mood is not charted: it stays a tier.">
             {detail.trends.length === 0 ? (
               <p className="empty">No readings to chart yet.</p>

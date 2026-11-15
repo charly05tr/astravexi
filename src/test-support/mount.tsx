@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppRoot } from '../app/AppRoot';
-import type { AiModelCatalog, AiSettingsStore, FollowUpSuggestionProvider } from '../core/ports';
+import type { AiModelCatalog, AiSettingsStore, CabinReferenceSource, FollowUpSuggestionProvider } from '../core/ports';
 import type { AppMode } from '../app/mode';
 import { ProfileProvider } from '../app/profile-context';
 import { SyncProvider } from '../app/sync/sync-context';
@@ -28,9 +28,12 @@ export async function mountApp(
     followUps?: FollowUpSuggestionProvider;
     aiSettings?: AiSettingsStore;
     aiModels?: AiModelCatalog;
+    /** The NASA OSDR reference. Defaults to a source that fails: tests never reach the network. */
+    cabinSource?: CabinReferenceSource;
   } = {},
 ) {
   const world = createTestWorld();
+  if (options.cabinSource) world.cabin.source = options.cabinSource;
   const app = await world.app(mode, { role: options.role });
   if (mode === 'live' && options.configureLive !== false) {
     await app.state().saveMissionConfig({ launchDate: '2026-06-15', transitDays: 210, destination: 'Mars' });

@@ -2713,3 +2713,54 @@ details > summary {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ---------- Medication stock (CMO crew dashboard) ---------- */
+.stock-summary {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.stock-summary__value {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.stock-summary .item[data-attention='true'] {
+  border-color: var(--text);
+}
+
+.table th[scope='row'] {
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text);
+}
+
+.table th[scope='row'] .item__meta {
+  display: block;
+}
+
+.stock-toolbar {
+  margin-block: 16px;
+}
+
+.stock-table th,
+.stock-table td {
+  vertical-align: middle;
+}
+
+.stock-table__actions {
+  white-space: nowrap;
+  width: 1%;
+}
+
+.stock-table__actions .badges {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}

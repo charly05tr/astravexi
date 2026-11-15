@@ -1,6 +1,15 @@
 import type { CrewProfile, Role } from './model';
 
-export type Action = 'checkIn' | 'decideRecommendation' | 'manageHabits' | 'acknowledgeAlert' | 'viewCrew' | 'manageProfiles';
+export type Action =
+  | 'checkIn'
+  | 'decideRecommendation'
+  | 'manageHabits'
+  | 'acknowledgeAlert'
+  | 'viewCrew'
+  | 'manageProfiles'
+  | 'manageMedicalStock'
+  | 'viewMedicalRecords'
+  | 'viewCabinEnvironment';
 
 const GRANTS: Record<Exclude<Action, 'manageProfiles'>, readonly Role[]> = {
   checkIn: ['astronaut'],
@@ -9,6 +18,11 @@ const GRANTS: Record<Exclude<Action, 'manageProfiles'>, readonly Role[]> = {
   manageHabits: ['astronaut'],
   acknowledgeAlert: ['cmo', 'flightSurgeon'],
   viewCrew: ['cmo', 'flightSurgeon'],
+  // The medical kit and each astronaut's medication and allergy record are the CMO's alone.
+  manageMedicalStock: ['cmo'],
+  viewMedicalRecords: ['cmo'],
+  // The cabin CO2 comparison against the NASA ISS reference is the CMO's alone.
+  viewCabinEnvironment: ['cmo'],
 };
 
 export interface PolicyContext {

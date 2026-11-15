@@ -5,5 +5,6 @@
   { "id": "recharts", "name": "Recharts", "license": "MIT", "url": "https://recharts.org/", "use": "Trend charts" },
   { "id": "react", "name": "React", "license": "MIT", "url": "https://react.dev/", "use": "User interface" },
   { "id": "zustand", "name": "Zustand", "license": "MIT", "url": "https://zustand.docs.pmnd.rs/", "use": "State" },
-  { "id": "dexie", "name": "Dexie.js", "license": "Apache-2.0", "url": "https://dexie.org/", "use": "Local storage (IndexedDB)" }
+  { "id": "dexie", "name": "Dexie.js", "license": "Apache-2.0", "url": "https://dexie.org/", "use": "Local storage (IndexedDB)" },
+  { "id": "nasa-osdr-eda", "name": "NASA OSDR Environmental Data Application (ISS cabin CO2 telemetry)", "license": "NASA open data", "url": "https://visualization.osdr.nasa.gov/eda/", "use": "Reference CO2 level for the simulated cabin (historical mission data)" }
 ]
