@@ -10,6 +10,7 @@ import { hasZoneSymptoms } from '../body-map/symptom-model';
 import { SymptomReportAction } from '../body-map/SymptomReportDialog';
 import { ZoneBenchmarkSection, ZoneEnvironmentCard } from '../environment/EnvironmentDialog';
 import { evaluateZoneEnvironment } from '../environment/environment-model';
+import { RoleZoneBanner } from '../readiness/ReadinessPanel';
 import { SuggestionList } from '../suggestions/SuggestionList';
 import { useSuggestions } from '../suggestions/use-suggestions';
 import type { SuggestionsState } from '../suggestions/use-suggestions';
@@ -118,6 +119,7 @@ export function ZonePanelContainer() {
       symptomAction={<SymptomReportAction zoneId={model.zoneId} zoneLabel={model.label} />}
       envContext={envAssessment ? <ZoneEnvironmentCard assessment={envAssessment} /> : null}
       envBenchmark={envAssessment ? <ZoneBenchmarkSection assessment={envAssessment} /> : null}
+      roleBanner={<RoleZoneBanner />}
     />
   );
 }

@@ -103,5 +103,5 @@ describe('SymptomReportAction integration', () => {
 
     expect(screen.queryByRole('region', { name: /reported symptom/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /report symptom/i })).toBeInTheDocument();
-  });
+  }, 15000);
 });

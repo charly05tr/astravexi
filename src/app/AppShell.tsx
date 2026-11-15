@@ -3,6 +3,8 @@ import { useBrand } from '../brand/brand-context';
 import { BodyMapContainer } from '../features/body-map/BodyMapContainer';
 import { StageHabitatBar } from '../features/environment/EnvironmentDialog';
 import { CmoContainer } from '../features/cmo/CmoContainer';
+import { CommsReadinessOverview, StageReadinessTrigger } from '../features/readiness/ReadinessPanel';
+import { ROLE_OPTIONS } from '../features/readiness/readiness-model';
 import { SourcesView } from '../features/disclosures/SourcesView';
 import { AlertRailContainer } from '../features/insights/AlertRailContainer';
 import { ZonePanelContainer } from '../features/insights/ZonePanelContainer';
@@ -21,7 +23,7 @@ const VIEWS: ReadonlyArray<{ id: View; label: string }> = [
 
 function Header() {
   const brand = useBrand();
-  const { view, setView } = useUi();
+  const { view, setView, roleView, setRoleView } = useUi();
   const mode = useAppState((s) => s.mode);
   const today = useAppState((s) => s.mission.today);
   const transitDays = useAppState((s) => s.mission.transitDays);
@@ -56,6 +58,19 @@ function Header() {
           ))}
         </nav>
         <div className="header__status">
+          <div className="segmented role-switch" role="group" aria-label="Role profile">
+            {ROLE_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                aria-pressed={roleView === opt.id}
+                title={opt.hint}
+                onClick={() => setRoleView(opt.id)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           <div className="badges">
             <Badge variant="solid">{mode === 'live' ? 'LIVE' : 'DEMO'}</Badge>
             {mode === 'demo' ? <Badge variant="dashed">SYNTHETIC</Badge> : null}
@@ -117,7 +132,10 @@ function Dashboard() {
           Body
         </h2>
         <BodyMapContainer />
-        <StageHabitatBar />
+        <div className="stage__controls">
+          <StageReadinessTrigger />
+          <StageHabitatBar />
+        </div>
         <p className="stage__hint" aria-hidden="true">
           {focusZoneId ? 'Esc or Full body to go back' : 'Drag to rotate · Scroll to zoom · Click an organ'}
         </p>
@@ -132,6 +150,7 @@ function Dashboard() {
 function Comms() {
   return (
     <div className="comms">
+      <CommsReadinessOverview />
       <CmoContainer />
       <OutboxContainer />
     </div>

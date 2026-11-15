@@ -2018,13 +2018,21 @@ details > summary {
   opacity: 0.85;
 }
 
-/* ---------- Module 2: Habitat telemetry bar & attribution ---------- */
-.stage__habitat {
+/* ---------- Module 2 & 3: Stage bottom controls, Habitat & Readiness ---------- */
+.stage__controls {
   position: fixed;
   bottom: calc(var(--space-lg) + 32px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stage__habitat {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -2038,6 +2046,26 @@ details > summary {
   white-space: nowrap;
   cursor: pointer;
   transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.stage__readiness {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--tier-color);
+  background: var(--tier-surface);
+  color: var(--tier-color);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: filter 140ms ease;
+}
+
+.stage__readiness:hover {
+  filter: brightness(0.97);
 }
 
 .stage__habitat:hover {
@@ -2119,4 +2147,164 @@ details > summary {
   flex-wrap: wrap;
   gap: 8px;
 }
+
+/* ---------- Module 3: Role switcher & Mission readiness ---------- */
+.role-switch {
+  display: inline-flex;
+  align-items: center;
+}
+
+.role-switch button {
+  min-height: 28px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.role-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-soft);
+  background: var(--tier-surface);
+  color: var(--tier-color);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.role-banner__text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.role-banner__cta {
+  font-size: 12px;
+  padding: 2px 6px;
+}
+
+.readiness-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--tier-color);
+  background: var(--tier-surface);
+  color: var(--text);
+}
+
+.readiness-hero--compact {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.readiness-hero__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.readiness-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--tier-color);
+  font-size: 0.95rem;
+}
+
+.readiness-drivers {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.readiness-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.readiness-grid--4col {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+  .readiness-grid--4col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .readiness-grid,
+  .readiness-grid--4col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.readiness-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-soft);
+  border-top: 3px solid var(--tier-color);
+  background: var(--surface);
+}
+
+.readiness-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.readiness-card__text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.readiness-cmo-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.readiness-cmo-bar__text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.readiness-disclaimer {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--line-soft);
+  padding-top: 8px;
+}
+
+.comms__full {
+  grid-column: 1 / -1;
+}
+
 

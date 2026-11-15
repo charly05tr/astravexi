@@ -32,6 +32,8 @@ export interface ZonePanelProps {
   envContext?: ReactNode;
   /** NASA OSDR/RadLab benchmark details shown in the full Zone detail modal (slot). */
   envBenchmark?: ReactNode;
+  /** Role perspective strip rendered only in Crew or CMO mode (slot). */
+  roleBanner?: ReactNode;
 }
 
 function VerifyMark() {
@@ -192,7 +194,7 @@ export function summaryIndicator(model: ZonePanelModel): IndicatorView | null {
  * Presentational zone panel: no store access. Everything it shows comes in through `model` and the slots.
  * Two levels: a summary (status, one chart, one recommendation) and the full detail on demand.
  */
-export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSuggestion, update, symptomAction, envContext, envBenchmark, detail, onDetail }: ZonePanelProps) {
+export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSuggestion, update, symptomAction, envContext, envBenchmark, roleBanner, detail, onDetail }: ZonePanelProps) {
   const hasFindings = model.findings.length > 0 || model.corroboration !== null;
   const primary = summaryIndicator(model);
   const emptyText =
@@ -218,6 +220,7 @@ export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSugg
         </button>
       ) : null}
       <p className="zone-panel__summary">{model.functionSummary}</p>
+      {roleBanner}
 
       {!model.monitored ? (
         <>
