@@ -6,13 +6,13 @@ import { mountApp } from '../test-support/mount';
 
 type Mounted = Awaited<ReturnType<typeof mountApp>>;
 
-const rail = () => screen.getByRole('list', { name: /body zones by alert tier/i });
+const rail = () => screen.getByRole('list', { name: /^body zones$/i });
 const railRow = (zone: string) => rail().querySelector<HTMLElement>(`[data-zone-id="${zone}"]`)!;
 const outboxCards = () => screen.queryAllByTestId('outbox-message');
 
 const dailyForm = () => screen.queryByRole('form', { name: /daily check-in/i });
 
-/** Opens the daily check-in drawer from the header, unless it is already open. */
+/** Opens the daily check-in dialog from the header, unless it is already open. */
 async function openCheckIn(m: Mounted) {
   if (!dailyForm()) await m.user.click(screen.getByRole('button', { name: /^check-in$/i }));
   return within(dailyForm()!);
@@ -24,7 +24,7 @@ async function goTo(m: Mounted, view: 'Dashboard' | 'Comms' | 'Sources') {
 
 /** Types into a daily check-in field. Scoped to the form: charts also carry aria-labels with the same words. */
 async function fill(m: Mounted, label: RegExp, value: string) {
-  // Outside the shell (mission setup) there is no check-in drawer: type into the page.
+  // Outside the shell (mission setup) there is no check-in dialog: type into the page.
   const form = screen.queryByRole('button', { name: /^check-in$/i }) ? await openCheckIn(m) : screen;
   await m.user.clear(form.getByLabelText(label));
   await m.user.type(form.getByLabelText(label), value);
@@ -156,15 +156,22 @@ describe('LIVE first run', () => {
 });
 
 describe('alert rail and zone selection', () => {
-  it('lists the six zones sorted by tier, Warning and Caution first, Not monitored last', async () => {
+  it('lists the six zones in fixed head-to-toe order, whatever their tier', async () => {
     await mountApp('demo');
     const ids = [...rail().querySelectorAll<HTMLElement>('[data-zone-id]')].map((el) => el.dataset.zoneId);
-    expect(ids).toHaveLength(6);
-    expect(ids[0]).toBe('brain'); // Caution at the demo seed
-    expect(ids[1]).toBe('heart'); // Notice
-    expect(ids.slice(-2).sort()).toEqual(['bone', 'eyes']); // Not monitored
+    expect(ids).toEqual(['brain', 'eyes', 'heart', 'immune', 'metabolism', 'bone']);
     expect(railRow('brain')).toHaveTextContent(/caution/i);
     expect(railRow('eyes')).toHaveTextContent(/not monitored/i);
+  });
+
+  it('selects a card on tap and turns the wheel to bring it to the centre', async () => {
+    const m = await mountApp('demo');
+    const transformOf = () => rail().querySelector<HTMLElement>('.rail__slot:has([data-zone-id="bone"])')!.style.transform;
+    const before = transformOf();
+    expect(before).toContain('translate'); // the wheel did lay the cards out
+    await m.user.click(railRow('bone'));
+    expect(railRow('bone')).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => expect(transformOf()).not.toBe(before));
   });
 
   it('opens a zone panel when a rail row is selected, and marks the selection', async () => {
@@ -316,7 +323,9 @@ describe('golden flows through the UI', () => {
     const m = await mountApp('demo');
     await enterBp(m, '185', '125');
     await waitFor(() => expect(railRow('heart')).toHaveTextContent(/warning/i));
-    expect(rail().querySelector('[data-zone-id]')).toBe(railRow('heart')); // sorted to the top
+    // The menu keeps its order; the panel follows the most urgent zone instead.
+    expect(rail().querySelector('[data-zone-id]')).toBe(railRow('brain'));
+    expect(screen.getByRole('heading', { level: 2, name: 'Heart' })).toBeInTheDocument();
     // The form reset and confirmed the save as MANUAL.
     expect(screen.getByText(/saved as manual/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^comms/i })).toHaveTextContent('1');

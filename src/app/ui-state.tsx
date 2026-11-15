@@ -12,7 +12,7 @@ export interface UiState {
   selectZone(id: ZoneId): void;
   /** Back to the whole body: the panel follows the highest-priority zone again. */
   clearZone(): void;
-  /** Whether the full check-in drawer is open. */
+  /** Whether the full check-in dialog is open. */
   checkInOpen: boolean;
   setCheckInOpen(open: boolean): void;
 }

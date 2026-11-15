@@ -19,8 +19,6 @@
   --space: 16px;
   --space-lg: 24px;
   --space-xl: 32px;
-  --header-h: 61px;
-  --footer-h: 37px;
   color-scheme: light;
 }
 
@@ -355,6 +353,38 @@ kbd {
 .app--dashboard .main {
   max-width: none;
   background: transparent;
+  min-height: 0;
+}
+
+/*
+ * The dashboard is exactly one viewport tall: the header takes what it needs and the columns share the
+ * rest (height: 100%), so no hard-coded header height can push the page past the viewport.
+ */
+.app--dashboard {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.app--dashboard .dashboard {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+@media (max-width: 1100px) {
+  /* Stacked layout: the page scrolls normally. */
+  .app--dashboard {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    grid-template-rows: auto 1fr;
+  }
+  .app--dashboard .dashboard {
+    height: auto;
+    grid-template-rows: none;
+  }
 }
 
 .app--dashboard .header {
@@ -529,33 +559,67 @@ kbd {
 /* ---------- Dashboard: rail | space stage | focus panel ---------- */
 .dashboard {
   display: grid;
-  grid-template-columns: minmax(260px, 300px) 1fr minmax(400px, 480px);
+  grid-template-columns: minmax(300px, 340px) 1fr minmax(400px, 480px);
   gap: var(--space-lg);
   align-items: start;
   position: relative;
   z-index: 1;
 }
 
-.dashboard__rail,
-.dashboard__panel,
-.drawer {
+.dashboard__panel {
   background: rgba(255, 255, 255, 0.78);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: var(--radius-lg);
   padding: var(--space);
-  max-height: calc(100dvh - var(--header-h) - 2 * var(--space-xl));
+  max-height: 100%;
   overflow: auto;
   position: relative;
   z-index: 1;
 }
 
+/* The zone menu floats straight on the space background: no card, no glass. */
 .dashboard__rail {
   grid-column: 1;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+  color: var(--on-raised);
+}
+
+.dashboard__rail .rail__arc circle {
+  stroke: color-mix(in srgb, var(--on-raised) 35%, transparent);
+}
+
+.dashboard__rail {
+  --dot-ring: var(--scene-background);
+}
+
+.dashboard__rail .rail__dot {
+  box-shadow: 0 0 0 3px var(--dot-ring);
+}
+
+.dashboard__rail .rail__item {
+  color: var(--text);
+}
+
+.dashboard__rail::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--on-raised) 30%, transparent) padding-box;
+}
+
+.dashboard__rail::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--on-raised) 50%, transparent) padding-box;
+}
+
+@supports (-moz-appearance: none) {
+  .dashboard__rail {
+    scrollbar-color: color-mix(in srgb, var(--on-raised) 35%, transparent) transparent;
+  }
 }
 
 .dashboard__panel {
@@ -585,22 +649,11 @@ kbd {
   width: auto;
 }
 
-.drawer {
-  grid-column: 3;
-  grid-row: 1;
-  z-index: 5;
-}
-
-.drawer:focus {
-  outline: none;
-}
-
-.drawer__head {
+/* The daily check-in dialog: hint, then the form. */
+.check-in-dialog {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: var(--space);
+  flex-direction: column;
+  gap: var(--space);
 }
 
 .stage__hint {
@@ -626,14 +679,6 @@ kbd {
   .dashboard__rail,
   .dashboard__panel {
     max-height: none;
-  }
-  .drawer {
-    position: fixed;
-    inset: auto 0 0 0;
-    grid-column: auto;
-    max-height: 85dvh;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    z-index: 40;
   }
 }
 
@@ -685,6 +730,116 @@ kbd {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Semicircle: a guide arc links one dot per zone (the wheel positions the cards). */
+.rail--arc {
+  position: relative;
+}
+
+.rail__arc {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.rail__arc circle,
+.rail__arc path {
+  fill: none;
+  stroke: var(--line-soft);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.rail__slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding-left: 22px;
+}
+
+.rail__slot > .rail__item {
+  flex: 1;
+  min-width: 0;
+}
+
+.rail__dot {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  border-radius: 999px;
+  background: var(--tier-color);
+  box-shadow: 0 0 0 3px var(--panel);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rail__dot--alert {
+    animation: dot-pulse 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes dot-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px var(--dot-ring, var(--panel)), 0 0 0 3px color-mix(in srgb, var(--tier-color) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 3px var(--dot-ring, var(--panel)), 0 0 0 9px color-mix(in srgb, var(--tier-color) 0%, transparent);
+  }
+}
+
+/* Wheel: cards are placed absolutely along the circle by AlertRail (transform per frame). */
+.rail--wheel {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  display: block;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.rail--wheel.is-dragging {
+  cursor: grabbing;
+}
+
+.rail--wheel .rail__arc {
+  width: 100%;
+  height: 100%;
+}
+
+.rail--wheel .rail__slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0 4px 0 22px;
+  will-change: transform, opacity;
+}
+
+.rail--wheel .rail__dot {
+  left: -5px;
+}
+
+.rail--wheel .rail__item {
+  cursor: inherit;
+}
+
+/* Narrow screens: a plain straight list. */
+@media (max-width: 1100px) {
+  .rail__slot {
+    padding-left: 0;
+  }
+  .rail__dot,
+  .rail__arc {
+    display: none;
+  }
 }
 
 .rail__item {

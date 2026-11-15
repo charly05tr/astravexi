@@ -86,12 +86,12 @@ describe('brand swap leaves tier meaning unchanged', () => {
 
   it('renders the whole app under another brand with identical tier chips in the alert rail', async () => {
     const first = await mountApp('demo');
-    const railA = chipsOf(screen.getByRole('list', { name: /body zones by alert tier/i }));
+    const railA = chipsOf(screen.getByRole('list', { name: /^body zones$/i }));
     first.unmount();
 
     await mountApp('demo', { brandConfig: other });
     expect(within(screen.getByRole('banner')).getByText('Other Brand')).toBeInTheDocument();
-    const railB = chipsOf(screen.getByRole('list', { name: /body zones by alert tier/i }));
+    const railB = chipsOf(screen.getByRole('list', { name: /^body zones$/i }));
     expect(railB).toEqual(railA);
     expect(railB).toHaveLength(6);
     expect(document.querySelector('.brand__mark')).toHaveAttribute('src', '/brand-b/mark.svg');

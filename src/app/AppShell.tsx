@@ -1,5 +1,5 @@
-import { ClipboardList, X } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { ClipboardList } from 'lucide-react';
+import { useEffect } from 'react';
 import { useBrand } from '../brand/brand-context';
 import { BodyMapContainer } from '../features/body-map/BodyMapContainer';
 import { CheckInContainer } from '../features/check-in/CheckInContainer';
@@ -11,6 +11,7 @@ import { ZonePanelContainer } from '../features/insights/ZonePanelContainer';
 import { useZones } from '../features/insights/use-zones';
 import { OutboxContainer } from '../features/outbox/OutboxContainer';
 import { Badge } from '../ui/Badge';
+import { Dialog } from '../ui/Dialog';
 import { useAppState } from './app-context';
 import { useUi } from './ui-state';
 import type { View } from './ui-state';
@@ -23,7 +24,7 @@ const VIEWS: ReadonlyArray<{ id: View; label: string }> = [
 
 function Header() {
   const brand = useBrand();
-  const { view, setView, checkInOpen, setCheckInOpen } = useUi();
+  const { view, setView, setCheckInOpen } = useUi();
   const mode = useAppState((s) => s.mode);
   const today = useAppState((s) => s.mission.today);
   const transitDays = useAppState((s) => s.mission.transitDays);
@@ -86,9 +87,8 @@ function Header() {
             <button
               type="button"
               className="button button--small button--primary"
-              aria-expanded={checkInOpen}
-              aria-controls="check-in-drawer"
-              onClick={() => setCheckInOpen(!checkInOpen)}
+              aria-haspopup="dialog"
+              onClick={() => setCheckInOpen(true)}
             >
               <ClipboardList size={16} aria-hidden="true" />
               Check-in
@@ -112,51 +112,42 @@ function Footer() {
   );
 }
 
-function CheckInDrawer() {
+/** The full daily check-in, in a modal dialog over the dashboard. */
+function CheckInDialog() {
   const { checkInOpen, setCheckInOpen } = useUi();
-  const ref = useRef<HTMLElement>(null);
-  useEffect(() => {
-    if (checkInOpen) ref.current?.focus();
-  }, [checkInOpen]);
   if (!checkInOpen) return null;
   return (
-    <aside className="drawer" id="check-in-drawer" aria-labelledby="check-in-title" tabIndex={-1} ref={ref}>
-      <div className="drawer__head">
-        <div>
-          <h2 id="check-in-title">Daily check-in</h2>
-          <p className="muted small">Fill in what you measured. Leave the rest empty.</p>
-        </div>
-        <button type="button" className="icon-button" aria-label="Close check-in" onClick={() => setCheckInOpen(false)}>
-          <X size={18} aria-hidden="true" />
-        </button>
+    <Dialog
+      title="Daily check-in"
+      closeLabel="Close check-in"
+      onClose={() => setCheckInOpen(false)}
+      style={{ width: 'min(640px, 92vw)' }}
+    >
+      <div className="check-in-dialog">
+        <p className="muted small">Fill in what you measured. Leave the rest empty.</p>
+        <CheckInContainer />
       </div>
-      <CheckInContainer />
-    </aside>
+    </Dialog>
   );
 }
 
 function Dashboard() {
   const { focusZoneId, clearZone } = useZones();
-  const { checkInOpen, setCheckInOpen } = useUi();
 
-  // Esc steps back: first closes the check-in, then leaves the focused organ.
+  // Esc steps back out of a focused organ.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      if (checkInOpen) setCheckInOpen(false);
-      else if (focusZoneId) clearZone();
+      // Open dialogs (check-in, zone detail) consume Esc themselves; here it only leaves the focused organ.
+      if (focusZoneId) clearZone();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [checkInOpen, focusZoneId, clearZone, setCheckInOpen]);
+  }, [focusZoneId, clearZone]);
 
   return (
     <div className="dashboard">
-      <aside className="dashboard__rail" aria-labelledby="zones-title">
-        <h2 className="section-title" id="zones-title">
-          Zones
-        </h2>
-        <p className="muted small">Most urgent first.</p>
+      <aside className="dashboard__rail" aria-label="Zones">
         <AlertRailContainer />
       </aside>
       <section className="dashboard__stage" aria-labelledby="body-title">
@@ -171,7 +162,7 @@ function Dashboard() {
       <div className="dashboard__panel">
         <ZonePanelContainer />
       </div>
-      <CheckInDrawer />
+      <CheckInDialog />
     </div>
   );
 }
