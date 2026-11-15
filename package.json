@@ -13,6 +13,7 @@
     "cabin:fetch": "node scripts/run-ts.mjs scripts/cabin-data/fetch-osdr.ts",
     "cabin:prepare": "node scripts/run-ts.mjs scripts/cabin-data/prepare-grid.ts",
     "cabin:build": "node scripts/run-ts.mjs scripts/cabin-data/build-artifacts.ts",
+    "eval:engine": "node scripts/run-ts.mjs scripts/engine-eval.ts",
     "cabin:all": "pnpm cabin:fetch && pnpm cabin:prepare && pnpm cabin:build"
   },
   "dependencies": {
