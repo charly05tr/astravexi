@@ -8,6 +8,7 @@ import { tierStyle } from '../../ui/TierChip';
 import { hasZoneSymptoms } from '../body-map/symptom-model';
 import type { ZoneSymptomReport } from '../body-map/symptom-model';
 import type { EnvironmentZoneAssessment } from '../environment/environment-model';
+import { TriageInventoryCheck } from '../inventory/MedicalInventoryPanel';
 import {
   ZONE_TRIAGE_QUESTIONS,
   evaluateGuidedTriage,
@@ -143,6 +144,8 @@ function GuidedTriageDialog({
             ))}
           </section>
         ) : null}
+
+        <TriageInventoryCheck zoneId={zoneId} zoneLabel={zoneLabel} triagePlan={plan} />
 
         <div className="form-actions">
           <Button type="button" variant="primary" onClick={onClose}>

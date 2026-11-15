@@ -8,6 +8,7 @@ import {
   sanitizeEnvironmentConfig,
 } from '../features/environment/environment-model';
 import type { EnvironmentConfig, HabitatPresetId } from '../features/environment/environment-model';
+import type { AllergyId } from '../features/inventory/inventory-model';
 import type { TriageAnswer } from '../features/triage/triage-model';
 
 export type View = 'dashboard' | 'comms' | 'sources';
@@ -34,6 +35,13 @@ export interface UiState {
   triageAnswers: Readonly<Record<string, TriageAnswer>>;
   setTriageAnswer(questionId: string, answer: TriageAnswer): void;
   clearTriageAnswers(questionIds: readonly string[]): void;
+  /** Onboard xEHR allergy profile & HMS consumable usage adjustments (Module 5). */
+  xehrAllergies: readonly AllergyId[];
+  toggleXehrAllergy(id: AllergyId): void;
+  clearXehrAllergies(): void;
+  hmsUsedCounts: Readonly<Record<string, number>>;
+  consumeHmsSupply(itemId: string): void;
+  resetHmsSupplies(): void;
 }
 
 const UiContext = createContext<UiState | null>(null);
@@ -47,9 +55,23 @@ export function UiProvider({ children, initialView = 'dashboard' }: { children: 
   );
   const [environment, setEnvironment] = useState<EnvironmentConfig>(() => createDefaultEnvironmentConfig('transit'));
   const [triageAnswers, setTriageAnswers] = useState<Record<string, TriageAnswer>>({});
+  const [xehrAllergies, setXehrAllergies] = useState<AllergyId[]>([]);
+  const [hmsUsedCounts, setHmsUsedCounts] = useState<Record<string, number>>({});
 
   const selectZone = useCallback((id: ZoneId) => setSelected(id), []);
   const clearZone = useCallback(() => setSelected(null), []);
+
+  const toggleXehrAllergy = useCallback((id: AllergyId) => {
+    setXehrAllergies((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
+  }, []);
+
+  const clearXehrAllergies = useCallback(() => setXehrAllergies([]), []);
+
+  const consumeHmsSupply = useCallback((itemId: string) => {
+    setHmsUsedCounts((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? 0) + 1 }));
+  }, []);
+
+  const resetHmsSupplies = useCallback(() => setHmsUsedCounts({}), []);
 
   const setTriageAnswer = useCallback((questionId: string, answer: TriageAnswer) => {
     setTriageAnswers((prev) => ({ ...prev, [questionId]: answer }));
@@ -120,6 +142,12 @@ export function UiProvider({ children, initialView = 'dashboard' }: { children: 
       triageAnswers,
       setTriageAnswer,
       clearTriageAnswers,
+      xehrAllergies,
+      toggleXehrAllergy,
+      clearXehrAllergies,
+      hmsUsedCounts,
+      consumeHmsSupply,
+      resetHmsSupplies,
     }),
     [
       view,
@@ -137,6 +165,12 @@ export function UiProvider({ children, initialView = 'dashboard' }: { children: 
       triageAnswers,
       setTriageAnswer,
       clearTriageAnswers,
+      xehrAllergies,
+      toggleXehrAllergy,
+      clearXehrAllergies,
+      hmsUsedCounts,
+      consumeHmsSupply,
+      resetHmsSupplies,
     ],
   );
   return <UiContext.Provider value={value}>{children}</UiContext.Provider>;
