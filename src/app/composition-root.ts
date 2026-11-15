@@ -10,7 +10,7 @@ import { createMemoryProfileStore } from '../adapters/memory-profile-store';
 import { createMemoryRecordStore } from '../adapters/memory-record-store';
 import { createModePreference } from '../adapters/mode-preference';
 import { createPinHasher } from '../adapters/pin-hasher';
-import { seededHistory } from '../adapters/seeded-history';
+import { calmHistory, seededHistory } from '../adapters/seeded-history';
 import { WallClock, defaultMissionConfig } from '../adapters/wall-clock';
 import { brand } from '../brand/brand.config';
 import type { BrandConfig } from '../brand/brand.types';
@@ -26,6 +26,7 @@ import type {
 } from '../core/ports';
 import { toActor } from '../core/profiles/model';
 import type { Actor, CrewProfile, Role } from '../core/profiles/model';
+import type { CrewMemberData, CrewSource } from '../core/use-cases/crew';
 import { createProfile } from '../core/use-cases/profiles';
 import type { ProfileDeps, ProfileResult } from '../core/use-cases/profiles';
 import { knowledge } from '../knowledge';
@@ -33,7 +34,7 @@ import { MISSION_META_KEY } from './adapters';
 import type { Adapters } from './adapters';
 import { createSyncService } from './sync/sync-service';
 import type { SyncService } from './sync/sync-service';
-import { DEMO_ASTRONAUT_ID, DEMO_SUBJECT_NAME, demoProfiles } from './demo/demo-profiles';
+import { DEMO_ASTRONAUT_ID, DEMO_CREW_EXTRAS, DEMO_SUBJECT_NAME, RETIRED_DEMO_CREW_IDS, demoProfiles } from './demo/demo-profiles';
 import { CLOCK_META_KEY } from './demo/demo-use-cases';
 import { copyLegacyLiveData } from './legacy-live';
 import {
@@ -42,6 +43,7 @@ import {
   MODE_STORAGE_KEY,
   PROFILES_DB_NAME,
   activeProfileKey,
+  demoCrewDbName,
   isAppMode,
   liveDbName,
 } from './mode';
@@ -84,6 +86,8 @@ export interface ComposeOptions {
   nowMs?: () => number;
   /** Injected in tests; defaults to Dexie with memory fallback. */
   open?: (name: string, wipeOnSchemaError: boolean) => Promise<StoreOpenResult>;
+  /** The profile store the app already opened; the crew review reads the profile list from it. */
+  profiles?: ProfileStore;
   /** Injected in tests; defaults to Dexie with memory fallback. */
   openProfiles?: (name: string) => Promise<ProfileStoreOpenResult>;
   /** Injected in tests; defaults to the platform's `crypto.randomUUID`. */
@@ -117,13 +121,40 @@ export async function composeAdapters(
   const newId = options.newId ?? (() => crypto.randomUUID());
   const nowIso = () => new Date(nowMs()).toISOString();
   const actor = toActor(profile);
+  const profiles =
+    options.profiles ?? (await (options.openProfiles ?? openProfileStore)(PROFILES_DB_NAME[mode])).store;
 
   if (mode === 'demo') {
     const { store, storageAvailable } = await open(DB_NAME.demo, true);
     const saved = await store.getMeta<DemoClockPosition>(CLOCK_META_KEY);
+    const extraStores = new Map<string, Promise<RecordStore>>();
+    const extraStore = (id: string) => {
+      let opened = extraStores.get(id);
+      if (!opened) {
+        opened = open(demoCrewDbName(id), true).then((r) => r.store);
+        extraStores.set(id, opened);
+      }
+      return opened;
+    };
     return {
       mode,
       storageAvailable,
+      crew: {
+        profiles,
+        async open(p): Promise<CrewMemberData> {
+          // The demo astronaut owns the DEMO database; the other demo profiles have no records of their own.
+          if (p.id === DEMO_ASTRONAUT_ID) return { store, history: seededHistory, seed: DEMO_SEED };
+          const extra = DEMO_CREW_EXTRAS.find((c) => c.id === p.id);
+          return {
+            store: await extraStore(p.id),
+            history: extra ? (extra.scenario ? seededHistory : calmHistory) : emptyHistory,
+            seed: extra?.seed ?? 0,
+          };
+        },
+      },
+      async resetCrew() {
+        for (const opened of extraStores.values()) await (await opened).clearAll();
+      },
       deps: {
         store,
         clock: new DemoClock(saved, nowMs), // re-anchors: no time passes while the tab was closed
@@ -145,6 +176,13 @@ export async function composeAdapters(
     mode,
     storageAvailable,
     hasMissionConfig: saved !== undefined,
+    crew: {
+      profiles,
+      // LIVE: each profile owns its database, so a member's records are exactly that database.
+      async open(p): Promise<CrewMemberData> {
+        return { store: p.id === profile.id ? store : (await open(liveDbName(p.id), false)).store, history: emptyHistory, seed: 0 };
+      },
+    } satisfies CrewSource,
     deps: {
       store,
       clock: new WallClock(saved ?? defaultMissionConfig(nowMs()), nowMs),
@@ -192,9 +230,16 @@ export async function composeProfileServices(mode: AppMode, options: ComposeOpti
     nowIso,
   };
 
-  if (mode === 'demo' && (await profiles.list({ includeDeleted: true })).length === 0) {
-    for (const p of demoProfiles(nowIso())) await profiles.upsert(p);
-    activeProfile.set(DEMO_ASTRONAUT_ID); // the first demo visit goes straight in as the astronaut
+  if (mode === 'demo') {
+    const first = (await profiles.list({ includeDeleted: true })).length === 0;
+    // Idempotent per profile: a device that already has the first two demo profiles gains the extra crew,
+    // and a demo profile that was deleted (its row stays) is not brought back.
+    for (const p of demoProfiles(nowIso())) if (!(await profiles.get(p.id))) await profiles.upsert(p);
+    for (const id of RETIRED_DEMO_CREW_IDS) {
+      const old = await profiles.get(id);
+      if (old && !old.deleted) await profiles.softDelete(id, nowIso());
+    }
+    if (first) activeProfile.set(DEMO_ASTRONAUT_ID); // the first demo visit goes straight in as the astronaut
   }
 
   return {

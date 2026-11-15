@@ -6,6 +6,8 @@ import type { Actor } from '../../core/profiles/model';
 import { acknowledge, advanceLink, decideRecommendation, sendNow } from '../../core/use-cases/actions';
 import { bootstrap, reevaluate } from '../../core/use-cases/bootstrap';
 import { submitCheckIn } from '../../core/use-cases/check-in';
+import { acknowledgeForMember, loadCrew } from '../../core/use-cases/crew';
+import type { CrewMember, CrewReview } from '../../core/use-cases/crew';
 import type { CheckInEntry, CheckInResult } from '../../core/use-cases/check-in';
 import type { Session } from '../../core/use-cases/session';
 import { MISSION_META_KEY } from '../adapters';
@@ -52,6 +54,10 @@ export interface AppState {
   setActor(actor: Actor): void;
   submitCheckIn(entry: CheckInEntry): Promise<CheckInResult>;
   acknowledge(zoneId: ZoneId, groupId: string): Promise<void>;
+  /** CMO and flight surgeon: every local profile, evaluated against its own records. */
+  loadCrew(): Promise<CrewReview>;
+  /** Acknowledges a latched warning of one crew member (not of the signed-in profile). Null: no such member. */
+  acknowledgeCrewMember(profileId: string, zoneId: ZoneId, groupId: string): Promise<CrewMember | null>;
   decideRecommendation(input: {
     recommendationId: string;
     findingKey: string;
@@ -175,6 +181,15 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
         await guarded(async () => applySession(await acknowledge(adapters.deps, requireSession(), { zoneId, groupId })));
       },
 
+      loadCrew() {
+        return enqueue(() => loadCrew(adapters.deps, adapters.crew));
+      },
+
+      async acknowledgeCrewMember(profileId, zoneId, groupId) {
+        const member = await guarded(() => acknowledgeForMember(adapters.deps, adapters.crew, profileId, { zoneId, groupId }));
+        return member ?? null;
+      },
+
       async decideRecommendation(input) {
         await guarded(async () => applySession(await decideRecommendation(adapters.deps, requireSession(), input)));
       },
@@ -244,6 +259,7 @@ export function createAppStore(adapters: Adapters, options: AppStoreOptions = {}
         set({ generation: get().generation + 1 });
         await enqueue(async () => {
           const link: LinkState = { oneWayDelayMin: DEFAULT_DELAY_MIN, blackout: false };
+          await demo.resetCrew();
           const session = await resetDemo(demo.deps, link);
           ticksSincePersist = 0;
           set({ session, link, mission: missionInfo(adapters), status: 'ready', error: null });

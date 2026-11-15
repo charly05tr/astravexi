@@ -10,16 +10,23 @@ import type { CmoZoneView } from './cmo-model';
 export function CmoPanel({
   zones,
   onAcknowledge,
+  title = 'Crew Medical Officer',
+  hint = 'On board. Caution and Warning items only. Mood shows as a tier, never as a score.',
+  id = 'cmo',
 }: {
   zones: readonly CmoZoneView[];
   onAcknowledge(zoneId: ZoneId, groupId: string): void;
+  /** The crew detail reuses the panel for one member, under its own heading. */
+  title?: string;
+  hint?: string;
+  id?: string;
 }) {
   return (
     <Panel
-      id="cmo"
-      title="Crew Medical Officer"
+      id={id}
+      title={title}
       icon={<Stethoscope size={20} aria-hidden="true" />}
-      hint="On board. Caution and Warning items only. Mood shows as a tier, never as a score."
+      hint={hint}
     >
       {zones.length === 0 ? (
         <EmptyState>Nothing needs review.</EmptyState>

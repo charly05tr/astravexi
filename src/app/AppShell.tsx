@@ -4,6 +4,7 @@ import { useBrand } from '../brand/brand-context';
 import { BodyMapContainer } from '../features/body-map/BodyMapContainer';
 import { CheckInContainer } from '../features/check-in/CheckInContainer';
 import { CmoContainer } from '../features/cmo/CmoContainer';
+import { CrewContainer } from '../features/crew/CrewContainer';
 import { SourcesView } from '../features/disclosures/SourcesView';
 import { AlertRailContainer } from '../features/insights/AlertRailContainer';
 import { ZonePanelContainer } from '../features/insights/ZonePanelContainer';
@@ -117,7 +118,7 @@ function CheckInDialog() {
   );
 }
 
-function Dashboard() {
+function BodyDashboard() {
   const { focusZoneId, clearZone } = useZones();
 
   // Esc steps back out of a focused organ.
@@ -150,6 +151,18 @@ function Dashboard() {
       </div>
       <CheckInDialog />
     </div>
+  );
+}
+
+/** The CMO and the flight surgeon review the crew; the astronaut sees their own body. */
+function Dashboard() {
+  const role = useAppState((s) => s.actor.role);
+  return can(role, 'viewCrew') ? (
+    <div className="crew-stage">
+      <CrewContainer />
+    </div>
+  ) : (
+    <BodyDashboard />
   );
 }
 

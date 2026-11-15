@@ -14,6 +14,9 @@ export const LEGACY_LIVE_DB = DB_NAME.live;
 /** LIVE keeps one record database per profile. */
 export const liveDbName = (profileId: string) => `astravexi-live-${profileId}`;
 
+/** DEMO keeps one extra database per synthetic crew member besides the demo astronaut (who owns `DB_NAME.demo`). */
+export const demoCrewDbName = (profileId: string) => `astravexi-demo-crew-${profileId}`;
+
 export const PROFILES_DB_NAME: Record<AppMode, string> = {
   live: 'astravexi-live-profiles',
   demo: 'astravexi-demo-profiles',

@@ -131,7 +131,7 @@ describe('profile switcher and the role switch in DEMO', () => {
     await renderFlow('demo');
     const header = await screen.findByRole('banner');
     expect(within(header).getByRole('button', { name: /^profile menu, demo astronaut$/i })).toHaveAttribute('aria-haspopup', 'menu');
-    expect((await openMenu(userEvent.setup())).getByText('Astronaut')).toBeInTheDocument();
+    expect((await openMenu(userEvent.setup())).getAllByText('Astronaut').length).toBeGreaterThan(0);
     await userEvent.setup().keyboard('{Escape}');
     expect(screen.getByRole('button', { name: /^check-in$/i })).toBeInTheDocument();
     expect(await hasManage(userEvent.setup())).toBe(false);
@@ -206,9 +206,9 @@ describe('account menu', () => {
     const m = await mountApp('demo', { role: 'cmo' });
     const menu = await openMenu(m.user);
     expect(menu.getAllByText('Crew Medical Officer').length).toBeGreaterThan(0);
-    await waitFor(() => expect(menu.getByRole('menuitem', { name: /demo astronaut/i })).toBeInTheDocument());
+    await waitFor(() => expect(menu.getByRole('menuitem', { name: /demo astronaut(?! \d)/i })).toBeInTheDocument());
     expect(menu.getByRole('menuitem', { name: /manage profiles/i })).toBeInTheDocument();
-    await m.user.click(menu.getByRole('menuitem', { name: /demo astronaut/i }));
+    await m.user.click(menu.getByRole('menuitem', { name: /demo astronaut(?! \d)/i }));
     expect(m.switches.count).toBe(1); // the PIN prompt, if any, is the gate's job after the reload
     expect(screen.queryByRole('menu')).toBeNull();
     await goManage(m.user);
@@ -258,9 +258,9 @@ describe('role gating in the UI', () => {
     const m = await mountApp('demo', { role: 'cmo' });
     expect(screen.queryByRole('button', { name: /^check-in$/i })).toBeNull();
     expect(await hasManage(userEvent.setup())).toBe(true);
-    const more = screen.queryByRole('button', { name: /view details/i });
-    if (more) await m.user.click(more);
-    await screen.findAllByText(/proposed routine change/i);
+    // The CMO reviews the crew instead of the body model, so there is no zone panel to act on.
+    expect(await screen.findByRole('region', { name: /^crew$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: /^body zones$/i })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
     expect(screen.queryByText(/update .* readings/i)).toBeNull(); // no zone-level check-in form either

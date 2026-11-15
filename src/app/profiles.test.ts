@@ -4,7 +4,7 @@ import { PermissionError } from '../core/profiles/policy';
 import type { OutboxMessage, Reading } from '../core/health/model';
 import { ack, reading } from '../test-support/builders';
 import { createTestWorld, testProfile } from '../test-support/compose';
-import { DEMO_ASTRONAUT_ID, DEMO_CMO_ID } from './demo/demo-profiles';
+import { DEMO_ASTRONAUT_ID, DEMO_CMO_ID, DEMO_CREW_EXTRAS, RETIRED_DEMO_CREW_IDS } from './demo/demo-profiles';
 import { LEGACY_MIGRATED_META_KEY } from './legacy-live';
 import { DB_NAME, liveDbName } from './mode';
 
@@ -132,6 +132,26 @@ describe('sync-ready records', () => {
 });
 
 describe('profiles in DEMO', () => {
+  it('retires the extra crewmates saved under their old ids, so each name appears once', async () => {
+    const world = createTestWorld();
+    const first = await world.profileSession('demo');
+    const extra = DEMO_CREW_EXTRAS[0]!;
+    // A device that ran the earlier build: the same crewmate under a retired id.
+    await first.services.profiles.upsert({
+      id: RETIRED_DEMO_CREW_IDS[0]!,
+      name: extra.name,
+      role: 'astronaut',
+      createdAt: '2026-06-01T00:00:00.000Z',
+      updatedAt: '2026-06-01T00:00:00.000Z',
+      deleted: false,
+    });
+    const again = await world.profileSession('demo');
+    const names = (await again.services.profiles.list()).map((p) => p.name);
+    expect(new Set(names).size).toBe(names.length);
+    expect(names.filter((n) => n === extra.name)).toHaveLength(1);
+    expect((await again.services.profiles.list()).map((p) => p.id)).not.toContain(RETIRED_DEMO_CREW_IDS[0]);
+  });
+
   it('seeds a demo astronaut and a demo CMO once, and starts as the astronaut', async () => {
     const world = createTestWorld();
     const { services } = await world.profileSession('demo');
@@ -139,12 +159,13 @@ describe('profiles in DEMO', () => {
     expect(profiles.map((p) => [p.id, p.role])).toEqual([
       [DEMO_ASTRONAUT_ID, 'astronaut'],
       [DEMO_CMO_ID, 'cmo'],
+      ...DEMO_CREW_EXTRAS.map((c) => [c.id, 'astronaut']), // synthetic crewmates for the crew dashboard
     ]);
     expect(profiles.every((p) => p.pin === undefined)).toBe(true);
     expect(services.activeProfile.get()).toBe(DEMO_ASTRONAUT_ID);
 
     const again = await world.profileSession('demo');
-    expect(await again.services.profiles.list({ includeDeleted: true })).toHaveLength(2); // no reseed
+    expect(await again.services.profiles.list({ includeDeleted: true })).toHaveLength(2 + DEMO_CREW_EXTRAS.length); // no reseed
   });
 
   it('shares one database: the demo CMO sees and acknowledges what the demo astronaut recorded', async () => {
