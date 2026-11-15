@@ -55,9 +55,16 @@ describe('SymptomReportAction integration', () => {
 
     await m.user.click(within(dialog).getByRole('button', { name: /done/i }));
 
-    // Summary line displays cleanly on the ZonePanel without clutter, button switches to Edit symptom
+    // Summary line displays cleanly on the ZonePanel and triggers LLM-simulated Recommended change
     expect(screen.getByText('Near-vision blur · discomfort 5/10')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /edit symptom/i })).toBeInTheDocument();
+    const eyesSuggestionHeading = screen.getByRole('heading', { name: /recommended change/i });
+    expect(eyesSuggestionHeading).toBeInTheDocument();
+    const eyesSuggestionCard = eyesSuggestionHeading.closest('section')!;
+    expect(within(eyesSuggestionCard).getByText(/reduce close-focus strain/i)).toBeInTheDocument();
+    expect(within(eyesSuggestionCard).getByText(/reported symptom: near-vision blur/i)).toBeInTheDocument();
+    expect(within(eyesSuggestionCard).getByText(/statistical baseline:/i)).toBeInTheDocument();
+    expect(within(eyesSuggestionCard).getByText(/cabin environment:/i)).toBeInTheDocument();
 
     // Switch to monitored Brain zone and report a symptom there too
     await m.user.click(railRow('brain'));
@@ -68,6 +75,12 @@ describe('SymptomReportAction integration', () => {
     await m.user.click(within(brainDialog).getByRole('button', { name: /headache \/ pressure/i }));
     await m.user.click(within(brainDialog).getByRole('button', { name: /done/i }));
     expect(screen.getByText('Headache / pressure')).toBeInTheDocument();
+
+    // Recommended change right below the atypical chart updates to the simulated LLM triage card
+    const brainSection = screen.getByRole('heading', { name: /recommended change/i }).closest('section')!;
+    expect(within(brainSection).getByText(/boost local airflow/i)).toBeInTheDocument();
+    expect(within(brainSection).getByText(/sleep:/i)).toBeInTheDocument();
+    expect(within(brainSection).getByText(/co2 \d+ ppm/i)).toBeInTheDocument();
 
     // Reopen Brain symptom modal and clear
     await m.user.click(screen.getByRole('button', { name: /edit symptom/i }));

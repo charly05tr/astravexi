@@ -14,9 +14,6 @@ export interface UiState {
   selectZone(id: ZoneId): void;
   /** Back to the whole body: the panel follows the highest-priority zone again. */
   clearZone(): void;
-  /** Whether the full check-in dialog is open. */
-  checkInOpen: boolean;
-  setCheckInOpen(open: boolean): void;
   /** Quick anatomical symptom and discomfort reports tagged directly from the 3D body / zone panel. */
   symptomReports: Readonly<Record<ZoneId, ZoneSymptomReport>>;
   toggleSymptomTag(zoneId: ZoneId, tagId: string): void;
@@ -30,7 +27,6 @@ const UiContext = createContext<UiState | null>(null);
 export function UiProvider({ children, initialView = 'dashboard' }: { children: ReactNode; initialView?: View }) {
   const [view, setView] = useState<View>(initialView);
   const [selectedZoneId, setSelected] = useState<ZoneId | null>(null);
-  const [checkInOpen, setCheckInOpen] = useState(false);
   const [symptomReports, setSymptomReports] = useState<Record<ZoneId, ZoneSymptomReport>>(() =>
     createInitialSymptomReports(),
   );
@@ -72,8 +68,6 @@ export function UiProvider({ children, initialView = 'dashboard' }: { children: 
       selectedZoneId,
       selectZone,
       clearZone,
-      checkInOpen,
-      setCheckInOpen,
       symptomReports,
       toggleSymptomTag,
       setZoneDiscomfort,
@@ -84,7 +78,6 @@ export function UiProvider({ children, initialView = 'dashboard' }: { children: 
       selectedZoneId,
       selectZone,
       clearZone,
-      checkInOpen,
       symptomReports,
       toggleSymptomTag,
       setZoneDiscomfort,

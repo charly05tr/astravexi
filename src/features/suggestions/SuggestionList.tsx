@@ -33,7 +33,11 @@ export function groupSuggestions(items: readonly Suggestion[]): SuggestionGroup[
 function SuggestionCard({ group, onDecide }: { group: SuggestionGroup; onDecide: SuggestionListProps['onDecide'] }) {
   const { head, members } = group;
   const open = members.filter((m) => m.decision !== 'accepted');
-  const reasons = [...new Set(members.map((m) => m.rationale))];
+  const reasons = [
+    ...new Set(
+      members.flatMap((m) => (m.rationales && m.rationales.length > 0 ? m.rationales : [m.rationale])),
+    ),
+  ];
   // A decision applies to every finding this recommendation answers. One at a time: each write reads the
   // session the previous one produced, so no decision is lost.
   const decide = async (decision: 'accepted' | 'dismissed') => {

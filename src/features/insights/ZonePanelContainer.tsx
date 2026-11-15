@@ -1,18 +1,22 @@
 import { useMemo, useState } from 'react';
 import type { IndicatorId } from '../../core/health/model';
 import { useAppActions, useAppContext, useAppState } from '../../app/app-context';
+import { useUi } from '../../app/ui-state';
 import type { SuggestionContext } from '../../core/ports';
 import { EmptyState } from '../../ui/Panel';
 import { CheckInContainer } from '../check-in/CheckInContainer';
+import { buildSymptomLlmSuggestions } from '../body-map/symptom-advisor';
 import { SymptomReportAction } from '../body-map/SymptomReportDialog';
 import { SuggestionList } from '../suggestions/SuggestionList';
 import { useSuggestions } from '../suggestions/use-suggestions';
+import type { SuggestionsState } from '../suggestions/use-suggestions';
 import { ZonePanel } from './ZonePanel';
 import { useZones } from './use-zones';
 import { buildZonePanelModel } from './zone-panel-model';
 
 export function ZonePanelContainer() {
   const { knowledge, content } = useAppContext();
+  const { symptomReports } = useUi();
   const session = useAppState((s) => s.session);
   const mode = useAppState((s) => s.mode);
   const actions = useAppActions();
@@ -43,6 +47,26 @@ export function ZonePanelContainer() {
     };
   }, [model, session]);
   const suggestions = useSuggestions(context);
+
+  const symptomReport = model ? symptomReports[model.zoneId] : undefined;
+  const llmSymptomSuggestions = useMemo(() => {
+    if (!model || !session || !symptomReport) return [];
+    return buildSymptomLlmSuggestions({
+      model,
+      symptomReport,
+      missionDay: session.evaluation.asOf.day,
+      decisions: session.decisions,
+    });
+  }, [model, session, symptomReport]);
+
+  const effectiveSuggestions = useMemo<SuggestionsState>(() => {
+    if (llmSymptomSuggestions.length === 0) return suggestions;
+    if (suggestions.status === 'error') {
+      return { status: 'error', items: [...llmSymptomSuggestions, ...suggestions.items], message: suggestions.message };
+    }
+    return { status: 'ready', items: [...llmSymptomSuggestions, ...suggestions.items] };
+  }, [suggestions, llmSymptomSuggestions]);
+
   // The detail view belongs to one zone: switching zones returns to that zone's summary.
   const [detailFor, setDetailFor] = useState<string | null>(null);
 
@@ -58,7 +82,7 @@ export function ZonePanelContainer() {
       topSuggestion={
         <SuggestionList
           variant="summary"
-          state={suggestions}
+          state={effectiveSuggestions}
           onDecide={(s, decision) =>
             actions.decideRecommendation({ recommendationId: s.id, findingKey: s.findingKey, decision })
           }
@@ -66,7 +90,7 @@ export function ZonePanelContainer() {
       }
       suggestions={
         <SuggestionList
-          state={suggestions}
+          state={effectiveSuggestions}
           onDecide={(s, decision) =>
             actions.decideRecommendation({ recommendationId: s.id, findingKey: s.findingKey, decision })
           }

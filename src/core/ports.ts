@@ -45,6 +45,8 @@ export interface Suggestion {
   steps: readonly string[];
   /** Why this suggestion, tied to the finding it answers. */
   rationale: string;
+  /** Optional multi-factor bullets rendered under Why (used by multi-context / LLM-simulated triage). */
+  rationales?: readonly string[];
   evidence: SourceRef | null;
   needsVerification: boolean;
   /** Who produced it. The UI labels generated advice differently from curated advice. */

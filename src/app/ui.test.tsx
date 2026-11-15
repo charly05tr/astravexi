@@ -10,42 +10,45 @@ const rail = () => screen.getByRole('list', { name: /^body zones$/i });
 const railRow = (zone: string) => rail().querySelector<HTMLElement>(`[data-zone-id="${zone}"]`)!;
 const outboxCards = () => screen.queryAllByTestId('outbox-message');
 
-const dailyForm = () => screen.queryByRole('form', { name: /daily check-in/i });
-
-/** Opens the daily check-in dialog from the header, unless it is already open. */
-async function openCheckIn(m: Mounted) {
-  if (!dailyForm()) await m.user.click(screen.getByRole('button', { name: /^check-in$/i }));
-  return within(dailyForm()!);
-}
 /** Switches the main view from the header navigation. */
 async function goTo(m: Mounted, view: 'Dashboard' | 'Comms' | 'Sources') {
   await m.user.click(within(screen.getByRole('navigation', { name: 'Views' })).getByRole('button', { name: new RegExp(`^${view}`) }));
 }
 
-/** Types into a daily check-in field. Scoped to the form: charts also carry aria-labels with the same words. */
-async function fill(m: Mounted, label: RegExp, value: string) {
-  // Outside the shell (mission setup) there is no check-in dialog: type into the page.
-  const form = screen.queryByRole('button', { name: /^check-in$/i }) ? await openCheckIn(m) : screen;
-  await m.user.clear(form.getByLabelText(label));
-  await m.user.type(form.getByLabelText(label), value);
-}
-async function save(m: Mounted) {
-  const form = await openCheckIn(m);
-  await m.user.click(form.getByRole('button', { name: /save check-in/i }));
-}
 /** Opens the zone panel's full detail (the panel starts on its summary). */
 async function openDetails(m: Mounted) {
   const more = screen.queryByRole('button', { name: /view details/i });
   if (more) await m.user.click(more);
 }
-async function phq(m: Mounted, name: RegExp) {
-  const form = await openCheckIn(m);
-  await m.user.click(form.getByRole('radio', { name }));
+
+/** Opens the zone-scoped check-in form inside a zone's detail dialog. */
+async function openZoneUpdate(m: Mounted, zone: 'brain' | 'heart' | 'immune' | 'metabolism') {
+  const existingDialog = screen.queryByRole('dialog');
+  if (!existingDialog) {
+    await m.user.click(railRow(zone));
+    await openDetails(m);
+  }
+  const dialog = screen.getByRole('dialog');
+  const formQuery = within(dialog).queryByRole('form');
+  if (!formQuery) {
+    const summary = dialog.querySelector('details.zone-update > summary')!;
+    await m.user.click(summary);
+  }
+  return within(within(dialog).getByRole('form'));
 }
+
 async function enterBp(m: Mounted, sys: string, dia: string) {
-  await fill(m, /^systolic blood pressure/i, sys);
-  await fill(m, /^diastolic blood pressure/i, dia);
-  await save(m);
+  const form = await openZoneUpdate(m, 'heart');
+  await m.user.clear(form.getByLabelText(/^systolic blood pressure/i));
+  await m.user.type(form.getByLabelText(/^systolic blood pressure/i), sys);
+  await m.user.clear(form.getByLabelText(/^diastolic blood pressure/i));
+  await m.user.type(form.getByLabelText(/^diastolic blood pressure/i), dia);
+  await m.user.click(form.getByRole('button', { name: /save readings/i }));
+}
+
+async function closeDetails(m: Mounted) {
+  const closeBtn = screen.queryByRole('button', { name: /close details/i });
+  if (closeBtn) await m.user.click(closeBtn);
 }
 
 describe('app shell: disclaimer and mode badge on both views, both modes', () => {
@@ -72,33 +75,16 @@ describe('app shell: disclaimer and mode badge on both views, both modes', () =>
     });
   }
 
-  it('shows Day 150 of 210 and the demo controls only in DEMO', async () => {
+  it('keeps the header single-row without demo/check-in toolbar buttons', async () => {
     const demo = await mountApp('demo');
     expect(within(screen.getByRole('banner')).getByText('Day 150 of 210')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Advance one day' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reset demo' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Advance one day' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Reset demo' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^check-in$/i })).toBeNull();
+    expect(screen.queryByRole('link', { name: /switch to live/i })).toBeNull();
     demo.unmount();
     await mountApp('live');
     expect(within(screen.getByRole('banner')).getByText('Day 1 of 210')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Advance one day' })).toBeNull();
-  });
-
-  it('asks for confirmation before Reset demo and keeps data when cancelled', async () => {
-    const m = await mountApp('demo');
-    await m.user.click(screen.getByRole('button', { name: 'Reset demo' }));
-    expect(screen.getByText(/reset the demo\?/i)).toBeInTheDocument();
-    await m.user.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.getByRole('button', { name: 'Reset demo' })).toBeInTheDocument();
-    expect(m.state().generation).toBe(0);
-    await m.user.click(screen.getByRole('button', { name: 'Reset demo' }));
-    await m.user.click(screen.getByRole('button', { name: 'Yes, reset' }));
-    await waitFor(() => expect(m.state().generation).toBe(1));
-  });
-
-  it('advances one day from the header', async () => {
-    const m = await mountApp('demo');
-    await m.user.click(screen.getByRole('button', { name: 'Advance one day' }));
-    await waitFor(() => expect(within(screen.getByRole('banner')).getByText('Day 151 of 210')).toBeInTheDocument());
   });
 
   it('shows a persistent banner when storage is unavailable', async () => {
@@ -138,7 +124,8 @@ describe('LIVE first run', () => {
 
   it('rejects a bad transit length inline', async () => {
     const m = await mountApp('live', { configureLive: false });
-    await fill(m, /transit length/i, '0');
+    await m.user.clear(screen.getByLabelText(/transit length/i));
+    await m.user.type(screen.getByLabelText(/transit length/i), '0');
     await m.user.click(screen.getByRole('button', { name: /start mission/i }));
     expect(screen.getByRole('alert')).toHaveTextContent(/whole number of days/i);
     expect(m.state().hasMissionConfig).toBe(false);
@@ -223,11 +210,10 @@ describe('zone panel content', () => {
 
   it('shows per-indicator status, with the baseline-building wording in LIVE', async () => {
     const m = await mountApp('live');
-    await m.user.click(railRow('heart'));
-    await fill(m, /^resting heart rate/i, '62');
-    await save(m);
+    const form = await openZoneUpdate(m, 'heart');
+    await m.user.type(form.getByLabelText(/^resting heart rate/i), '62');
+    await m.user.click(form.getByRole('button', { name: /save readings/i }));
     await waitFor(() => expect(screen.getAllByText(/baseline building, 0 of 7 in the baseline window/i).length).toBeGreaterThan(0));
-    await openDetails(m);
     expect(screen.getAllByText(/no readings yet/i).length).toBeGreaterThan(0); // blood pressure has none
   });
 
@@ -255,46 +241,53 @@ describe('zone panel content', () => {
 describe('daily check-in form', () => {
   it('has exactly two PHQ-2 questions and no item 9 or self-harm item', async () => {
     const m = await mountApp('demo');
-    await openCheckIn(m);
-    const form = dailyForm()!;
-    expect(within(form).getAllByText(/little interest or pleasure|feeling down, depressed or hopeless/i)).toHaveLength(2);
-    expect(form.textContent).not.toMatch(/self-harm|better off dead|hurt yourself|item 9/i);
+    const form = await openZoneUpdate(m, 'brain');
+    expect(form.getAllByText(/little interest or pleasure|feeling down, depressed or hopeless/i)).toHaveLength(2);
+    expect(screen.getByRole('form').textContent).not.toMatch(/self-harm|better off dead|hurt yourself|item 9/i);
   });
 
   it('shows hints, units and the rest, symptom and glucose controls', async () => {
     const m = await mountApp('demo');
-    await openCheckIn(m);
-    expect(screen.getByText(/count the pulse for 60 s/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/fasting glucose/i)).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /at rest/i })).toBeChecked();
-    expect(screen.getByRole('radio', { name: /after exercise/i })).not.toBeChecked();
-    expect(screen.getByRole('switch', { name: /symptoms now/i })).not.toBeChecked();
-    expect(screen.getByText(/chills, palpitations, dizziness, chest discomfort/i)).toBeInTheDocument();
+    const heartForm = await openZoneUpdate(m, 'heart');
+    expect(heartForm.getByText(/count the pulse for 60 s/i)).toBeInTheDocument();
+    expect(heartForm.getByRole('radio', { name: /at rest/i })).toBeChecked();
+    expect(heartForm.getByRole('radio', { name: /after exercise/i })).not.toBeChecked();
+    expect(heartForm.getByRole('switch', { name: /symptoms now/i })).not.toBeChecked();
+    expect(heartForm.getByText(/chills, palpitations, dizziness, chest discomfort/i)).toBeInTheDocument();
+    await closeDetails(m);
+    const metForm = await openZoneUpdate(m, 'metabolism');
+    expect(metForm.getByLabelText(/fasting glucose/i)).toBeInTheDocument();
   });
 
   it('rejects an out-of-range value inline and stores nothing', async () => {
     const m = await mountApp('demo');
     const before = m.state().session!.manual.length;
-    await fill(m, /^temperature/i, '50');
-    await save(m);
+    const form = await openZoneUpdate(m, 'immune');
+    await m.user.type(form.getByLabelText(/^temperature/i), '50');
+    await m.user.click(form.getByRole('button', { name: /save readings/i }));
     expect(await screen.findByText(/enter a value between 30 and 45 C/i)).toBeInTheDocument();
-    expect(within(dailyForm()!).getByLabelText(/^temperature/i)).toHaveAttribute('aria-invalid', 'true');
+    expect(form.getByLabelText(/^temperature/i)).toHaveAttribute('aria-invalid', 'true');
     expect(m.state().session!.manual).toHaveLength(before);
   });
 
   it('rejects half a blood pressure pair and half a PHQ-2', async () => {
     const m = await mountApp('demo');
-    await fill(m, /^systolic blood pressure/i, '120');
-    await phq(m, /little interest.*: 2,/i);
-    await save(m);
+    const heartForm = await openZoneUpdate(m, 'heart');
+    await m.user.type(heartForm.getByLabelText(/^systolic blood pressure/i), '120');
+    await m.user.click(heartForm.getByRole('button', { name: /save readings/i }));
     expect(screen.getByText(/enter both blood pressure values/i)).toBeInTheDocument();
+    await closeDetails(m);
+    const brainForm = await openZoneUpdate(m, 'brain');
+    await m.user.click(brainForm.getByRole('radio', { name: /little interest.*: 2,/i }));
+    await m.user.click(brainForm.getByRole('button', { name: /save readings/i }));
     expect(screen.getByText(/answer both questions/i)).toBeInTheDocument();
     expect(m.state().session!.manual).toHaveLength(0);
   });
 
   it('asks for at least one value on an empty submit', async () => {
     const m = await mountApp('demo');
-    await save(m);
+    const form = await openZoneUpdate(m, 'heart');
+    await m.user.click(form.getByRole('button', { name: /save readings/i }));
     expect(await screen.findByText(/enter at least one value/i)).toBeInTheDocument();
   });
 
@@ -305,6 +298,7 @@ describe('daily check-in form', () => {
     const { BrandProvider } = await import('../brand/brand-context');
     const { brand } = await import('../brand/brand.config');
     const { AppRoot } = await import('./AppRoot');
+    const userEvent = (await import('@testing-library/user-event')).default;
     const world = createTestWorld();
     const { store } = await world.app('demo');
     render(
@@ -312,9 +306,13 @@ describe('daily check-in form', () => {
         <AppRoot store={store} knowledge={loadKnowledge({ glucose: false })} autoStart={false} />
       </BrandProvider>,
     );
-    fireEvent.click(screen.getByRole('button', { name: /^check-in$/i }));
-    expect(screen.queryByLabelText(/fasting glucose/i)).toBeNull();
-    expect(screen.getByLabelText(/^temperature/i)).toBeInTheDocument();
+    const u = userEvent.setup();
+    await u.click(railRow('immune'));
+    await u.click(screen.getByRole('button', { name: /view details/i }));
+    await u.click(screen.getByText(/update immune readings/i));
+    const immuneForm = within(screen.getByRole('form', { name: /update immune readings/i }));
+    expect(immuneForm.queryByLabelText(/fasting glucose/i)).toBeNull();
+    expect(immuneForm.getByLabelText(/^temperature/i)).toBeInTheDocument();
   });
 });
 
@@ -323,11 +321,11 @@ describe('golden flows through the UI', () => {
     const m = await mountApp('demo');
     await enterBp(m, '185', '125');
     await waitFor(() => expect(railRow('heart')).toHaveTextContent(/warning/i));
+    expect(screen.getByText(/saved as manual/i)).toBeInTheDocument();
+    await closeDetails(m);
     // The menu keeps its order; the panel follows the most urgent zone instead.
     expect(rail().querySelector('[data-zone-id]')).toBe(railRow('brain'));
     expect(screen.getByRole('heading', { level: 2, name: 'Heart' })).toBeInTheDocument();
-    // The form reset and confirmed the save as MANUAL.
-    expect(screen.getByText(/saved as manual/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^comms/i })).toHaveTextContent('1');
     await goTo(m, 'Comms');
     expect(outboxCards()).toHaveLength(1);
@@ -337,13 +335,13 @@ describe('golden flows through the UI', () => {
 
   it('38.1 C stays Information with the in-flight shift explanation', async () => {
     const m = await mountApp('demo');
-    await fill(m, /^temperature/i, '38.1');
-    await save(m);
+    const form = await openZoneUpdate(m, 'immune');
+    await m.user.type(form.getByLabelText(/^temperature/i), '38.1');
+    await m.user.click(form.getByRole('button', { name: /save readings/i }));
     await waitFor(() => expect(railRow('immune')).toHaveTextContent(/information/i));
     expect(railRow('immune')).not.toHaveTextContent(/caution|warning|notice/i);
-    await m.user.click(railRow('immune'));
-    await openDetails(m);
     expect(screen.getByText(/rises by about 1 C/i)).toBeInTheDocument();
+    await closeDetails(m);
     await goTo(m, 'Comms');
     expect(outboxCards()).toHaveLength(0);
   });
@@ -354,9 +352,9 @@ describe('golden flows through the UI', () => {
     await waitFor(() => expect(railRow('heart')).toHaveTextContent(/warning/i));
     m.world.wait(120);
     await enterBp(m, '130', '80');
-    await openDetails(m);
     await waitFor(() => expect(screen.getAllByText(/latest re-measure/i).length).toBeGreaterThan(0));
     expect(railRow('heart')).toHaveTextContent(/warning/i);
+    await closeDetails(m);
     await goTo(m, 'Comms');
     const cmo = screen.getByRole('region', { name: /crew medical officer/i });
     const acks = within(cmo).getAllByRole('button', { name: /acknowledge heart warning/i });
@@ -381,9 +379,13 @@ describe('Crew Medical Officer panel', () => {
 
   it('keeps a mood score out of every CMO and outbox text even when mood is high', async () => {
     const m = await mountApp('demo');
-    await phq(m, /little interest.*: 3,/i);
-    await phq(m, /feeling down.*: 3,/i);
+    const brainForm = await openZoneUpdate(m, 'brain');
+    await m.user.click(brainForm.getByRole('radio', { name: /little interest.*: 3,/i }));
+    await m.user.click(brainForm.getByRole('radio', { name: /feeling down.*: 3,/i }));
+    await m.user.click(brainForm.getByRole('button', { name: /save readings/i }));
+    await closeDetails(m);
     await enterBp(m, '185', '125');
+    await closeDetails(m);
     await goTo(m, 'Comms');
     await waitFor(() => expect(outboxCards()).toHaveLength(1));
     const cmo = screen.getByRole('region', { name: /crew medical officer/i });
@@ -395,6 +397,7 @@ describe('outbox', () => {
   async function withWarning() {
     const m = await mountApp('demo');
     await enterBp(m, '185', '125');
+    await closeDetails(m);
     await goTo(m, 'Comms');
     await waitFor(() => expect(outboxCards()).toHaveLength(1));
     return m;
@@ -402,9 +405,13 @@ describe('outbox', () => {
 
   it('payload preview shows tiers only: no PHQ values, mood is at most a tier', async () => {
     const m = await mountApp('demo');
-    await phq(m, /little interest.*: 3,/i);
-    await phq(m, /feeling down.*: 3,/i);
+    const brainForm = await openZoneUpdate(m, 'brain');
+    await m.user.click(brainForm.getByRole('radio', { name: /little interest.*: 3,/i }));
+    await m.user.click(brainForm.getByRole('radio', { name: /feeling down.*: 3,/i }));
+    await m.user.click(brainForm.getByRole('button', { name: /save readings/i }));
+    await closeDetails(m);
     await enterBp(m, '185', '125');
+    await closeDetails(m);
     await goTo(m, 'Comms');
     await waitFor(() => expect(outboxCards()).toHaveLength(1));
     const preview = within(outboxCards()[0]!).getByLabelText('Message payload');
@@ -532,12 +539,13 @@ describe('focus and suggestions', () => {
     expect(opener).toHaveFocus();
   });
 
-  it('Esc closes the check-in first, then leaves the focused zone', async () => {
+  it('Esc closes the symptom dialog first, then leaves the focused zone', async () => {
     const m = await mountApp('demo');
     await m.user.click(railRow('heart'));
-    await openCheckIn(m);
+    await m.user.click(screen.getByRole('button', { name: /report symptom/i }));
+    expect(screen.getByRole('dialog', { name: /heart symptoms/i })).toBeInTheDocument();
     await m.user.keyboard('{Escape}');
-    expect(dailyForm()).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('heading', { level: 2, name: 'Heart' })).toBeInTheDocument();
     await m.user.keyboard('{Escape}');
     expect(screen.getByRole('heading', { level: 2, name: 'Brain' })).toBeInTheDocument();

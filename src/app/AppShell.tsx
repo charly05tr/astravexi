@@ -1,17 +1,13 @@
-import { ClipboardList } from 'lucide-react';
 import { useEffect } from 'react';
 import { useBrand } from '../brand/brand-context';
 import { BodyMapContainer } from '../features/body-map/BodyMapContainer';
-import { CheckInContainer } from '../features/check-in/CheckInContainer';
 import { CmoContainer } from '../features/cmo/CmoContainer';
-import { DemoControls } from '../features/demo/DemoControls';
 import { SourcesView } from '../features/disclosures/SourcesView';
 import { AlertRailContainer } from '../features/insights/AlertRailContainer';
 import { ZonePanelContainer } from '../features/insights/ZonePanelContainer';
 import { useZones } from '../features/insights/use-zones';
 import { OutboxContainer } from '../features/outbox/OutboxContainer';
 import { Badge } from '../ui/Badge';
-import { Dialog } from '../ui/Dialog';
 import { useAppState } from './app-context';
 import { useUi } from './ui-state';
 import type { View } from './ui-state';
@@ -24,7 +20,7 @@ const VIEWS: ReadonlyArray<{ id: View; label: string }> = [
 
 function Header() {
   const brand = useBrand();
-  const { view, setView, setCheckInOpen } = useUi();
+  const { view, setView } = useUi();
   const mode = useAppState((s) => s.mode);
   const today = useAppState((s) => s.mission.today);
   const transitDays = useAppState((s) => s.mission.transitDays);
@@ -78,23 +74,6 @@ function Header() {
             </div>
           </div>
         </div>
-        <div className="header__tools">
-          {mode === 'demo' ? <DemoControls /> : null}
-          <a className="button button--small button--ghost" href={mode === 'demo' ? '?mode=live' : '?mode=demo'}>
-            Switch to {mode === 'demo' ? 'LIVE' : 'DEMO'}
-          </a>
-          {view === 'dashboard' ? (
-            <button
-              type="button"
-              className="button button--small button--primary"
-              aria-haspopup="dialog"
-              onClick={() => setCheckInOpen(true)}
-            >
-              <ClipboardList size={16} aria-hidden="true" />
-              Check-in
-            </button>
-          ) : null}
-        </div>
       </div>
     </header>
   );
@@ -112,25 +91,6 @@ function Footer() {
   );
 }
 
-/** The full daily check-in, in a modal dialog over the dashboard. */
-function CheckInDialog() {
-  const { checkInOpen, setCheckInOpen } = useUi();
-  if (!checkInOpen) return null;
-  return (
-    <Dialog
-      title="Daily check-in"
-      closeLabel="Close check-in"
-      onClose={() => setCheckInOpen(false)}
-      style={{ width: 'min(640px, 92vw)' }}
-    >
-      <div className="check-in-dialog">
-        <p className="muted small">Fill in what you measured. Leave the rest empty.</p>
-        <CheckInContainer />
-      </div>
-    </Dialog>
-  );
-}
-
 function Dashboard() {
   const { focusZoneId, clearZone } = useZones();
 
@@ -138,7 +98,7 @@ function Dashboard() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      // Open dialogs (check-in, zone detail) consume Esc themselves; here it only leaves the focused organ.
+      // Open dialogs (zone detail, symptom quick-report) consume Esc themselves; here it only leaves the focused organ.
       if (focusZoneId) clearZone();
     };
     window.addEventListener('keydown', onKey);
@@ -162,7 +122,6 @@ function Dashboard() {
       <div className="dashboard__panel">
         <ZonePanelContainer />
       </div>
-      <CheckInDialog />
     </div>
   );
 }

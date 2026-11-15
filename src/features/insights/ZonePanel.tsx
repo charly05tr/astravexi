@@ -220,6 +220,7 @@ export function ZonePanel({ model, isLive, focused, onBack, suggestions, topSugg
           <EmptyState>
             Not monitored in this prototype. No indicator feeds this zone, so it shows no alert, trend or score.
           </EmptyState>
+          {detail ? null : topSuggestion}
           {symptomAction}
         </>
       ) : (
